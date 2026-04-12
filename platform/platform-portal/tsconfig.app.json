@@ -28,8 +28,8 @@
   /* 路径别名 */
   "baseUrl": ".",
   "paths": {
-    "@/*": ["src/*"],
-    "@components/*": ["src/components/*"]
+    "/@/*": ["src/*"],
+    "/@components/*": ["src/components/*"]
   },
   "include": ["src"]
 }
