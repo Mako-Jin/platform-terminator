@@ -1,0 +1,12 @@
+/* 去除浏览器默认边距 */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+/* 确保 body 没有边距 */
+body {
+    margin: 0;
+    padding: 0;
+}

@@ -1,4 +1,4 @@
-import './App.css'
+import './App.scss'
 import Layout from "/@/layout/index.tsx";
 
 function App() {

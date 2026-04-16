@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Layout as AntLayout } from 'antd';
 import Header from './header';
-import './index.css'; // 用于内容区域样式
+import './index.scss'; // 用于内容区域样式
 
 const { Content } = AntLayout;
 

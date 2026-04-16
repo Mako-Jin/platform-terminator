@@ -1,0 +1,153 @@
+// views/portal/index.module.scss
+.portalContainer {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(135deg, #0a0a0a 0%, #1a1208 50%, #0a0a0a 100%);
+  font-family: 'Cinema', '华文楷书', 'KaiTi', 'Georgia', serif;
+}
+
+.background {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(circle at 20% 40%, rgba(212, 175, 55, 0.05) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+.content {
+  position: relative;
+  z-index: 10;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+.header {
+  position: absolute;
+  top: 30px;
+  right: 30px;
+  left: 30px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+
+  .title {
+    font-size: 1.5rem;
+    color: #d4af37;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5);
+    letter-spacing: 4px;
+}
+
+  .logoutBtn {
+    background: rgba(212, 175, 55, 0.2);
+    border: 1px solid #d4af37;
+    color: #d4af37;
+    padding: 8px 24px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    letter-spacing: 2px;
+    transition: all 0.3s ease;
+
+    &:hover {
+      background: rgba(212, 175, 55, 0.4);
+      box-shadow: 0 0 15px rgba(212, 175, 55, 0.3);
+  }
+}
+}
+
+.welcomeCard {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(20px);
+  border: 2px solid rgba(212, 175, 55, 0.6);
+  border-radius: 30px;
+  padding: 50px 60px;
+  text-align: center;
+  box-shadow: 0 0 50px rgba(212, 175, 55, 0.2);
+  animation: fadeInUp 0.8s ease;
+
+  .welcomeIcon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+  .welcomeText {
+    font-size: 1.8rem;
+    color: #e9d6a3;
+    margin-bottom: 20px;
+
+    .username {
+      color: #d4af37;
+      text-shadow: 0 0 10px #d4af37;
+      font-weight: bold;
+  }
+}
+
+  .divider {
+    width: 100px;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #d4af37, transparent);
+    margin: 20px auto;
+}
+
+  .description {
+    font-size: 1.1rem;
+    color: #c9aa4b;
+    line-height: 2;
+
+    p {
+      margin: 10px 0;
+  }
+}
+
+  .seal {
+    margin-top: 30px;
+    font-size: 0.8rem;
+    color: rgba(212, 175, 55, 0.6);
+    border: 1px solid rgba(212, 175, 55, 0.4);
+    display: inline-block;
+    padding: 5px 20px;
+    border-radius: 20px;
+    transform: rotate(-5deg);
+}
+}
+
+.footer {
+  position: absolute;
+  bottom: 20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 0.7rem;
+  color: rgba(212, 175, 55, 0.4);
+  letter-spacing: 2px;
+}
+
+@keyframes fadeInUp {
+from {
+opacity: 0;
+transform: translateY(30px);
+}
+to {
+opacity: 1;
+transform: translateY(0);
+}
+}
+
+@keyframes pulse {
+0%, 100% {
+transform: scale(1);
+opacity: 0.8;
+}
+50% {
+transform: scale(1.05);
+opacity: 1;
+}
+}
