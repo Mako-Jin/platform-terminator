@@ -1,3 +1,6 @@
 packages:
+  # 公共依赖
+  - 'packages/common-shared'
+  # 平台级功能子应用
   - 'platform/platform-auth'
   - 'platform/platform-portal'

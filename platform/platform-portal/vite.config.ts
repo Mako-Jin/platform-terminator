@@ -12,10 +12,27 @@ export default defineConfig({
     },
   },
   server: {
-    port: 3001,
+    port: 3000,
     cors: true,
+    origin: '//localhost:3000',
     headers: {
       'Access-Control-Allow-Origin': '*',
+    },
+    preview: {
+      port: 3000,
+      cors: true,
+    },
+    build: {
+      target: 'es2015',
+      outDir: 'dist',
+      rollupOptions: {
+        output: {
+          manualChunks: {
+            'qiankun': ['qiankun'],
+            'react-vendor': ['react', 'react-dom', 'react-router-dom'],
+          },
+        },
+      },
     },
   },
 })
