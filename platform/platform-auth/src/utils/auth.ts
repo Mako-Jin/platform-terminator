@@ -1,3 +1,5 @@
+import type {UserInfo} from "/@types/auth.ts";
+
 const TOKEN_KEY = 'app:token';
 const USER_KEY = 'app:user';
 
