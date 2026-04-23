@@ -10,7 +10,7 @@
  * - 自动清理和内存泄漏防护
  */
 
-import { Logger } from '../utils/logger';
+import { LoggerFactory } from '../utils/logger';
 import type {
     EventMeta,
     EventHandler,
@@ -22,6 +22,9 @@ import type {
     EventMap
 } from './types';
 import { AppEvents } from './types';
+
+// 创建模块专用的 logger
+const logger = LoggerFactory.create('EventBus');
 
 export { AppEvents };
 export type { EventMeta, EventHandler, EmitOptions, RequestOptions, EventMap };
@@ -67,9 +70,9 @@ export class UnifiedEventBus {
             try {
                 this.broadcastChannel = new BroadcastChannel(this.channelName);
                 this.setupBroadcastListener();
-                Logger.info('EventBus', 'BroadcastChannel initialized');
+                logger.info('BroadcastChannel initialized');
             } catch (error) {
-                Logger.warn('EventBus', `Failed to initialize BroadcastChannel: ${error}`);
+                logger.warn(`Failed to initialize BroadcastChannel: ${error}`);
             }
         }
     }
@@ -101,7 +104,7 @@ export class UnifiedEventBus {
         };
 
         this.broadcastChannel.onmessageerror = (event) => {
-            Logger.error('EventBus', `BroadcastChannel message error: ${event}`);
+            logger.error(`BroadcastChannel message error: ${event}`);
         };
     }
 
@@ -115,7 +118,7 @@ export class UnifiedEventBus {
                 try {
                     handler(data, meta);
                 } catch (error) {
-                    Logger.error('EventBus', `Error in handler for "${type}": ${error}`);
+                    logger.error(`Error in handler for "${type}"`, error);
                 }
             });
         }
@@ -128,7 +131,7 @@ export class UnifiedEventBus {
             });
             window.dispatchEvent(customEvent);
         } catch (error) {
-            Logger.warn('EventBus', `Failed to dispatch CustomEvent: ${error}`);
+            logger.warn(`Failed to dispatch CustomEvent: ${error}`);
         }
     }
 
@@ -172,7 +175,7 @@ export class UnifiedEventBus {
         options?: EmitOptions
     ): void {
         if (this.isDestroyed) {
-            Logger.warn('EventBus', 'Cannot emit after destroy');
+            logger.warn('Cannot emit after destroy');
             return;
         }
 
@@ -198,44 +201,44 @@ export class UnifiedEventBus {
                         isResponse: false,
                     });
                 } catch (error) {
-                    Logger.error('EventBus', `Failed to post message: ${error}`);
+                    logger.error(`Failed to post message: ${error}`);
                 }
             }
         }
     }
 
     /**
-     * 监听事件
-     * @example
-     * // 使用预定义事件
-     * bus.on(AppEvents.AUTH_LOGIN, (data) => { ... });
-     *
-     * // 使用自定义事件
-     * bus.on('my-app:custom' as any, (data) => { ... });
+     * 注册事件处理器
      */
     on<T extends keyof EventMap>(
         type: T,
         handler: EventHandler<EventMap[T]>
     ): () => void;
     on(type: string, handler: EventHandler): () => void;
-    on<T extends keyof EventMap>(
-        type: T extends string ? T : string,
-        handler: EventHandler
-    ): () => void {
+    on(type: string, handler: EventHandler): () => void {
         if (this.isDestroyed) {
-            Logger.warn('EventBus', 'Cannot register handler after destroy');
+            logger.warn('Cannot register handler after destroy');
             return () => {};
         }
 
-        const typeStr = type as string;
-        if (!this.eventMap.has(typeStr)) {
-            this.eventMap.set(typeStr, new Set());
+        if (!this.eventMap.has(type)) {
+            this.eventMap.set(type, new Set());
         }
-        this.eventMap.get(typeStr)!.add(handler);
+        this.eventMap.get(type)!.add(handler);
 
         return () => {
-            this.eventMap.get(typeStr)?.delete(handler);
+            this.eventMap.get(type)?.delete(handler);
         };
+    }
+
+    /**
+     * 移除事件处理器
+     */
+    off(type: string, handler: EventHandler): void {
+        const handlers = this.eventMap.get(type);
+        if (handlers) {
+            handlers.delete(handler);
+        }
     }
 
     /**
@@ -246,64 +249,37 @@ export class UnifiedEventBus {
         handler: EventHandler<EventMap[T]>
     ): () => void;
     once(type: string, handler: EventHandler): () => void;
-    once<T extends keyof EventMap>(
-        type: T extends string ? T : string,
-        handler: EventHandler
-    ): () => void {
-        let unsubscribed = false;
-
+    once(type: string, handler: EventHandler): () => void {
         const wrapper: EventHandler = (data, meta) => {
-            if (!unsubscribed) {
-                unsubscribed = true;
-                handler(data, meta);
-                this.off(type as any, wrapper);
-            }
+            handler(data, meta);
+            this.off(type, wrapper);
         };
-
-        const unsubscribe = this.on(type as any, wrapper);
-
-        return () => {
-            if (!unsubscribed) {
-                unsubscribed = true;
-                unsubscribe();
-            }
-        };
-    }
-
-    /**
-     * 移除监听
-     */
-    off<T extends keyof EventMap>(type?: T, handler?: EventHandler): void;
-    off(type?: string, handler?: EventHandler): void {
-        if (type && handler) {
-            this.eventMap.get(type as string)?.delete(handler);
-        } else if (type) {
-            this.eventMap.delete(type as string);
-        } else {
-            this.eventMap.clear();
-        }
+        return this.on(type, wrapper);
     }
 
     /**
      * 请求-响应模式（RPC）
      */
-    async request<T = any, R = any>(
+    request<T = any, R = any>(
         type: string,
         data?: T,
         options?: RequestOptions
     ): Promise<R> {
-        if (this.isDestroyed) {
-            throw new Error('[EventBus] Cannot request after destroy');
-        }
-
-        const { crossTab = false, source = window.location.origin, timeout = 10000 } = options || {};
-
-        const requestId = `${type}_${Date.now()}_${++this.requestIdCounter}`;
-
         return new Promise((resolve, reject) => {
+            if (this.isDestroyed) {
+                reject(new Error('EventBus is destroyed'));
+                return;
+            }
+
+            const { timeout = 5000, crossTab = false } = options || {};
+            const requestId = `req_${++this.requestIdCounter}_${Date.now()}`;
+
+            logger.debug(`Request started: ${type}`, { requestId, crossTab });
+
             const timeoutId = setTimeout(() => {
+                logger.warn(`Request timeout: ${type}`, { requestId });
                 this.pendingRequests.delete(requestId);
-                reject(new Error(`Request "${type}" timeout after ${timeout}ms`));
+                reject(new Error(`Request timeout: ${type}`));
             }, timeout);
 
             this.pendingRequests.set(requestId, {
@@ -312,139 +288,96 @@ export class UnifiedEventBus {
                 timeout: timeoutId,
             });
 
-            const requestData = {
-                requestId,
-                data,
-                source,
-                timestamp: Date.now(),
-            };
-
-            try {
-                if (crossTab) {
-                    this.ensureBroadcastChannel();
-                    if (this.broadcastChannel) {
-                        this.broadcastChannel.postMessage({
-                            type,
-                            data: requestData,
-                            source,
-                            timestamp: Date.now(),
-                            isResponse: false,
-                            isRequest: true,
-                            requestId,
-                        });
-                    } else {
-                        this.triggerLocal(type, requestData, {
-                            source,
-                            timestamp: Date.now(),
-                            requestId,
-                        });
-                    }
-                } else {
-                    this.triggerLocal(type, requestData, {
-                        source,
+            // 如果明确启用跨标签页且 BroadcastChannel 可用
+            if (crossTab && this.broadcastChannel) {
+                logger.debug('Using cross-tab mode for request');
+                try {
+                    this.broadcastChannel.postMessage({
+                        type,
+                        data,
+                        source: window.location.origin,
                         timestamp: Date.now(),
                         requestId,
+                        isResponse: false,
                     });
+                } catch (error) {
+                    clearTimeout(timeoutId);
+                    this.pendingRequests.delete(requestId);
+                    reject(error);
                 }
-            } catch (error) {
-                clearTimeout(timeoutId);
-                this.pendingRequests.delete(requestId);
-                reject(error);
+            } else {
+                // 本地请求，直接触发 respond 监听器
+                logger.debug('Using local mode for request', { eventType: `${type}:request` });
+                this.triggerLocal(`${type}:request`, { requestId, data }, {
+                    source: window.location.origin,
+                    timestamp: Date.now(),
+                    isCrossTab: false,
+                });
             }
         });
+    }
+
+    /**
+     * 响应请求（别名方法，与 respond 相同）
+     */
+    onRequest<T = any>(type: string, handler: (data: T) => Promise<any> | any): () => void {
+        return this.respond(type, handler);
     }
 
     /**
      * 响应请求
      */
-    respond(requestId: string, data: any, crossTab: boolean = false): void {
-        const response: ResponseData = {
-            success: true,
-            data,
-        };
-
-        if (crossTab && this.broadcastChannel) {
-            try {
-                this.broadcastChannel.postMessage({
-                    type: '__response__',
-                    data: response,
-                    requestId,
-                    source: window.location.origin,
-                    timestamp: Date.now(),
-                    isResponse: true,
-                });
-            } catch (error) {
-                Logger.error('EventBus', `Failed to send response: ${error}`);
-            }
-        } else {
-            this.handleResponse(requestId, response);
-        }
-    }
-
-    /**
-     * 响应错误
-     */
-    respondError(requestId: string, error: string | Error, crossTab: boolean = false): void {
-        const errorMsg = error instanceof Error ? error.message : error;
-        const response: ResponseData = {
-            success: false,
-            error: errorMsg,
-        };
-
-        if (crossTab && this.broadcastChannel) {
-            try {
-                this.broadcastChannel.postMessage({
-                    type: '__response__',
-                    data: response,
-                    requestId,
-                    source: window.location.origin,
-                    timestamp: Date.now(),
-                    isResponse: true,
-                });
-            } catch (err) {
-                Logger.error('EventBus', `Failed to send error response: ${err}`);
-            }
-        } else {
-            this.handleResponse(requestId, response);
-        }
-    }
-
-    /**
-     * 注册请求处理器（服务端）
-     */
-    onRequest<T = any, R = any>(
-        type: string,
-        handler: (data: T, meta: EventMeta) => Promise<R> | R
-    ): () => void {
-        return this.on(type as any, async (requestData: any, meta?: EventMeta) => {
-            if (!requestData || !requestData.requestId) {
+    respond<T = any>(type: string, handler: (data: T) => Promise<any> | any): () => void {
+        const eventType = `${type}:request`;
+        logger.debug(`Respond registered for: ${eventType}`);
+        
+        return this.on(eventType, async (requestData, meta) => {
+            logger.debug(`Respond received for: ${eventType}`, { requestData });
+            
+            // requestData 可能是 { requestId, data } 格式
+            const { requestId, data } = requestData || {};
+            
+            if (!requestId) {
+                logger.warn('Received request without requestId');
                 return;
             }
-
-            const { requestId, data } = requestData;
-
+            
             try {
-                const result = await handler(data, meta || { source: 'unknown', timestamp: Date.now() });
-                this.respond(requestId, result, meta?.isCrossTab);
+                const result = await handler(data);
+                logger.debug(`Respond success for: ${type}`, { requestId });
+                this.sendResponse(requestId, { success: true, data: result });
             } catch (error) {
-                const errorMsg = error instanceof Error ? error.message : String(error);
-                this.respondError(requestId, errorMsg, meta?.isCrossTab);
+                logger.debug(`Respond error for: ${type}`, { requestId, error });
+                this.sendResponse(requestId, {
+                    success: false,
+                    error: error instanceof Error ? error.message : String(error),
+                });
             }
         });
     }
 
     /**
-     * 获取某个事件的监听器数量（调试用）
+     * 发送响应
      */
-    listenerCount(type: string): number {
-        return this.eventMap.get(type)?.size || 0;
+    private sendResponse(requestId: string, response: ResponseData): void {
+        logger.debug(`Sending response`, { requestId, response });
+        
+        // 本地响应，直接处理
+        this.handleResponse(requestId, response);
     }
 
     /**
-     * 获取所有待处理请求数量（调试用）
+     * 获取待处理请求数量
      */
     pendingRequestCount(): number {
         return this.pendingRequests.size;
+    }
+
+    /**
+     * 获取监听器数量
+     */
+    listenerCount(type: string): number {
+        return this.eventMap.get(type)?.size || 0;
     }
 
     /**
@@ -453,35 +386,37 @@ export class UnifiedEventBus {
     destroy(): void {
         this.isDestroyed = true;
 
+        // 清理所有待处理的请求
+        this.pendingRequests.forEach(({ timeout }) => {
+            clearTimeout(timeout);
+        });
+        this.pendingRequests.clear();
+
+        // 关闭 BroadcastChannel
         if (this.broadcastChannel) {
             this.broadcastChannel.close();
             this.broadcastChannel = null;
         }
 
+        // 清理事件处理器
         this.eventMap.clear();
 
-        this.pendingRequests.forEach((pending) => {
-            clearTimeout(pending.timeout);
-            pending.reject(new Error('[EventBus] Destroyed'));
-        });
-        this.pendingRequests.clear();
-
-        Logger.info('EventBus', 'Destroyed');
+        logger.info('Destroyed');
     }
 
     /**
-     * 重置事件总线（开发环境调试用）
+     * 重置事件总线
      */
     reset(): void {
         this.destroy();
         this.isDestroyed = false;
-        this.requestIdCounter = 0;
-        Logger.info('EventBus', 'Reset');
+        logger.info('Reset');
     }
 }
 
-export const broadcast = UnifiedEventBus.getInstance();
+// 导出单例实例
+export const eventBus = UnifiedEventBus.getInstance();
 
-export default broadcast;
+export default eventBus;
 
 

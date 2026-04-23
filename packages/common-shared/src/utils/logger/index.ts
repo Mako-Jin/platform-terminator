@@ -1,5 +1,5 @@
 
-export { LoggerFactory, Logger } from './factory';
+export * from './factory';
 export { DEFAULT_THEME, DARK_THEME, CONTRAST_THEME } from './themes';
 export type {
     ConsoleConfig,

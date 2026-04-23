@@ -23,7 +23,6 @@ export { AppEvents } from './types';
 export { EventBus, eventBus } from './simple';
 
 // 统一事件总线（支持跨标签页）
-export { broadcast } from './unified';
-export { default as UnifiedEventBus } from './unified';
+export { UnifiedEventBus, eventBus as unifiedEventBus } from './unified';
 
 

@@ -1,62 +1,113 @@
-
 import type {
-    ConsoleConfig,
     BannerConfig,
-    TechItem,
+    ConsoleConfig,
     CreditLink,
     KeyValueOptions,
     LoggerLevel,
+    TechItem,
     ThemeColors
 } from './types';
-import { DEFAULT_THEME } from './themes';
+import {DEFAULT_THEME} from './themes';
 
 export class LoggerFactory {
-    private static instance: LoggerFactory;
-    private config: ConsoleConfig;
-    private theme: ThemeColors;
-    private asciiArtCache: Map<string, string> = new Map();
+    private static globalConfig: ConsoleConfig = {};
+    private static globalTheme: Partial<ThemeColors> = {};
 
-    private constructor(config: ConsoleConfig = {}) {
+    /**
+     * 设置全局配置（影响所有新创建的 Logger 实例）
+     */
+    static configure(config: Partial<ConsoleConfig>): void {
+        LoggerFactory.globalConfig = { ...LoggerFactory.globalConfig, ...config };
+    }
+
+    /**
+     * 设置全局主题
+     */
+    static setTheme(theme: Partial<ThemeColors>): void {
+        LoggerFactory.globalTheme = theme;
+    }
+
+    /**
+     * 设置调试模式（全局）
+     */
+    static setDebugMode(enabled: boolean): void {
+        LoggerFactory.globalConfig.debugMode = enabled;
+    }
+
+    // ==================== 工厂方法 ====================
+
+    /**
+     * 创建新的 Logger 实例（推荐）
+     * @param moduleName - 模块名称，会显示在日志中
+     * @param config - 可选的局部配置
+     * @example
+     * const logger = LoggerFactory.create('AuthService');
+     * logger.info('用户登录成功');
+     */
+    static create(moduleName: string, config?: ConsoleConfig): LoggerInstance {
+        return new LoggerInstance(moduleName, config);
+    }
+
+    /**
+     * 获取单例 Logger（向后兼容）
+     * @deprecated 推荐使用 create() 方法
+     */
+    static getInstance(config?: ConsoleConfig): LoggerInstance {
+        if (!(LoggerFactory as any).singleton) {
+            (LoggerFactory as any).singleton = new LoggerInstance('Global', config);
+        }
+        return (LoggerFactory as any).singleton;
+    }
+
+    /**
+     * 获取全局配置（内部使用）
+     */
+    static getGlobalConfig(): ConsoleConfig {
+        return { ...LoggerFactory.globalConfig };
+    }
+
+    /**
+     * 获取全局主题（内部使用）
+     */
+    static getGlobalTheme(): Partial<ThemeColors> {
+        return { ...LoggerFactory.globalTheme };
+    }
+}
+
+/**
+ * Logger 实例类
+ * 每个模块可以有独立的 Logger 实例
+ */
+export class LoggerInstance {
+    private config: ConsoleConfig;
+    private readonly theme: ThemeColors;
+    private readonly moduleName: string;
+
+    constructor(moduleName: string = 'App', config?: ConsoleConfig) {
+        this.moduleName = moduleName;
+        
+        // 合并默认配置、全局配置和局部配置
         this.config = {
             showTimestamp: true,
             timestampFormat: 'HH:MM:SS',
             enableGrouping: true,
             maxTableRows: 50,
             debugMode: false,
-            ...config
+            ...LoggerFactory.getGlobalConfig(),  // 应用全局配置
+            ...config  // 局部配置覆盖全局配置
         };
-        this.theme = { ...DEFAULT_THEME, ...config.theme };
-    }
-
-    static getInstance(config?: ConsoleConfig): LoggerFactory {
-        if (!LoggerFactory.instance) {
-            LoggerFactory.instance = new LoggerFactory(config);
-        }
-        return LoggerFactory.instance;
-    }
-
-    static reinit(config?: ConsoleConfig): LoggerFactory {
-        LoggerFactory.instance = new LoggerFactory(config);
-        return LoggerFactory.instance;
-    }
-
-    // ==================== 配置方法 ====================
-
-    updateConfig(config: Partial<ConsoleConfig>): void {
-        this.config = { ...this.config, ...config };
-    }
-
-    updateTheme(theme: Partial<ThemeColors>): void {
-        this.theme = { ...this.theme, ...theme };
-    }
-
-    setDebugMode(enabled: boolean): void {
-        this.config.debugMode = enabled;
+        
+        // 合并主题
+        this.theme = { 
+            ...DEFAULT_THEME, 
+            ...LoggerFactory.getGlobalTheme(),
+            ...config?.theme 
+        };
     }
 
     // ==================== 核心样式方法 ====================
 
-    private css(styles: Record<string, string | number>): string {
+    private static css(styles: Record<string, string | number>): string {
         return Object.entries(styles)
             .map(([k, v]) => `${k}:${v}`)
             .join(';');
@@ -75,12 +126,22 @@ export class LoggerFactory {
         return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
 
-    private styled(level: LoggerLevel, label: string, message: string): void {
+    private styled(level: LoggerLevel, message: string, data?: any): void {
         const colors = this.theme[level];
         const timestamp = this.getTimestamp();
         const timeStr = timestamp ? ` ${timestamp} ` : ' ';
 
-        const tagStyle = this.css({
+        const moduleStyle = LoggerInstance.css({
+            background: '#1e293b',
+            color: '#94a3b8',
+            padding: '2px 6px',
+            'border-radius': '3px',
+            'font-size': '9px',
+            'font-weight': '600',
+            'margin-right': '4px'
+        });
+
+        const tagStyle = LoggerInstance.css({
             background: `linear-gradient(135deg, ${colors.bg} 0%, ${colors.border} 100%)`,
             color: colors.fg,
             padding: '3px 10px',
@@ -91,64 +152,96 @@ export class LoggerFactory {
             'letter-spacing': '0.5px'
         });
 
-        const metaStyle = this.css({
+        const metaStyle = LoggerInstance.css({
             color: '#64748b',
             'font-size': '10px',
             padding: '0 8px',
             'font-family': 'monospace'
         });
 
-        const msgStyle = this.css({
+        const msgStyle = LoggerInstance.css({
             color: '#e2e8f0',
             'font-size': '12px',
             'font-weight': '500'
         });
 
-        console.log(`%c${label}%c${timeStr}%c${message}`, tagStyle, metaStyle, msgStyle);
+        // 根据是否有数据选择不同的输出方式
+        if (data !== undefined && data !== null) {
+            console.log(
+                `%c${this.moduleName}%c${tagStyle}%c${level.toUpperCase()}%c${timeStr}%c${message}`,
+                moduleStyle,
+                'padding:0;', // 重置
+                tagStyle,
+                metaStyle,
+                msgStyle,
+                data
+            );
+        } else {
+            console.log(
+                `%c${this.moduleName}%c${tagStyle}%c${level.toUpperCase()}%c${timeStr}%c${message}`,
+                moduleStyle,
+                'padding:0;',
+                tagStyle,
+                metaStyle,
+                msgStyle
+            );
+        }
     }
 
-    // ==================== 公共日志方法 ====================
-
-    info(label: string, message: string): void {
-        this.styled('info', label, message);
+    /**
+     * 信息日志
+     */
+    info(message: string, data?: any): void {
+        this.styled('info', message, data);
     }
 
-    success(label: string, message: string): void {
-        this.styled('success', label, message);
+    /**
+     * 成功日志
+     */
+    success(message: string, data?: any): void {
+        this.styled('success', message, data);
     }
 
-    warn(label: string, message: string): void {
-        this.styled('warn', label, message);
+    /**
+     * 警告日志
+     */
+    warn(message: string, data?: any): void {
+        this.styled('warn', message, data);
     }
 
-    error(label: string, message: string): void {
-        this.styled('error', label, message);
+    /**
+     * 错误日志
+     */
+    error(message: string, error?: any): void {
+        this.styled('error', message, error);
     }
 
-    debug(label: string, message: string): void {
+    /**
+     * 调试日志（仅在 debugMode 开启时输出）
+     */
+    debug(message: string, data?: any): void {
         if (!this.config.debugMode) return;
-        this.styled('debug', label, message);
+        this.styled('debug', message, data);
     }
 
+    /**
+     * 性能日志
+     */
     perf(label: string, value: number, unit: string = 'ms'): void {
-        this.styled('perf', 'PERF', `${label}: ${value}${unit}`);
+        this.styled('perf', `${label}: ${value}${unit}`);
     }
 
     // ==================== ASCII Art Banner ====================
 
     async loadAsciiArt(path: string): Promise<string> {
-        if (this.asciiArtCache.has(path)) {
-            return this.asciiArtCache.get(path)!;
-        }
-
         try {
             const response = await fetch(path);
-            if (!response.ok) throw new Error(`Failed to load ASCII art from ${path}`);
-            const art = await response.text();
-            this.asciiArtCache.set(path, art);
-            return art;
+            if (!response.ok) {
+                throw new Error(`Failed to load ASCII art from ${path}`);
+            }
+            return await response.text();
         } catch (error) {
-            console.error('Failed to load ASCII art:', error);
+            this.error('Failed to load ASCII art', error);
             return '';
         }
     }
@@ -163,7 +256,6 @@ export class LoggerFactory {
         }
 
         if (asciiArt) {
-            // 支持多行颜色渐变的 ASCII 艺术
             const lines = asciiArt.split('\n');
             const gradientColors = [
                 '#22d3ee', '#2dd4bf', '#34d399', '#4ade80', '#a3e635',
@@ -174,33 +266,30 @@ export class LoggerFactory {
             lines.forEach((line, index) => {
                 if (line.trim()) {
                     const color = gradientColors[index % gradientColors.length];
-                    console.log(`%c${line}`, this.css({ color, 'font-weight': 'bold', 'font-size': '10px', 'line-height': '1.2' }));
+                    console.log(`%c${line}`, LoggerInstance.css({ color, 'font-weight': 'bold', 'font-size': '10px', 'line-height': '1.2' }));
                 } else {
                     console.log('');
                 }
             });
         } else {
-            // 默认简单 Banner
-            console.log(`%c✨ ${config.title}`, this.css({ color: '#38bdf8', 'font-size': '20px', 'font-weight': 'bold' }));
+            console.log(`%c✨ ${config.title}`, LoggerInstance.css({ color: '#38bdf8', 'font-size': '20px', 'font-weight': 'bold' }));
         }
 
-        // 显示副标题和版本
         if (config.subtitle) {
             console.log(
                 `%c${config.subtitle} %cv${config.version || '1.0.0'}`,
-                this.css({ color: '#94a3b8', 'font-size': '14px', 'font-weight': '400', 'padding-left': '4px' }),
-                this.css({ color: '#475569', 'font-size': '12px', background: '#1e293b', padding: '2px 8px', 'border-radius': '4px', 'margin-left': '8px' })
+                LoggerInstance.css({ color: '#94a3b8', 'font-size': '14px', 'font-weight': '400', 'padding-left': '4px' }),
+                LoggerInstance.css({ color: '#475569', 'font-size': '12px', background: '#1e293b', padding: '2px 8px', 'border-radius': '4px', 'margin-left': '8px' })
             );
         }
 
-        // 显示 GitHub 链接
         if (config.githubUrl) {
             console.log(
                 `%c%c Code on GitHub %c ${config.githubUrl} %c →`,
-                this.css({ padding: '4px' }),
-                this.css({ background: 'linear-gradient(135deg, #6e5494 0%, #24292e 100%)', color: '#ffffff', 'font-size': '12px', 'font-weight': '700', padding: '6px 12px', 'border-radius': '6px 0 0 6px', 'text-shadow': '0 1px 2px rgba(0,0,0,0.3)' }),
-                this.css({ background: 'linear-gradient(135deg, #161b22 0%, #0d1117 100%)', color: '#58a6ff', 'font-size': '11px', 'font-weight': '500', padding: '6px 14px', 'border-radius': '0', border: '1px solid #30363d' }),
-                this.css({ background: 'linear-gradient(135deg, #238636 0%, #2ea043 100%)', color: '#ffffff', 'font-size': '12px', 'font-weight': '700', padding: '6px 10px', 'border-radius': '0 6px 6px 0' })
+                LoggerInstance.css({ padding: '4px' }),
+                LoggerInstance.css({ background: 'linear-gradient(135deg, #6e5494 0%, #24292e 100%)', color: '#ffffff', 'font-size': '12px', 'font-weight': '700', padding: '6px 12px', 'border-radius': '6px 0 0 6px', 'text-shadow': '0 1px 2px rgba(0,0,0,0.3)' }),
+                LoggerInstance.css({ background: 'linear-gradient(135deg, #161b22 0%, #0d1117 100%)', color: '#58a6ff', 'font-size': '11px', 'font-weight': '500', padding: '6px 14px', 'border-radius': '0', border: '1px solid #30363d' }),
+                LoggerInstance.css({ background: 'linear-gradient(135deg, #238636 0%, #2ea043 100%)', color: '#ffffff', 'font-size': '12px', 'font-weight': '700', padding: '6px 10px', 'border-radius': '0 6px 6px 0' })
             );
         }
 
@@ -212,7 +301,7 @@ export class LoggerFactory {
     section(title: string, icon: string = '◆'): void {
         console.log(
             `\n%c ${icon} ${title.toUpperCase()} `,
-            this.css({
+            LoggerInstance.css({
                 background: 'linear-gradient(90deg, #0f172a 0%, #1e293b 100%)',
                 color: '#38bdf8',
                 'font-size': '12px',
@@ -228,7 +317,7 @@ export class LoggerFactory {
     divider(char: string = '─', length: number = 50): void {
         console.log(
             `%c${char.repeat(length)}`,
-            this.css({ color: '#334155', 'font-size': '10px' })
+            LoggerInstance.css({ color: '#334155', 'font-size': '10px' })
         );
     }
 
@@ -238,8 +327,8 @@ export class LoggerFactory {
 
         console.log(
             `%c${indentStr}${key}: %c${value}`,
-            this.css({ color: keyColor, 'font-size': '11px', 'font-weight': '500' }),
-            this.css({ color: valueColor, 'font-size': '11px', 'font-weight': '700' })
+            LoggerInstance.css({ color: keyColor, 'font-size': '11px', 'font-weight': '500' }),
+            LoggerInstance.css({ color: valueColor, 'font-size': '11px', 'font-weight': '700' })
         );
     }
 
@@ -247,9 +336,7 @@ export class LoggerFactory {
 
     techTable(items: TechItem[]): void {
         this.section('Tech Stack', '⚡');
-
-        const rows = items.slice(0, this.config.maxTableRows);
-        console.table(rows);
+        console.table(items.slice(0, this.config.maxTableRows));
     }
 
     // ==================== 分组输出 ====================
@@ -262,7 +349,7 @@ export class LoggerFactory {
 
         console.group(
             `%c ${title}`,
-            this.css({
+            LoggerInstance.css({
                 color: '#f8fafc',
                 'font-weight': '700',
                 'font-size': '12px',
@@ -283,7 +370,7 @@ export class LoggerFactory {
 
         console.groupCollapsed(
             `%c ${icon} ${title}`,
-            this.css({
+            LoggerInstance.css({
                 color: '#cbd5e1',
                 'font-weight': '600',
                 'font-size': '11px',
@@ -313,38 +400,11 @@ export class LoggerFactory {
         links.forEach(({ label, url }) => {
             console.log(
                 `%c  ${label}: %c${url}`,
-                this.css({ color: '#94a3b8', 'font-size': '11px' }),
-                this.css({ color: '#60a5fa', 'font-size': '11px', 'text-decoration': 'underline' })
+                LoggerInstance.css({ color: '#94a3b8', 'font-size': '11px' }),
+                LoggerInstance.css({ color: '#60a5fa', 'font-size': '11px', 'text-decoration': 'underline' })
             );
         });
     }
-
-    // ==================== 环境变量读取 ====================
-
-    static getEnvConfig(): Partial<ConsoleConfig> {
-        // 从 Vite 环境变量读取
-        const debugMode = import.meta.env?.VITE_CONSOLE_DEBUG === 'true';
-        const showTimestamp = import.meta.env?.VITE_CONSOLE_TIMESTAMP !== 'false';
-        const timestampFormat = import.meta.env?.VITE_CONSOLE_TIMESTAMP_FORMAT as 'HH:MM:SS' | 'YYYY-MM-DD HH:MM:SS' || 'HH:MM:SS';
-
-        return {
-            debugMode,
-            showTimestamp,
-            timestampFormat
-        };
-    }
-
-    static getEnvBannerConfig(): Partial<BannerConfig> {
-        return {
-            title: import.meta.env?.VITE_APP_TITLE || 'Application',
-            subtitle: import.meta.env?.VITE_APP_DESCRIPTION,
-            version: import.meta.env?.VITE_APP_VERSION,
-            githubUrl: import.meta.env?.VITE_GITHUB_URL,
-            asciiArtPath: import.meta.env?.VITE_ASCII_ART_PATH || '/ascii/banner.txt'
-        };
-    }
-
-    // ==================== 清理 ====================
 
     clear(): void {
         console.clear();
@@ -352,9 +412,8 @@ export class LoggerFactory {
 
     reset(): void {
         console.clear();
-        this.asciiArtCache.clear();
     }
 }
 
-// 导出单例实例
-export const Logger = LoggerFactory.getInstance();
+// 导出便捷方法
+export const createLogger = LoggerFactory.create;

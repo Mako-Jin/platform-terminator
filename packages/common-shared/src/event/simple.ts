@@ -3,7 +3,10 @@
  * 适用于同窗口内的事件通信
  */
 
-import { Logger } from '../utils/logger';
+import { LoggerFactory } from '../utils/logger';
+
+// 创建模块专用的 logger
+const logger = LoggerFactory.create('EventBus');
 
 type EventCallback = (data?: any) => void;
 
@@ -34,7 +37,7 @@ export class EventBus {
                 try {
                     callback(data);
                 } catch (error) {
-                    Logger.error('EventBus', `Error in event "${eventName}": ${error}`);
+                    logger.error(`Error in event "${eventName}"`, error);
                 }
             });
         }
@@ -102,7 +105,7 @@ export class EventBus {
      */
     destroy(): void {
         this.listeners.clear();
-        Logger.info('EventBus', 'Destroyed');
+        logger.info('Destroyed');
     }
 }
 
