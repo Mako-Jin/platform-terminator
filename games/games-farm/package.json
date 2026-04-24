@@ -1,39 +1,30 @@
 {
-  "name": "elemental-weather",
+  "name": "games-farm",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "elemental-weather-dev": "vite",
+    "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview"
   },
   "dependencies": {
-    "gsap": "^3.15.0",
-    "lil-gui": "^0.21.0",
-    "mersennetwister": "^0.2.3",
     "react": "^19.2.5",
-    "react-dom": "^19.2.5",
-    "three": "^0.183.2"
+    "react-dom": "^19.2.5"
   },
   "devDependencies": {
-    "@eslint/js": "^9.39.4",
+    "@eslint/js": "^10.0.1",
     "@types/node": "^24.12.2",
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
-    "@types/three": "^0.183.1",
     "@vitejs/plugin-react": "^6.0.1",
-    "eslint": "^9.39.4",
+    "eslint": "^10.2.1",
     "eslint-plugin-react-hooks": "^7.1.1",
     "eslint-plugin-react-refresh": "^0.5.2",
     "globals": "^17.5.0",
-    "sass": "^1.99.0",
-    "three-perf": "^1.0.11",
     "typescript": "~6.0.2",
     "typescript-eslint": "^8.58.2",
-    "vite": "^8.0.9",
-    "vite-plugin-glsl": "^1.6.0",
-    "vite-plugin-qiankun": "^1.0.15"
+    "vite": "^8.0.10"
   }
 }

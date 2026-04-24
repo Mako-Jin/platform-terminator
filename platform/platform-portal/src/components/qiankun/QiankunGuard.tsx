@@ -24,7 +24,7 @@ export const QiankunGuard: ({children}: { children: JSX.Element }) => (JSX.Eleme
       }
     };
 
-    initQiankun();
+    initQiankun().then();
   }, []);
 
   if (error) {

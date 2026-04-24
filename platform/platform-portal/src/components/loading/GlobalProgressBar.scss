@@ -1,0 +1,163 @@
+.global-progress-bar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 99999;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  box-shadow: 0 4px 20px rgba(102, 126, 234, 0.3);
+  transition: opacity 0.5s ease-out, transform 0.5s ease-out;
+
+  &.fade-out {
+    opacity: 0;
+    transform: translateY(-100%);
+  }
+
+  &.error {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+
+  // 进度条容器
+  .progress-container {
+    position: relative;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.2);
+    overflow: hidden;
+  }
+
+  // 进度填充
+  .progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #ffd700, #ffed4e, #ffd700);
+    background-size: 200% 100%;
+    animation: shimmer 2s infinite;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+    transition: width 0.3s ease-out;
+
+    &.error {
+      background: linear-gradient(90deg, #ff6b6b, #ff8787);
+      animation: none;
+    }
+  }
+
+  // 光晕效果
+  .progress-glow {
+    position: absolute;
+    top: -2px;
+    width: 100px;
+    height: 8px;
+    background: radial-gradient(circle, rgba(255, 215, 0, 0.8) 0%, transparent 70%);
+    transform: translateX(-50%);
+    filter: blur(4px);
+  }
+
+  @keyframes shimmer {
+    0% {
+      background-position: 200% 0;
+    }
+    100% {
+      background-position: -200% 0;
+    }
+  }
+
+  // 进度信息
+  .progress-info {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 12px 24px;
+    color: white;
+  }
+
+  .progress-message {
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+  }
+
+  .progress-percentage {
+    font-size: 16px;
+    font-weight: 700;
+    font-family: 'Courier New', monospace;
+  }
+
+  // 阶段指示器
+  .phase-indicators {
+    display: flex;
+    justify-content: space-around;
+    padding: 16px 24px 20px;
+    gap: 12px;
+  }
+
+  .phase-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 6px;
+    opacity: 0.4;
+    transition: all 0.3s ease;
+    flex: 1;
+
+    &.completed {
+      opacity: 0.8;
+    }
+
+    &.current {
+      opacity: 1;
+      transform: scale(1.1);
+
+      .phase-icon {
+        animation: bounce 1s infinite;
+      }
+    }
+  }
+
+  .phase-icon {
+    font-size: 24px;
+    line-height: 1;
+  }
+
+  .phase-label {
+    font-size: 11px;
+    color: rgba(255, 255, 255, 0.9);
+    text-align: center;
+    white-space: nowrap;
+  }
+
+  @keyframes bounce {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-5px);
+    }
+  }
+
+  // 响应式
+  @media (max-width: 768px) {
+    .phase-indicators {
+      padding: 12px 16px 16px;
+      gap: 8px;
+    }
+
+    .phase-icon {
+      font-size: 20px;
+    }
+
+    .phase-label {
+      font-size: 10px;
+    }
+
+    .progress-info {
+      padding: 10px 16px;
+    }
+
+    .progress-message {
+      font-size: 12px;
+    }
+
+    .progress-percentage {
+      font-size: 14px;
+    }
+  }
+}
