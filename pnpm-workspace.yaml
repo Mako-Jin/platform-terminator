@@ -6,3 +6,5 @@ packages:
   # 平台级功能子应用
   - 'platform/platform-auth'
   - 'platform/platform-portal'
+  # 休闲放松游戏
+  - 'games/games-farm'

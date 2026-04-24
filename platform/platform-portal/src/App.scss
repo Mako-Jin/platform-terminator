@@ -1,12 +1,146 @@
-/* 去除浏览器默认边距 */
+
+/* main-app/src/App.css */
 * {
   margin: 0;
   padding: 0;
   box-sizing: border-box;
 }
 
-/* 确保 body 没有边距 */
-body {
-  margin: 0;
-  padding: 0;
+.main-app {
+  display: flex;
+  width: 100vw;
+  height: 100vh;
+  overflow: hidden;
+}
+
+/* 侧边栏导航 */
+.sidebar {
+  width: 260px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  padding: 20px;
+  box-shadow: 2px 0 10px rgba(0, 0, 0, 0.1);
+  z-index: 10;
+}
+
+.sidebar h2 {
+  margin-bottom: 30px;
+  font-size: 1.5rem;
+  text-align: center;
+}
+
+.sidebar ul {
+  list-style: none;
+}
+
+.sidebar li {
+  margin-bottom: 15px;
+}
+
+.sidebar a {
+  color: white;
+  text-decoration: none;
+  font-size: 1.1rem;
+  display: block;
+  padding: 10px 15px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.sidebar a:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateX(5px);
+}
+
+/* 内容区域 */
+.content {
+  flex: 1;
+  overflow: auto;
+  background: #f5f5f5;
+}
+
+/* 普通页面容器 */
+.page-container {
+  padding: 40px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.page-container h1 {
+  color: #333;
+  margin-bottom: 20px;
+}
+
+.page-container p {
+  color: #666;
+  font-size: 1.1rem;
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+
+.demo-preview {
+  background: white;
+  border-radius: 12px;
+  padding: 24px;
+  margin-top: 30px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.demo-preview h3 {
+  color: #667eea;
+  margin-bottom: 15px;
+}
+
+.demo-preview ul {
+  margin-left: 20px;
+  color: #666;
+}
+
+.demo-preview li {
+  margin: 8px 0;
+}
+
+/* 子应用容器 */
+.sub-app-wrapper {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.games-farm-container {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+}
+
+/* 确保子应用画布填满容器 */
+.subapp-container canvas {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* 加载状态（可选） */
+.loading {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  text-align: center;
+}
+
+.loading-spinner {
+  border: 3px solid #f3f3f3;
+  border-top: 3px solid #667eea;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin: 0 auto 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }

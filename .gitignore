@@ -140,3 +140,4 @@ vite.config.ts.timestamp-*
 /pnpm-lock.yaml
 /.idea/
 /platform/platform-auth/package-lock.json
+/games/games-farm/package-lock.json

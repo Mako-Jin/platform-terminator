@@ -6,38 +6,40 @@ import { QiankunGuard } from '/@/components/qiankun/QiankunGuard';
 const Logger = LoggerFactory.create("platform-portal-app");
 
 function App() {
-        async function initConsole() {
-                // Logger.updateConfig(LoggerFactory.getEnvConfig());
-                //
-                // await Logger.showBanner({
-                //         ...LoggerFactory.getEnvBannerConfig(),
-                //         asciiArtPath: './banner.txt'
-                // });
+  async function initConsole() {
+    // Logger.updateConfig(LoggerFactory.getEnvConfig());
+    //
+    // await Logger.showBanner({
+    //   ...LoggerFactory.getEnvBannerConfig(),
+    //   asciiArtPath: './banner.txt'
+    // });
 
-                Logger.techTable([
-                        { Layer: 'Build', Technology: 'Vite 6.0', Details: 'ES Modules, HMR' },
-                        { Layer: 'UI Framework', Technology: 'React 19', Details: 'Concurrent Mode' },
-                        { Layer: 'Micro Frontend', Technology: 'Qiankun 2.10', Details: 'Sandbox Isolation' }
-                ]);
+    Logger.techTable([
+      { Layer: 'Build', Technology: 'Vite 6.0', Details: 'ES Modules, HMR' },
+      { Layer: 'UI Framework', Technology: 'React 19', Details: 'Concurrent Mode' },
+      { Layer: 'Micro Frontend', Technology: 'Qiankun 2.10', Details: 'Sandbox Isolation' }
+    ]);
 
-                Logger.group('System Info', () => {
-                        Logger.keyValue('Environment', import.meta.env.MODE);
-                        Logger.keyValue('Platform', 'Web Portal');
-                });
+    Logger.group('System Info', () => {
+      Logger.keyValue('Environment', import.meta.env.MODE);
+      Logger.keyValue('Platform', 'Web Portal');
+    });
 
-                Logger.info('LOADING', 'Initializing application...');
-                Logger.success('DONE', 'Application ready');
+    Logger.info('LOADING', 'Initializing application...');
+    Logger.success('DONE', 'Application ready');
 
-                Logger.divider('═', 60);
-        }
+    Logger.divider('═', 60);
+  }
 
-        initConsole().then();
+  initConsole().then();
 
-        return (
-            <QiankunGuard>
-                <div>111111111</div>
-            </QiankunGuard>
-        );
+  return (
+    <QiankunGuard>
+      <div className="sub-app-wrapper">
+        <div id="games-farm-container" className="games-farm-container"/>
+      </div>
+    </QiankunGuard>
+  );
 }
 
 export default App;

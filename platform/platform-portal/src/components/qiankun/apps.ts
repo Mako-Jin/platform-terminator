@@ -25,8 +25,12 @@ const createMicroApp = (
 });
 
 export const microApps: MicroAppConfig[] = [
+    // 平台级
     createMicroApp('platform-auth', 3001, '/platform/platform-auth/', '/platform-auth'),
+    // 系统元素
     createMicroApp('elemental-weather', 5001, '/elemental/elemental-weather/', '/elemental-weather', '#elemental-weather-container'),
+    // 休闲游戏
+    createMicroApp('games-farm', 7001, '/games/games-farm/', '/games-farm', '#games-farm-container'),
 ];
 
 export const getAllApps = (): MicroAppConfig[] => {

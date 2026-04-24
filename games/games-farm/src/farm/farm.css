@@ -1,0 +1,55 @@
+/* src/App.css */
+.app-container {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+}
+
+.canvas-wrapper {
+    width: 100%;
+    height: 100%;
+    display: block;
+}
+
+.info-panel {
+    position: absolute;
+    bottom: 20px;
+    left: 20px;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    padding: 12px 24px;
+    border-radius: 12px;
+    color: white;
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    pointer-events: none;  /* 让面板不干扰点击操作 */
+    z-index: 10;
+    border-left: 4px solid #3f8efc;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+}
+
+.info-panel h1 {
+    margin: 0;
+    font-size: 1.4rem;
+    letter-spacing: 1px;
+}
+
+.info-panel p {
+    margin: 6px 0 0;
+    font-size: 0.85rem;
+    opacity: 0.9;
+}
+
+@media (max-width: 600px) {
+    .info-panel {
+        bottom: 12px;
+        left: 12px;
+        padding: 8px 16px;
+    }
+    .info-panel h1 {
+        font-size: 1rem;
+    }
+    .info-panel p {
+        font-size: 0.7rem;
+    }
+}
