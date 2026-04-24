@@ -42,14 +42,6 @@
     ".": {
       "import": "./src/index.ts",
       "types": "./src/index.ts"
-    },
-    "./utils/logger": {
-      "import": "./src/utils/logger/index.ts",
-      "types": "./src/utils/logger/index.ts"
-    },
-    "./event": {
-      "import": "./src/event/index.ts",
-      "types": "./src/event/index.ts"
     }
   }
 }

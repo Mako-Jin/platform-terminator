@@ -26,7 +26,7 @@ export default defineConfig({
   build: {
     target: 'es2015',
     outDir: 'dist',
-    rolldownOptions: {
+    rollupOptions: {
       output: {
         manualChunks(id) {
           // 将 qiankun 单独打包
