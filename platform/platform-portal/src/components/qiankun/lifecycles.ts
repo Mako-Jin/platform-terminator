@@ -4,6 +4,8 @@ import { LoggerFactory } from 'common-shared';
 
 let loadingElement: HTMLDivElement | null = null;
 
+const Logger = LoggerFactory.create('qiankun-lifecycles');
+
 const showLoading = (): void => {
     if (loadingElement) return;
 

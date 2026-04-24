@@ -9,6 +9,9 @@ export default defineConfig({
       qiankun('games-farm', {  // 子应用名称，与基座注册时一致
         useDevMode: true,
         devHistoryMode: 'hash',  // 开发环境使用 hash 模式
+        useDevBinary: true,
+        // 关键配置：解决 module 脚本问题
+        devSandbox: false, // 开发环境禁用沙箱
       }),
   ],
   server: {
@@ -17,6 +20,13 @@ export default defineConfig({
     origin: '//localhost:7001',
     headers: {
       'Access-Control-Allow-Origin': '*',
+    },
+    // 关键：禁用 HMR 或配置为轮询模式
+    hmr: {
+        protocol: 'ws',
+        host: 'localhost',
+        port: 7001,
+        overlay: false, // 禁用错误覆盖层
     },
   },
   preview: {
