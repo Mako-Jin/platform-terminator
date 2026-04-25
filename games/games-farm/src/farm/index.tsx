@@ -1,24 +1,39 @@
 // src/App.tsx
-import React, { useRef, useEffect } from 'react'
+import { useRef, useEffect } from 'react'
 import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import './farm.css';
 
-const Farm = () => {
+const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
     const mountRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
-        if (!mountRef.current) return
+        // 优先使用传入的container，否则使用ref
+        let targetContainer: HTMLElement | null = null
+        
+        if (container) {
+            targetContainer = typeof container === 'string' 
+                ? document.querySelector(container)
+                : container
+        } else {
+            targetContainer = mountRef.current
+        }
+
+        if (!targetContainer) return
 
         // --- 初始化场景、相机、渲染器 ---
         const scene = new THREE.Scene()
         scene.background = new THREE.Color(0x111122) // 深色星空背景
         scene.fog = new THREE.FogExp2(0x111122, 0.008) // 雾效增强景深
 
+        // 获取容器的实际尺寸
+        const containerWidth = targetContainer.clientWidth || window.innerWidth
+        const containerHeight = targetContainer.clientHeight || window.innerHeight
+
         // 透视相机: 视野, 宽高比, 近平面, 远平面
         const camera = new THREE.PerspectiveCamera(
             45,
-            window.innerWidth / window.innerHeight,
+            containerWidth / containerHeight,
             0.1,
             1000
         )
@@ -26,10 +41,10 @@ const Farm = () => {
         camera.lookAt(0, 0, 0)
 
         const renderer = new THREE.WebGLRenderer({ antialias: true })
-        renderer.setSize(window.innerWidth, window.innerHeight)
+        renderer.setSize(containerWidth, containerHeight)
         renderer.shadowMap.enabled = true // 开启阴影映射
         renderer.setPixelRatio(window.devicePixelRatio)
-        mountRef.current.appendChild(renderer.domElement)
+        targetContainer.appendChild(renderer.domElement)
 
         // --- 轨道控制 (允许用户交互) ---
         const controls = new OrbitControls(camera, renderer.domElement)
@@ -46,7 +61,7 @@ const Farm = () => {
         scene.add(gridHelper)
 
         // 简易坐标轴 (红X, 绿Z, 蓝Y 但为了视觉效果，简单添加一个AxesHelper)
-        const axesHelper = new THREE.AxesHelper(5)
+        // const axesHelper = new THREE.AxesHelper(5)
         // scene.add(axesHelper) // 默认隐藏，需要可取消注释
 
         // --- 添加环境光与点光源，让材质有立体感 ---
@@ -182,7 +197,7 @@ const Farm = () => {
             lightSphere.position.copy(backLight.position)
 
             // 动态改变立方体材质颜色产生渐变效果 (可选)
-            const hue = (time * 0.1) % 1
+            // const hue = (time * 0.1) % 1
             // 不强制改变，保持蓝色调，保持美观。可以取消注释下面代码来体验彩虹立方体
             // material.color.setHSL(hue, 0.8, 0.5)
 
@@ -197,17 +212,20 @@ const Farm = () => {
 
         // --- 窗口适配响应式 ---
         const handleResize = () => {
-            camera.aspect = window.innerWidth / window.innerHeight
+            if (!targetContainer) return
+            const width = targetContainer.clientWidth
+            const height = targetContainer.clientHeight
+            camera.aspect = width / height
             camera.updateProjectionMatrix()
-            renderer.setSize(window.innerWidth, window.innerHeight)
+            renderer.setSize(width, height)
         }
         window.addEventListener('resize', handleResize)
 
         // --- 清理函数 (防止内存泄漏) ---
         return () => {
             window.removeEventListener('resize', handleResize)
-            if (mountRef.current) {
-                mountRef.current.removeChild(renderer.domElement)
+            if (targetContainer && renderer.domElement) {
+                targetContainer.removeChild(renderer.domElement)
             }
             // 可选: dispose 几何体和材质以优化
             geometry.dispose()
@@ -218,7 +236,12 @@ const Farm = () => {
             torusMaterial.dispose()
             renderer.dispose()
         }
-    }, [])
+    }, [container])
+
+    // 如果传入了container，不需要渲染额外的wrapper
+    if (container) {
+        return null
+    }
 
     return (
         <div className="app-container">

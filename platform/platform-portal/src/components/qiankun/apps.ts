@@ -10,7 +10,7 @@ const createMicroApp = (
     devPort: number,
     prodPath: string,
     activeRule: string,
-    container: string = '#subapp-container'
+    container: string = '#sub-app-container'
 ): MicroAppConfig => ({
     name,
     entry: isDev ? `//localhost:${devPort}` : prodPath,

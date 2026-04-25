@@ -1,42 +1,62 @@
 import { StrictMode } from 'react'
-import {createRoot, Root} from 'react-dom/client'
+import {createRoot, type Root} from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import Farm from "./farm";
 import {LoggerFactory} from "common-shared";
-import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
 
 
 const Logger = LoggerFactory.create("games-farm");
 
-
 let root: Root | null = null;
+let isQiankun = false;
 
 // 渲染函数
 function render(props: any = {}) {
     const { container } = props;
-    const mountRoot = container
-        ? container.querySelector('#root')
-        : document.getElementById('root');
+    
+    let mountRoot: HTMLElement | null = null;
+    
+    if (container) {
+        // qiankun 环境：直接在容器中创建 #root
+        const existingRoot = container.querySelector('#root');
+        if (existingRoot) {
+            mountRoot = existingRoot as HTMLElement;
+        } else {
+            mountRoot = document.createElement('div');
+            mountRoot.id = 'root';
+            container.appendChild(mountRoot);
+        }
+    } else {
+        // 独立运行
+        mountRoot = document.getElementById('root');
+    }
 
     if (mountRoot) {
         root = createRoot(mountRoot);
-        root.render(
-            <StrictMode>
-                <App />
-            </StrictMode>
-        );
+        
+        if (isQiankun && container) {
+            root.render(
+                <StrictMode>
+                    <Farm container={mountRoot} />
+                </StrictMode>
+            );
+        } else {
+            root.render(
+                <StrictMode>
+                    <App />
+                </StrictMode>
+            );
+        }
+    } else {
+        Logger.error('[games-farm] 找不到挂载点')
     }
 }
 
-// 判断是否在乾坤环境中
-if (!qiankunWindow.__POWERED_BY_QIANKUN__) {
-    // 独立运行
-    render();
-}
-
-// qiankun生命周期钩子
+// qiankun生命周期钩子 - 必须始终导出
 export async function bootstrap() {
     Logger.info('[games-farm] 子应用启动')
+    isQiankun = true;
 }
 
 export async function mount(props: any) {
@@ -45,20 +65,31 @@ export async function mount(props: any) {
 
     // 监听全局状态变化（可选）
     props.onGlobalStateChange?.((state: any, prev: any) => {
-        Logger.info('[games-farm] 全局状态变化', {state, prev})
+        Logger.info('[games-farm] 全局状态变化', state, prev)
     }, true)
 }
 
 export async function unmount(props: any) {
     Logger.info('[games-farm] 子应用卸载', props)
-    const { container } = props
-    const rootElement = container
-        ? container.querySelector('#root')
-        : document.getElementById('root')
-
-    if (rootElement) {
-        // 清理React根节点
-        createRoot(rootElement).unmount()
+    
+    if (root) {
+        root.unmount()
+        root = null
     }
+    
+    // 清理容器中的内容
+    const { container } = props
+    if (container) {
+        const rootElement = container.querySelector('#root')
+        if (rootElement) {
+            container.removeChild(rootElement)
+        }
+    }
+}
+
+// 判断是否在乾坤环境中，如果不是则独立运行
+if (!(window as any).__POWERED_BY_QIANKUN__) {
+    Logger.info('[games-farm] 独立运行模式')
+    render()
 }
 

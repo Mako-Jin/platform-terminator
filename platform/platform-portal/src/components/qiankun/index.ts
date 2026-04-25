@@ -18,7 +18,14 @@ export const registerApps = (): void => {
 
     Logger.info('[Qiankun] 注册子应用:', apps.map(app => app.name));
 
-    registerMicroApps(apps, {
+    // 为每个应用配置独立的沙箱选项
+    const appsWithSandboxConfig = apps.map(app => ({
+        ...app,
+        // 对于 Vite 应用，使用 legacy 沙箱或禁用沙箱
+        sandbox: !(app.name.includes('farm') || app.name.includes('weather')),
+    }));
+
+    registerMicroApps(appsWithSandboxConfig, {
         beforeLoad: lifecycleHooks.beforeLoad ? [lifecycleHooks.beforeLoad] : [],
         beforeMount: lifecycleHooks.beforeMount ? [lifecycleHooks.beforeMount] : [],
         afterMount: lifecycleHooks.afterMount ? [lifecycleHooks.afterMount] : [],
@@ -47,10 +54,10 @@ export const startQiankun = async (options?: QiankunStartOptions): Promise<void>
         start({
             prefetch: options?.prefetch ?? 'all',
             sandbox: {
-                experimentalStyleIsolation: options?.sandbox?.experimentalStyleIsolation ?? true,
-                strictStyleIsolation: options?.sandbox?.strictStyleIsolation ?? false,
+                strictStyleIsolation: false,
+                experimentalStyleIsolation: true,
             },
-            singular: options?.singular ?? false,
+            singular: false,
         });
 
         isStarted = true;

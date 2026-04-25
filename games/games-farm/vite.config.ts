@@ -17,17 +17,11 @@ export default defineConfig({
   server: {
     port: 7001,
     cors: true,
-    origin: '//localhost:7001',
+    origin: 'http://localhost:7001',
     headers: {
       'Access-Control-Allow-Origin': '*',
     },
-    // 关键：禁用 HMR 或配置为轮询模式
-    hmr: {
-        protocol: 'ws',
-        host: 'localhost',
-        port: 7001,
-        overlay: false, // 禁用错误覆盖层
-    },
+    hmr: false,
   },
   preview: {
     port: 3001,
