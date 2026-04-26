@@ -8,14 +8,7 @@
  */
 
 // 类型导出
-export type {
-    EventMeta,
-    EventHandler,
-    EmitOptions,
-    RequestOptions,
-    ResponseData,
-    EventMap,
-} from './types';
+export type * from './types';
 
 export { AppEvents } from './types';
 

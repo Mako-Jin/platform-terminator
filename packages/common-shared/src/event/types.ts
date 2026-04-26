@@ -82,6 +82,9 @@ export const AppEvents = {
     SUB_APP_LOADED: 'sub-app:loaded',
     SUB_APP_UNLOADED: 'sub-app:unloaded',
     SUB_APP_ERROR: 'sub-app:error',
+    RESOURCE_PROGRESS: 'resource:progress',
+    RESOURCE_LOADED: 'resource:loaded',
+    RESOURCE_ERROR: 'resource:error',
 } as const;
 
 /**
@@ -103,5 +106,28 @@ export interface EventMap {
     [AppEvents.SUB_APP_LOADED]: { appName: string };
     [AppEvents.SUB_APP_UNLOADED]: { appName: string };
     [AppEvents.SUB_APP_ERROR]: { appName: string; error: string };
+    [AppEvents.RESOURCE_PROGRESS]: ResourceProgressData;
+    [AppEvents.RESOURCE_LOADED]: ResourceLoadedData;
+    [AppEvents.RESOURCE_ERROR]: ResourceErrorData;
+}
+
+export interface ResourceProgressData {
+    id: string;
+    itemsLoaded: number;
+    itemsTotal: number;
+    percent: number;
+}
+
+export interface ResourceLoadedData {
+    itemsLoaded: number;
+    itemsTotal: number;
+    percent: number;
+}
+
+export interface ResourceErrorData {
+    id: string;
+    url: string;
+    itemsLoaded: number;
+    itemsTotal: number;
 }
 

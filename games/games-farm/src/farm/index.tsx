@@ -5,7 +5,7 @@ import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import './farm.css';
 
 const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
-    const mountRef = useRef<HTMLDivElement>(null)
+    const farmContainerRef = useRef<HTMLDivElement>(null)
 
     useEffect(() => {
         // 优先使用传入的container，否则使用ref
@@ -16,7 +16,7 @@ const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
                 ? document.querySelector(container)
                 : container
         } else {
-            targetContainer = mountRef.current
+            targetContainer = farmContainerRef.current
         }
 
         if (!targetContainer) return
@@ -244,8 +244,8 @@ const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
     }
 
     return (
-        <div className="app-container">
-            <div ref={mountRef} className="canvas-wrapper" />
+        <div className="farm-container">
+            <div ref={farmContainerRef} className="canvas-wrapper" />
         </div>
     )
 }
