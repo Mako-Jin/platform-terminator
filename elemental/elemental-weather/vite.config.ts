@@ -4,8 +4,6 @@ import path from "path";
 import qiankun from 'vite-plugin-qiankun';
 import glsl from 'vite-plugin-glsl'
 
-const useQianKun = process.env.USE_QIANKUN === 'true';
-
 // https://vite.dev/config/
 export default defineConfig({
   plugins: [
@@ -13,7 +11,6 @@ export default defineConfig({
     glsl(),
     qiankun('elemental-weather', {  // 子应用名称，与基座注册时一致
       useDevMode: true, // 开发模式
-      devHistoryMode: 'hash',  // 开发环境使用 hash 模式
     }),
   ],
   resolve: {
@@ -37,11 +34,17 @@ export default defineConfig({
   build: {
     target: 'es2023',
     outDir: 'dist',
-    rollupOptions: {
+    rolldownOptions: {
       output: {
-        manualChunks: {
-          three: ['three'],
-          gsap: ['gsap']
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('three')) {
+              return 'three';
+            }
+            if (id.includes('gsap')) {
+              return 'gsap';
+            }
+          }
         },
         entryFileNames: 'assets/[name].[hash].js',
         chunkFileNames: 'assets/[name].[hash].js',
