@@ -1,9 +1,11 @@
 import * as THREE from 'three';
+import EventEmitter from "/@/utils/EventEmitter.ts";
 
 
-export default class SeasonManager {
+export default class SeasonManager extends EventEmitter {
 
     constructor(initialSeason = 'spring') {
+        super();
         if (SeasonManager.instance) {
             return SeasonManager.instance;
         }

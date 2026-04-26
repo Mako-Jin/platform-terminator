@@ -1,7 +1,9 @@
+import EventEmitter from "/@/utils/EventEmitter.ts";
 
 
-export default class EnvironmentTimeManager {
+export default class EnvironmentTimeManager extends EventEmitter {
     constructor(initialTime = null) {
+        super();
         if (EnvironmentTimeManager.instance) {
             return EnvironmentTimeManager.instance;
         }
