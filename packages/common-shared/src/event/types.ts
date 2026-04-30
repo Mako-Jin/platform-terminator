@@ -88,7 +88,37 @@ export const AppEvents = {
 } as const;
 
 /**
+ * 资源进度数据
+ */
+export interface ResourceProgressData {
+    id: string;
+    itemsLoaded: number;
+    itemsTotal: number;
+    percent: number;
+}
+
+/**
+ * 资源加载完成数据
+ */
+export interface ResourceLoadedData {
+    itemsLoaded: number;
+    itemsTotal: number;
+    percent: number;
+}
+
+/**
+ * 资源错误数据
+ */
+export interface ResourceErrorData {
+    id: string;
+    url: string;
+    itemsLoaded: number;
+    itemsTotal: number;
+}
+
+/**
  * 事件映射表
+ * 可以通过模块合并来扩展此接口
  */
 export interface EventMap {
     [AppEvents.AUTH_LOGIN]: any;
@@ -111,23 +141,15 @@ export interface EventMap {
     [AppEvents.RESOURCE_ERROR]: ResourceErrorData;
 }
 
-export interface ResourceProgressData {
-    id: string;
-    itemsLoaded: number;
-    itemsTotal: number;
-    percent: number;
+/**
+ * 事件拦截器
+ */
+export interface EventInterceptor {
+    before?: (type: string, data: any, meta: EventMeta) => boolean | void;
+    after?: (type: string, data: any, meta: EventMeta) => void;
 }
 
-export interface ResourceLoadedData {
-    itemsLoaded: number;
-    itemsTotal: number;
-    percent: number;
-}
-
-export interface ResourceErrorData {
-    id: string;
-    url: string;
-    itemsLoaded: number;
-    itemsTotal: number;
-}
-
+/**
+ * 批量事件处理器映射
+ */
+export type BatchEventHandlers = Record<string, EventHandler>;

@@ -1,14 +1,28 @@
-import * as THREE from 'three';
-import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
-import Weather from "/@/weather/weather.ts";
+import * as Three from 'three';
+import {OrbitControls} from 'three/addons/controls/OrbitControls.js';
+import Sizes from "./Size";
 
 
 export default class Camera {
-    constructor(fov = 25, near = 0.1, far = 200) {
-        this.weather = Weather.getInstance();
-        this.canvas = this.weather.canvas;
-        this.sizes = this.weather.sizes;
-        this.scene = this.weather.scene;
+
+    private container: HTMLElement;
+    private scene: Three.Scene;
+    private sizes: Sizes;
+    private idealRatio: number;
+    private ratioOverflow: number;
+    private initialCameraPosition: Three.Vector3;
+    private adjustedCameraPosition: Three.Vector3;
+    private baseMaxDistance: number;
+    private cameraInstance: Three.PerspectiveCamera;
+    private controls: OrbitControls;
+
+    constructor(
+        container: HTMLElement, sizes: Sizes, scene: Three.Scene,
+        fov = 25, near = 0.1, far = 200
+    ) {
+        this.container = container;
+        this.sizes = sizes;
+        this.scene = scene;
 
         this.idealRatio = 16 / 9;
         this.ratioOverflow = 0;
@@ -24,8 +38,8 @@ export default class Camera {
     }
 
     setPerspectiveCameraInstance(fov, near, far) {
-        const aspectRatio = this.sizes.width / this.sizes.height;
-        this.cameraInstance = new THREE.PerspectiveCamera(
+        const aspectRatio = this.sizes.getWidth() / this.sizes.getHeight();
+        this.cameraInstance = new Three.PerspectiveCamera(
             fov,
             aspectRatio,
             near,
@@ -37,7 +51,7 @@ export default class Camera {
     }
 
     setOrbitControls() {
-        this.controls = new OrbitControls(this.cameraInstance, this.canvas);
+        this.controls = new OrbitControls(this.cameraInstance, this.container);
         this.controls.enableDamping = true;
         this.controls.enablePan = false;
         this.controls.enableZoom = true;
@@ -47,7 +61,7 @@ export default class Camera {
     }
 
     updateCameraForAspectRatio() {
-        const currentRatio = this.sizes.width / this.sizes.height;
+        const currentRatio = this.sizes.getWidth() / this.sizes.getHeight();
         this.ratioOverflow = Math.max(1, this.idealRatio / currentRatio) - 1;
 
         const baseDistance = this.initialCameraPosition.length();
@@ -62,15 +76,18 @@ export default class Camera {
         this.controls.maxDistance = Math.max(this.baseMaxDistance, newDistance);
     }
 
-    resize() {
-        const aspectRatio = this.sizes.width / this.sizes.height;
-        this.cameraInstance.aspect = aspectRatio;
+    public resize() {
+        this.cameraInstance.aspect = this.sizes.getWidth() / this.sizes.getHeight();
         this.cameraInstance.updateProjectionMatrix();
 
         this.updateCameraForAspectRatio();
     }
 
-    update() {
+    public update() {
         this.controls.update();
+    }
+
+    public getCameraInstance () {
+        return this.cameraInstance;
     }
 }

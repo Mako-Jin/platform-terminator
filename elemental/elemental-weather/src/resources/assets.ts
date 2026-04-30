@@ -12,7 +12,7 @@ export interface Asset {
     path: string[];
 }
 
-const ASSETS: Asset[] = [
+export const ASSETS: Asset[] = [
     {
         id: 'environmentMapDayTexture',
         type: 'cubeMap',

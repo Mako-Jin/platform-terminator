@@ -1,26 +1,37 @@
-import * as THREE from 'three';
-import Weather from "/@/weather/weather.ts";
-import EnvironmentTimeManager from "/@/utils/EnvironmentTimeManager.ts";
+import * as Three from 'three';
+import Sizes from "./Size";
+import Camera from "./Camera";
+import {eventBus} from "common-shared";
+import {WeatherEvents} from "/@/events/types";
+import type {TimeChangedEventData} from "/@/events/types";
+import moment from "moment";
 
 export default class Renderer {
-    constructor() {
-        this.weather = Weather.getInstance();
-        this.canvas = this.weather.canvas;
-        this.sizes = this.weather.sizes;
-        this.scene = this.weather.scene;
-        this.camera = this.weather.camera;
 
-        this.environmentTimeManager = EnvironmentTimeManager.getInstance();
-        this.envTime = this.environmentTimeManager.envTime;
+    private container: HTMLElement;
+    private sizes: Sizes;
+    private scene: Three.Scene;
+    private camera: Camera;
+    private renderer: Renderer;
+    private isDebugMode: boolean;
+    private rendererInstance: Three.WebGLRenderer;
 
-        this.renderer = this.weather.renderer;
-        this.debugGUI = this.weather.debug;
+    constructor(
+        container: HTMLElement, sizes: Sizes, scene: Three.Scene, camera: Camera, renderer: Renderer,
+        isDebugMode: boolean
+    ) {
+        this.container = container;
+        this.sizes = sizes;
+        this.scene = scene;
+        this.camera = camera;
 
-        this.isDebugMode = this.weather.isDebugMode;
+        this.renderer = renderer;
+
+        this.isDebugMode = isDebugMode;
 
         this.setRendererInstance();
-        this.environmentTimeManager.onChange((newValue, oldValue) => {
-            this.onEnvTimeChanged(newValue, oldValue);
+        eventBus.on(WeatherEvents.TIME_CHANGED, (data: TimeChangedEventData) => {
+            this.updateToneMapping(data.currentTime);
         });
 
         this.onGraphicsQualityChanged = this.onGraphicsQualityChanged.bind(this);
@@ -39,7 +50,9 @@ export default class Renderer {
 
         try {
             const savedSettings = localStorage.getItem('gameSettings');
-            if (!savedSettings) return defaults;
+            if (!savedSettings) return {
+                defaults
+            };
 
             const settings = JSON.parse(savedSettings);
             const quality = settings.graphicsQuality || 'medium';
@@ -86,57 +99,42 @@ export default class Renderer {
     }
 
     setRendererInstance() {
-        const toneMappingOptions = {
-            NoToneMapping: THREE.NoToneMapping,
-            LinearToneMapping: THREE.LinearToneMapping,
-            ReinhardToneMapping: THREE.ReinhardToneMapping,
-            CineonToneMapping: THREE.CineonToneMapping,
-            ACESFilmicToneMapping: THREE.ACESFilmicToneMapping,
-            AgXToneMapping: THREE.AgXToneMapping,
-            NeutralToneMapping: THREE.NeutralToneMapping,
-        };
+        // const toneMappingOptions = {
+        //     NoToneMapping: Three.NoToneMapping,
+        //     LinearToneMapping: Three.LinearToneMapping,
+        //     ReinhardToneMapping: Three.ReinhardToneMapping,
+        //     CineonToneMapping: Three.CineonToneMapping,
+        //     ACESFilmicToneMapping: Three.ACESFilmicToneMapping,
+        //     AgXToneMapping: Three.AgXToneMapping,
+        //     NeutralToneMapping: Three.NeutralToneMapping,
+        // };
 
         const graphicsSettings = this.getInitialGraphicsSettings();
         const useAntialias = graphicsSettings.antialias;
 
-        this.rendererInstance = new THREE.WebGLRenderer({
-            canvas: this.canvas,
+        this.rendererInstance = new Three.WebGLRenderer({
             antialias: useAntialias,
             powerPreference: 'high-performance',
         });
+        this.container.appendChild(this.rendererInstance.domElement);
 
-        this.updateToneMapping();
-
-        if (this.isDebugMode) {
-            this.debugGUI.add(
-                this.rendererInstance,
-                'toneMapping',
-                {
-                    options: toneMappingOptions,
-                    label: 'Tone Mapping',
-                    onChange: (toneMappingType) => {
-                        this.rendererInstance.toneMapping = toneMappingType;
-                    },
-                },
-                'Renderer Settings'
-            );
-        }
+        this.updateToneMapping(moment().format("YYYY-MM-DD HH:mm:ss"));
 
         this.rendererInstance.toneMappingExposure = 1.75;
         this.rendererInstance.shadowMap.enabled = true;
 
         const shadowMapTypes = {
-            BasicShadowMap: THREE.BasicShadowMap,
-            PCFShadowMap: THREE.PCFShadowMap,
-            PCFSoftShadowMap: THREE.PCFSoftShadowMap,
+            BasicShadowMap: Three.BasicShadowMap,
+            PCFShadowMap: Three.PCFShadowMap,
+            PCFSoftShadowMap: Three.PCFSoftShadowMap,
         };
         this.rendererInstance.shadowMap.type =
-            shadowMapTypes[graphicsSettings.shadowMapType] || THREE.PCFShadowMap;
+            shadowMapTypes[graphicsSettings.shadowMapType] || Three.PCFShadowMap;
 
-        this.rendererInstance.setSize(this.sizes.width, this.sizes.height);
+        this.rendererInstance.setSize(this.sizes.getWidth(), this.sizes.getHeight());
 
         this.rendererInstance.setPixelRatio(
-            Math.min(this.sizes.pixelRatio, graphicsSettings.pixelRatioCap)
+            Math.min(this.sizes.getPixelRatio(), graphicsSettings.pixelRatioCap)
         );
 
         if (this.isDebugMode) {
@@ -144,25 +142,21 @@ export default class Renderer {
         }
     }
 
-    updateToneMapping() {
+    updateToneMapping(time) {
+        const hour = moment(time).hour();
         this.rendererInstance.toneMapping =
-            this.envTime === 'day'
-                ? THREE.LinearToneMapping
-                : THREE.NeutralToneMapping;
-    }
-
-    onEnvTimeChanged(newValue, oldValue) {
-        this.envTime = newValue;
-        this.updateToneMapping();
+             hour >= 6 && hour < 18
+                ? Three.LinearToneMapping
+                : Three.NeutralToneMapping;
     }
 
     onGraphicsQualityChanged(event) {
-        const { quality, settings } = event.detail;
+        const { settings } = event.detail;
 
         const shadowMapTypes = {
-            BasicShadowMap: THREE.BasicShadowMap,
-            PCFShadowMap: THREE.PCFShadowMap,
-            PCFSoftShadowMap: THREE.PCFSoftShadowMap,
+            BasicShadowMap: Three.BasicShadowMap,
+            PCFShadowMap: Three.PCFShadowMap,
+            PCFSoftShadowMap: Three.PCFSoftShadowMap,
         };
 
         if (shadowMapTypes[settings.shadowMapType]) {
@@ -172,7 +166,7 @@ export default class Renderer {
 
         if (this.sizes && settings.pixelRatioCap) {
             const newPixelRatio = Math.min(
-                this.sizes.pixelRatio,
+                this.sizes.getPixelRatio(),
                 settings.pixelRatioCap
             );
             this.rendererInstance.setPixelRatio(newPixelRatio);
@@ -187,30 +181,30 @@ export default class Renderer {
     }
 
     setUpPerformanceMonitor() {
-        this.perf = new PerformanceMonitor(this.rendererInstance);
+        // this.perf = new PerformanceMonitor(this.rendererInstance);
     }
 
-    resize() {
-        this.rendererInstance.setSize(this.sizes.width, this.sizes.height);
+    public resize() {
+        this.rendererInstance.setSize(this.sizes.getWidth(), this.sizes.getHeight());
 
         const graphicsSettings = this.getInitialGraphicsSettings();
         this.rendererInstance.setPixelRatio(
-            Math.min(this.sizes.pixelRatio, graphicsSettings.pixelRatioCap)
+            Math.min(this.sizes.getPixelRatio(), graphicsSettings.pixelRatioCap)
         );
     }
 
-    update() {
-        if (this.perf) {
-            this.perf.beginFrame();
-        }
-        this.rendererInstance.render(this.scene, this.camera.cameraInstance);
-        if (this.perf) {
-            this.perf.endFrame();
-        }
+    public update() {
+        // if (this.perf) {
+        //     this.perf.beginFrame();
+        // }
+        this.rendererInstance.render(this.scene, this.camera.getCameraInstance());
+        // if (this.perf) {
+        //     this.perf.endFrame();
+        // }
     }
 
     destroy() {
-        this.environmentTimeManager.offChange();
+        eventBus.off(WeatherEvents.TIME_CHANGED, null);
         window.removeEventListener(
             'graphicsQualityChanged',
             this.onGraphicsQualityChanged

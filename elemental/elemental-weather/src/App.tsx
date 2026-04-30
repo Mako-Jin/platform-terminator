@@ -1,11 +1,11 @@
-import './App.css'
+import './App.scss'
 import WeatherView from "/@/weather";
 
 function App() {
 
   return (
       <>
-        <WeatherView></WeatherView>
+        <WeatherView/>
       </>
   )
 }

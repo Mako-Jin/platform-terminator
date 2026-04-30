@@ -1,85 +1,32 @@
-import DebugGUI from "../utils/DebugGUI";
-import type ResourceLoader from "../utils/ResourceLoader";
-import EnvironmentTimeManager from "/@/utils/EnvironmentTimeManager.ts";
-import SeasonManager from "/@/utils/SeasonManager.ts";
-import {Scene} from "three";
-import Renderer from "/@/core/Renderer.ts";
-import Camera from "/@/core/Camera.ts";
-import LightningButtonUI from "/@/component/ui/LightningButtonUI.ts";
-import MusicControlUI from "/@/component/ui/MusicControlUI.ts";
-import ToastManager from "/@/component/ui/ToastManager.ts";
-import AmbientSoundManager from "/@/utils/AmbientSoundManager.ts";
-import AudioManager from "/@/utils/AudioManager.ts";
-import Sizes from "../utils/Sizes";
-import Time from "/@/utils/Time.ts";
-import MusicManager from "/@/utils/MusicManager.ts";
-import World from "/@/World";
-
+import {ResourceLoader} from "/@/resources";
+import {LoggerFactory} from "common-shared";
+import Clock from "/@/core/Clock";
+import Sizes from "/@/core/Size";
+import * as Three from "three";
+import Camera from "/@/core/Camera";
+import Renderer from "/@/core/Renderer";
+import World from "./world";
 
 class Weather {
-    constructor(container: HTMLElement, resources: ResourceLoader, isDebugMode: boolean = false, withMusic: boolean = true) {
+
+    private static instance: Weather;
+
+    private Logger = LoggerFactory.create("weather");
+    private isDebugMode: boolean;
+    private resources: ResourceLoader;
+    private container: HTMLElement;
+    private clock: Clock;
+    private sizes: Sizes;
+    private scene: Three.Scene;
+    private camera: Camera;
+    private renderer: Renderer;
+    private world: World;
+
+    constructor() {
         if (Weather.instance) {
             return Weather.instance;
         }
         Weather.instance = this;
-
-        this.isDebugMode = isDebugMode;
-        this.withMusic = withMusic;
-
-        if (this.isDebugMode) {
-            this.debug = new DebugGUI();
-        }
-
-        this.container = container;
-        this.resources = resources;
-        this.environmentTimeManager = EnvironmentTimeManager.getInstance();
-        this.seasonManager = SeasonManager.getInstance();
-        this.sizes = new Sizes();
-        this.time = new Time();
-        this.scene = new Scene();
-        this.camera = new Camera();
-        this.renderer = new Renderer();
-
-        this.audioManager = new AudioManager(this.resources);
-        this.audioManager.addListenerToCamera(this.camera);
-
-        this.toastManager = new ToastManager();
-        this.musicManager = new MusicManager(this.audioManager);
-
-        this.musicControlUI = new MusicControlUI(
-            this.musicManager,
-            this.toastManager
-        );
-        this.musicControlUI.setInitialState(this.withMusic);
-
-        this.ambientSoundManager = new AmbientSoundManager(
-            this.environmentTimeManager,
-            this.seasonManager,
-            this.audioManager,
-            this.musicControlUI
-        );
-
-        this.musicManager.on('trackChanged', (track) => {
-            this.toastManager.showMusicToast(track.name);
-        });
-
-        this.world = new World();
-
-        this.lightningButtonUI = new LightningButtonUI(this.world.lightning);
-
-        if (this.withMusic) {
-            this.musicManager.startRandomMusic();
-        }
-
-        this.time.on('animate', () => {
-            this.update();
-        });
-        this.sizes.on('resize', () => {
-            this.resize();
-        });
-        if (this.isDebugMode) {
-            this.initGUI();
-        }
     }
 
     static getInstance() {
@@ -89,12 +36,33 @@ class Weather {
         return Weather.instance;
     }
 
-    get envTime() {
-        return this.environmentTimeManager.envTime;
+    public init(
+        container: HTMLElement,
+        resources: ResourceLoader,
+        isDebugMode: boolean = false
+    ) {
+        this.isDebugMode = isDebugMode;
+        this.container = container;
+        this.resources = resources;
+        this.clock = new Clock();
+        this.sizes = new Sizes();
+
+        this.scene = new Three.Scene();
+        this.camera = new Camera(this.container, this.sizes, this.scene);
+        this.renderer = new Renderer(this.container, this.sizes, this.scene, this.camera, this.renderer, isDebugMode);
+
+        this.world = new World(this.scene);
+
+        this.clock.on('animate', () => {
+            this.update();
+        });
+        this.sizes.on('resize', () => {
+            this.resize();
+        });
     }
 
-    set envTime(value) {
-        this.environmentTimeManager.envTime = value;
+    public start() {
+
     }
 
     resize() {
@@ -104,292 +72,10 @@ class Weather {
 
     update() {
         this.camera.update();
-        this.world.update(this.time.delta, this.time.elapsedTime);
+        this.world.update(this.clock.getDelta(), this.clock.getElapsedTime());
         this.renderer.update();
-
-        if (this.ambientSoundManager) {
-            this.ambientSoundManager.update();
-        }
     }
 
-    initGUI() {
-        const envTimeProxy = {
-            get time() {
-                return Game.instance.environmentTimeManager.envTime;
-            },
-            set time(value) {
-                Game.instance.environmentTimeManager.envTime = value;
-            },
-        };
-
-        const seasonProxy = {
-            get season() {
-                return Game.instance.seasonManager.currentSeason;
-            },
-            set season(value) {
-                Game.instance.seasonManager.setSeason(value);
-            },
-        };
-
-        this.debug.add(
-            envTimeProxy,
-            'time',
-            {
-                options: ['day', 'night'],
-                label: 'Time of Day',
-                onChange: (value) => {
-                    this.environmentTimeManager.setTime(value);
-                },
-            },
-            'Environment'
-        );
-
-        this.debug.add(
-            seasonProxy,
-            'season',
-            {
-                options: ['spring', 'winter', 'autumn', 'rainy'],
-                label: 'Season',
-                onChange: (value) => {
-                    this.seasonManager.setSeason(value);
-                },
-            },
-            'Environment'
-        );
-
-        const seasonControls = {
-            toggleSeason: () => {
-                this.seasonManager.toggle();
-            },
-        };
-
-        this.debug.add(
-            seasonControls,
-            'toggleSeason',
-            {
-                label: 'Toggle Season',
-            },
-            'Environment'
-        );
-
-        const audioControls = {
-            masterVolume: this.audioManager.masterVolume,
-            musicVolume: this.audioManager.musicVolume,
-            soundVolume: this.audioManager.soundVolume,
-            startRandomMusic: () => this.musicManager.startRandomMusic(),
-            stopMusic: () => this.musicManager.stopMusic(),
-            playMorningPetals: () =>
-                this.audioManager.playMusic('morningPetalsMusic'),
-            playWindowLight: () => this.audioManager.playMusic('windowLightMusic'),
-            playForestDreams: () => this.audioManager.playMusic('forestDreamsMusic'),
-            playRain: () => this.audioManager.playSound('rainSound', null, true),
-            playFire: () =>
-                this.audioManager.playSound('fireBurningSound', null, true),
-            playBirds: () =>
-                this.audioManager.playSound(this.audioManager.getRandomBirdSound()),
-            stopAllSounds: () => {
-                Object.keys(this.audioManager.sounds).forEach((soundId) => {
-                    if (!soundId.includes('Music')) {
-                        this.audioManager.stopSound(soundId);
-                    }
-                });
-            },
-        };
-
-        this.debug.add(
-            audioControls,
-            'masterVolume',
-            {
-                min: 0,
-                max: 1,
-                step: 0.1,
-                onChange: (value) => this.audioManager.setMasterVolume(value),
-            },
-            'Audio'
-        );
-
-        this.debug.add(
-            audioControls,
-            'musicVolume',
-            {
-                min: 0,
-                max: 1,
-                step: 0.1,
-                onChange: (value) => this.audioManager.setMusicVolume(value),
-            },
-            'Audio'
-        );
-
-        this.debug.add(
-            audioControls,
-            'soundVolume',
-            {
-                min: 0,
-                max: 1,
-                step: 0.1,
-                onChange: (value) => this.audioManager.setSoundVolume(value),
-            },
-            'Audio'
-        );
-
-        this.debug.add(
-            audioControls,
-            'startRandomMusic',
-            { label: 'Start Random Music' },
-            'Audio'
-        );
-        this.debug.add(
-            audioControls,
-            'stopMusic',
-            { label: 'Stop Music' },
-            'Audio'
-        );
-        this.debug.add(
-            audioControls,
-            'playMorningPetals',
-            { label: 'Play Morning Petals' },
-            'Audio'
-        );
-        this.debug.add(
-            audioControls,
-            'playWindowLight',
-            { label: 'Play Window Light' },
-            'Audio'
-        );
-        this.debug.add(
-            audioControls,
-            'playForestDreams',
-            { label: 'Play Forest Dreams' },
-            'Audio'
-        );
-        this.debug.add(
-            audioControls,
-            'playRain',
-            { label: 'Play Rain (Loop)' },
-            'Audio'
-        );
-        this.debug.add(
-            audioControls,
-            'playFire',
-            { label: 'Play Fire (Loop)' },
-            'Audio'
-        );
-        this.debug.add(
-            audioControls,
-            'playBirds',
-            { label: 'Play Random Birds' },
-            'Audio'
-        );
-        this.debug.add(
-            audioControls,
-            'stopAllSounds',
-            { label: 'Stop All Sounds' },
-            'Audio'
-        );
-
-        const ambientControls = {
-            ambientVolume: this.ambientSoundManager.config.baseVolume,
-            stopAllAmbient: () => this.ambientSoundManager.stopAllAmbientSounds(),
-            updateAmbient: () => this.ambientSoundManager.updateAmbientSounds(),
-        };
-
-        this.debug.add(
-            ambientControls,
-            'ambientVolume',
-            {
-                min: 0,
-                max: 1,
-                step: 0.1,
-                onChange: (value) => {
-                    this.ambientSoundManager.config.baseVolume = value;
-                    this.ambientSoundManager.setMasterVolume(1.0);
-                },
-            },
-            'Ambient Sounds'
-        );
-
-        this.debug.add(
-            ambientControls,
-            'stopAllAmbient',
-            { label: 'Stop All Ambient' },
-            'Ambient Sounds'
-        );
-        this.debug.add(
-            ambientControls,
-            'updateAmbient',
-            { label: 'Update Ambient' },
-            'Ambient Sounds'
-        );
-    }
-
-    destroy() {
-        this.sizes.off('resize');
-        this.time.off('animate');
-
-        if (this.ambientSoundManager) {
-            this.ambientSoundManager.dispose();
-        }
-        if (this.musicManager) {
-            this.musicManager.stopMusic();
-        }
-        if (this.audioManager) {
-            this.audioManager.dispose();
-        }
-        if (this.toastManager) {
-            this.toastManager.destroy();
-        }
-        if (this.musicControlUI) {
-            this.musicControlUI.destroy();
-        }
-        if (this.lightningButtonUI) {
-            this.lightningButtonUI.destroy();
-        }
-
-        this.scene.traverse((child) => {
-            if (child instanceof THREE.Mesh) {
-                child.geometry.dispose();
-
-                for (const key in child.material) {
-                    const value = child.material[key];
-
-                    if (typeof value?.dispose === 'function') {
-                        value.dispose();
-                    }
-                }
-            }
-            if (child.geometry) child.geometry.dispose();
-            if (child.material) {
-                const mats = Array.isArray(child.material)
-                    ? child.material
-                    : [child.material];
-                mats.forEach((m) => {
-                    for (const key in m) {
-                        const prop = m[key];
-                        if (prop && prop.isTexture) prop.dispose();
-                    }
-                    m.dispose();
-                });
-            }
-        });
-
-        this.camera.controls.dispose();
-        this.renderer.rendererInstance.dispose();
-        if (this.debug) {
-            this.debug.gui.destroy();
-        }
-
-        this.container = null;
-        this.scene = null;
-        this.camera = null;
-        this.renderer = null;
-        this.world = null;
-        this.debug = null;
-        this.audioManager = null;
-        this.ambientSoundManager = null;
-        this.musicManager = null;
-        this.toastManager = null;
-        this.musicControlUI = null;
-    }
 }
 
 export default Weather;
