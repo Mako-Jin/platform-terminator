@@ -3,7 +3,7 @@ import {AppEvents} from "common-shared";
 import type {ResourceProgressData, ResourceErrorData, ResourceLoadedData} from "common-shared";
 import Weather from "./weather";
 import {ResourceLoader} from "../resources";
-import ShaderReveal from "/@/shaders/reveal";
+import ShaderReveal from "/src/shaders/reveal";
 
 export const start = (
     weatherContainer: HTMLElement,

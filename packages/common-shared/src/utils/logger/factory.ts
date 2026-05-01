@@ -119,11 +119,12 @@ export class LoggerInstance {
         const d = new Date();
         const pad = (n: number) => String(n).padStart(2, '0');
 
-        if (this.config.timestampFormat === 'YYYY-MM-DD HH:MM:SS') {
-            return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
-        }
-
-        return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        // if (this.config.timestampFormat === 'YYYY-MM-DD HH:MM:SS') {
+        //     return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        // }
+        //
+        // return `${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
     }
 
     private styled(level: LoggerLevel, message: string, data?: any): void {
@@ -132,13 +133,17 @@ export class LoggerInstance {
         const timeStr = timestamp ? ` ${timestamp} ` : ' ';
 
         const moduleStyle = LoggerInstance.css({
-            background: '#1e293b',
-            color: '#94a3b8',
+            background: colors.bg,
+            color: colors.fg,
             padding: '2px 6px',
             'border-radius': '3px',
             'font-size': '9px',
             'font-weight': '600',
-            'margin-right': '4px'
+            'margin-right': '4px',
+            'border-left': `2px solid ${colors.border}`,
+            'min-width': '120px',
+            'display': 'inline-block',
+            'text-align': 'center'
         });
 
         const tagStyle = LoggerInstance.css({
@@ -149,18 +154,23 @@ export class LoggerInstance {
             'font-weight': '700',
             'font-size': '11px',
             'text-transform': 'uppercase',
-            'letter-spacing': '0.5px'
+            'letter-spacing': '0.5px',
+            'min-width': '60px',
+            'display': 'inline-block',
+            'text-align': 'center'
         });
 
         const metaStyle = LoggerInstance.css({
-            color: '#64748b',
+            color: colors.fg,
             'font-size': '10px',
             padding: '0 8px',
-            'font-family': 'monospace'
+            'font-family': "'Courier New', Courier, monospace",
+            'min-width': this.config.timestampFormat === 'YYYY-MM-DD HH:MM:SS' ? '160px' : '85px',
+            'display': 'inline-block'
         });
 
         const msgStyle = LoggerInstance.css({
-            color: '#e2e8f0',
+            color: colors.fg,
             'font-size': '12px',
             'font-weight': '500'
         });
@@ -168,21 +178,21 @@ export class LoggerInstance {
         // 根据是否有数据选择不同的输出方式
         if (data !== undefined && data !== null) {
             console.log(
-                `%c${this.moduleName}%c${tagStyle}%c${level.toUpperCase()}%c${timeStr}%c${message}`,
+                `%c${this.moduleName}::%c %c 【${level.toUpperCase()}】%c${timeStr} - ${message}`,
                 moduleStyle,
                 'padding:0;', // 重置
                 tagStyle,
-                metaStyle,
+                // metaStyle,
                 msgStyle,
                 data
             );
         } else {
             console.log(
-                `%c${this.moduleName}%c${tagStyle}%c${level.toUpperCase()}%c${timeStr}%c${message}`,
+                `%c${this.moduleName}::%c %c【${level.toUpperCase()}】%c${timeStr} - ${message}`,
                 moduleStyle,
                 'padding:0;',
                 tagStyle,
-                metaStyle,
+                // metaStyle,
                 msgStyle
             );
         }

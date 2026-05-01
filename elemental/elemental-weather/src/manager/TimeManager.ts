@@ -1,7 +1,7 @@
 import moment from 'moment';
 import {LoggerFactory} from "common-shared";
-import {eventBus} from "common-shared/src/event";
-import {WeatherEvents} from "/@/events/types";
+import {eventBus} from "common-shared";
+import {type TimeChangedEventData, WeatherEvents} from "/@/events/types";
 
 export type EnvTime = 'day' | 'night';
 export type TimeOfDay = 'dawn' | 'day' | 'dusk' | 'night';
@@ -33,15 +33,16 @@ export default class TimeManager {
     private static instance: TimeManager | null = null;
     private useRealTime: boolean;
     private debugMode: boolean;
-    private manualTime: moment.Moment;
+    private manualTime: moment.Moment | null;
     private realTime: moment.Moment;
     private hour: number;
+    private minute: number;
     private timeOfDay: TimeOfDay = 'day';
     private envTime: EnvTime = 'day';
 
     // 日出日落时间配置
-    private readonly SUNRISEhour = 6;
-    private readonly SUNSEThour = 18;
+    private readonly SUN_RISE_hour = 6;
+    private readonly SUNSET_hour = 18;
     private readonly DAWN_START = 5;
     private readonly DAWN_END = 7;
     private readonly DUSK_START = 17;
@@ -53,7 +54,7 @@ export default class TimeManager {
     private readonly NIGHT_FULL_START = 20;
     private readonly NIGHT_FULL_END = 4;
 
-    constructor(initialTime: moment.Moment = null, debugMode: boolean = false) {
+    constructor(initialTime: moment.Moment | null = null, debugMode: boolean = false) {
         if (TimeManager.instance) {
             return TimeManager.instance;
         }
@@ -67,10 +68,11 @@ export default class TimeManager {
         this.manualTime = initialTime;
 
         this.hour = this.getLocalHour();
+        this.minute = this.getLocalMinute();
         this.envTime = this.hourToDayNight(this.hour);
 
         this.resetToRealTime();
-        eventBus.on(WeatherEvents.TIME_CHANGED, (data) => {
+        eventBus.on(WeatherEvents.TIME_CHANGED, (data: TimeChangedEventData) => {
             this.updateTime(data.currentTime);
         });
     }
@@ -79,7 +81,11 @@ export default class TimeManager {
         return this.realTime.hour();
     }
 
-    public hourToDayNight(hour) {
+    public getLocalMinute() {
+        return this.realTime.minute();
+    }
+
+    public hourToDayNight(hour: number) {
         return hour >= 6 && hour < 18 ? 'day' : 'night';
     }
 
@@ -116,10 +122,11 @@ export default class TimeManager {
         }
         this.realTime = moment(newValue);
         this.hour = this.realTime.hour();
+        this.minute = this.realTime.minute();
         const data = {
             currentTime: newValue,
             previousTime: oldValue.format("YYYY-MM-DD HH:mm:ss"),
-            timestamp: moment(newValue).format("YYYY-MM-DD HH:mm:ss")
+            timestamp: moment().format("YYYY-MM-DD HH:mm:ss")
         };
         eventBus.emit(WeatherEvents.TIME_CHANGED, data);
     }
@@ -136,9 +143,10 @@ export default class TimeManager {
 
         const oldHour = this.hour;
         const oldEnvTime = this.envTime;
-        const oldTimeOfDay = this.timeOfDay;
+        // const oldTimeOfDay = this.timeOfDay;
 
         this.hour = hour;
+        this.minute = Math.round((hour % 1) * 60);
         this.envTime = this.calculateEnvTime(hour);
         this.timeOfDay = this.calculateTimeOfDay(hour);
 
@@ -183,7 +191,7 @@ export default class TimeManager {
      * 计算当前是白天还是夜晚
     */
     private calculateEnvTime(hour: number): EnvTime {
-        return hour >= this.SUNRISEhour && hour < this.SUNSEThour ? 'day' : 'night';
+        return hour >= this.SUN_RISE_hour && hour < this.SUNSET_hour ? 'day' : 'night';
     }
 
     /**
@@ -216,21 +224,36 @@ export default class TimeManager {
     /**
      * 获取当前小时
      */
-    get hour(): number {
+    public getHour(): number {
         return this.hour;
+    }
+
+    /**
+     * 获取当前分钟
+     */
+    public getMinute(): number {
+        return this.minute;
+    }
+
+    /**
+     * 获取当前时间的小时数（包含分钟的小数部分）
+     * 例如：14:30 返回 14.5
+     */
+    public getDecimalHour(): number {
+        return this.hour + this.minute / 60;
     }
 
     /**
      * 获取当前环境时间（白天/夜晚）
      */
-    get envTime(): EnvTime {
+    public getEnvTime(): EnvTime {
         return this.envTime;
     }
 
     /**
      * 获取时段类型
      */
-    get timeOfDay(): TimeOfDay {
+    public getTimeOfDay(): TimeOfDay {
         return this.timeOfDay;
     }
 
@@ -239,14 +262,14 @@ export default class TimeManager {
     /**
      * 判断是否是白天
      */
-    isDay(): boolean {
+    public isDay(): boolean {
         return this.envTime === 'day';
     }
 
     /**
      * 判断是否是夜晚
      */
-    isNight(): boolean {
+    public isNight(): boolean {
         return this.envTime === 'night';
     }
 
@@ -270,12 +293,12 @@ export default class TimeManager {
      * 获取一天中的进度 (0-1)
      * 0 = 日出时刻, 1 = 日落时刻
      */
-    getDayProgress(): number {
-        if (this.hour < this.SUNRISEhour || this.hour >= this.SUNSEThour) {
+    public getDayProgress(): number {
+        if (this.hour < this.SUN_RISE_hour || this.hour >= this.SUNSET_hour) {
             return 0;
         }
 
-        return (this.hour - this.SUNRISEhour) / (this.SUNSEThour - this.SUNRISEhour);
+        return (this.getDecimalHour() - this.SUN_RISE_hour) / (this.SUNSET_hour - this.SUN_RISE_hour);
     }
 
     /**
@@ -298,14 +321,14 @@ export default class TimeManager {
             linearFactor = 0; // 完全白天
         } else if (this.hour >= this.NIGHT_FULL_START || this.hour < this.NIGHT_FULL_END) {
             linearFactor = 1; // 完全夜晚
-        } else if (this.hour >= this.SUNRISEhour && this.hour < this.DAY_FULL_START) {
-            linearFactor = 1 - (this.hour - this.SUNRISEhour) / (this.DAY_FULL_START - this.SUNRISEhour);
-        } else if (this.hour >= this.DAY_FULL_END && this.hour < this.SUNSEThour) {
-            linearFactor = (this.hour - this.DAY_FULL_END) / (this.SUNSEThour - this.DAY_FULL_END);
-        } else if (this.hour >= this.SUNSEThour && this.hour < this.NIGHT_FULL_START) {
-            linearFactor = (this.hour - this.SUNSEThour) / (this.NIGHT_FULL_START - this.SUNSEThour);
+        } else if (this.hour >= this.SUN_RISE_hour && this.hour < this.DAY_FULL_START) {
+            linearFactor = 1 - (this.hour - this.SUN_RISE_hour) / (this.DAY_FULL_START - this.SUN_RISE_hour);
+        } else if (this.hour >= this.DAY_FULL_END && this.hour < this.SUNSET_hour) {
+            linearFactor = (this.hour - this.DAY_FULL_END) / (this.SUNSET_hour - this.DAY_FULL_END);
+        } else if (this.hour >= this.SUNSET_hour && this.hour < this.NIGHT_FULL_START) {
+            linearFactor = (this.hour - this.SUNSET_hour) / (this.NIGHT_FULL_START - this.SUNSET_hour);
         } else {
-            linearFactor = 1 - (this.hour - this.NIGHT_FULL_END) / (this.SUNRISEhour - this.NIGHT_FULL_END);
+            linearFactor = 1 - (this.hour - this.NIGHT_FULL_END) / (this.SUN_RISE_hour - this.NIGHT_FULL_END);
         }
 
         linearFactor = Math.max(0, Math.min(1, linearFactor));
@@ -338,12 +361,12 @@ export default class TimeManager {
      * 获取太阳位置
      * 基于24小时制计算太阳在天空中的位置
      */
-    getSunPosition(): SunPosition {
-        const sunrise = this.SUNRISEhour;
-        const sunset = this.SUNSEThour;
-        const noon = (sunrise + sunset) / 2;
-
-        if (this.hour >= sunrise && this.hour <= sunset) {
+    public getSunPosition(): SunPosition {
+        const sunrise = this.SUN_RISE_hour;
+        const sunset = this.SUNSET_hour;
+        // const noon = (sunrise + sunset) / 2;
+        const decimalHour = this.getDecimalHour();
+        if (decimalHour >= sunrise && decimalHour <= sunset) {
             const dayProgress = (this.hour - sunrise) / (sunset - sunrise);
             const angle = dayProgress * Math.PI;
 
@@ -369,13 +392,13 @@ export default class TimeManager {
     /**
      * 获取月亮位置（夜晚时）
      */
-    getMoonPosition(): SunPosition | null {
+    public getMoonPosition(): SunPosition | null {
         if (this.isDay()) {
             return null;
         }
 
-        const sunrise = this.SUNRISEhour;
-        const sunset = this.SUNSEThour;
+        const sunrise = this.SUN_RISE_hour;
+        const sunset = this.SUNSET_hour;
         const adjustedHour = this.hour < sunrise ? this.hour + 24 : this.hour;
         const nightTotal = 24 - sunset + sunrise;
         const nightProgress = (adjustedHour - sunset) / nightTotal;
@@ -392,7 +415,7 @@ export default class TimeManager {
      * 获取光照强度系数 (0-1)
      * 用于调整环境光强度
      */
-    getLightIntensity(): number {
+    public getLightIntensity(): number {
         const factor = this.getColorInterpolationFactor('smoothstep');
         return 1 - factor * 0.7; // 夜晚保留30%的基础光照
     }

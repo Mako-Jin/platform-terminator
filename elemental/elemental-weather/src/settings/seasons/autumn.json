@@ -1,0 +1,179 @@
+{
+  "bush": {
+    "day": {
+      "shadowColor": [0.12, 0.04, 0.001],
+      "midColor": [0.35, 0.15, 0.03],
+      "highlightColor": [0.95, 0.6, 0.2],
+      "colorMultiplier": [0.85, 0.5, 0.25],
+      "treeShadowColor": [0.08, 0.05, 0.01],
+      "treeMidColor": [0.33, 0.05, 0.004],
+      "treeHighlightColor": [0.85, 0.63, 0.0],
+      "treeColorMultiplier": [0.9, 0.6, 0.3],
+      "birchShadowColor": [0.09, 0.003, 0.004],
+      "birchMidColor": [0.21, 0.01, 0.0],
+      "birchHighlightColor": [0.8, 0.317, 0.058],
+      "birchColorMultiplier": [0.9, 0.3, 0.2]
+    },
+    "night": {
+      "shadowColor": [0.0384, 0.0128, 0.00032],
+      "midColor": [0.112, 0.048, 0.0096],
+      "highlightColor": [0.304, 0.192, 0.064],
+      "colorMultiplier": [0.272, 0.16, 0.08],
+      "treeShadowColor": [0.0256, 0.016, 0.0032],
+      "treeMidColor": [0.1056, 0.016, 0.00128],
+      "treeHighlightColor": [0.272, 0.2016, 0.0],
+      "treeColorMultiplier": [0.288, 0.192, 0.096],
+      "birchShadowColor": [0.0288, 0.00096, 0.00128],
+      "birchMidColor": [0.0672, 0.0032, 0.0],
+      "birchHighlightColor": [0.256, 0.10144, 0.01856],
+      "birchColorMultiplier": [0.288, 0.096, 0.064]
+    }
+  },
+  "lighting": {
+    "day": {
+      "key": {
+        "color": 16771798,
+        "intensity": 2.4,
+        "position": [-15, 12, 8],
+        "castShadow": true
+      },
+      "fill": {
+        "color": 16750950,
+        "intensity": 0.8,
+        "position": [10, 5, -6],
+        "castShadow": false
+      },
+      "ambient": {
+        "color": 16773862,
+        "intensity": 0.5
+      },
+      "rim": {
+        "color": 16757606,
+        "intensity": 0.4,
+        "position": [5, 10, -12],
+        "castShadow": false
+      },
+      "environment": {
+        "intensity": 0.4,
+        "backgroundIntensity": 1.0,
+        "rotationY": 6.64,
+        "rotationX": 3.95,
+        "rotationZ": 6.27
+      },
+      "lamp": {
+        "color": 16769670,
+        "intensity": 0,
+        "distance": 20,
+        "decay": 1.5,
+        "position": [2.9, 4.6, -5.5],
+        "castShadow": false
+      }
+    },
+    "night": {
+      "key": {
+        "color": 7029795,
+        "intensity": 0.3,
+        "position": [-10, 15, 5],
+        "castShadow": true
+      },
+      "fill": {
+        "color": 5914922,
+        "intensity": 0.22,
+        "position": [10, 5, -6],
+        "castShadow": false
+      },
+      "ambient": {
+        "color": 5061163,
+        "intensity": 0.12
+      },
+      "rim": {
+        "color": 9138951,
+        "intensity": 0.15,
+        "position": [5, 10, -12],
+        "castShadow": false
+      },
+      "environment": {
+        "intensity": 0.05,
+        "backgroundIntensity": 1.0,
+        "rotationY": 3.25,
+        "rotationX": 4.65,
+        "rotationZ": 4.67
+      },
+      "lamp": {
+        "color": 16769670,
+        "intensity": 10,
+        "distance": 20,
+        "decay": 1.5,
+        "position": [2.9, 4.6, -5.5],
+        "castShadow": false
+      }
+    }
+  },
+  "ground": {
+    "day": {
+      "uGroundColorLight": {"type": "color", "value": [0.45, 0.28, 0.15]},
+      "uGroundColorDark": {"type": "color", "value": [0.9, 0.65, 0.4]},
+      "uGroundColorBelowGrass": {"type": "color", "value": [0.3, 0.2, 0.1]},
+      "uRockColor": {"type": "color", "value": [0.95, 0.7, 0.5]},
+      "uWaterShallow": {"type": "color", "value": [1.0, 0.49, 0.16]},
+      "uWaterDeep": {"type": "color", "value": [0.07, 0.64, 0.72]}
+    },
+    "night": {
+      "uGroundColorLight": {"type": "color", "value": [0.3, 0.2, 0.12]},
+      "uGroundColorDark": {"type": "color", "value": [0.7, 0.5, 0.35]},
+      "uGroundColorBelowGrass": {"type": "color", "value": [0.2, 0.15, 0.08]},
+      "uRockColor": {"type": "color", "value": [0.75, 0.55, 0.4]},
+      "uWaterShallow": {"type": "color", "value": [0.58, 0.23, 0.0]},
+      "uWaterDeep": {"type": "color", "value": [0.18, 0.83, 0.86]}
+    }
+  },
+  "grass": {
+    "day": {
+      "shadow": {"type": "color", "value": [0.13, 0.062, 0.0039]},
+      "dark": {"type": "color", "value": [0.278, 0.019, 0.0]},
+      "light": {"type": "color", "value": [0.67, 0.498, 0.003]},
+      "flowerVisibility": 0.9
+    },
+    "night": {
+      "shadow": {"type": "color", "value": [0.05, 0.025, 0.01]},
+      "dark": {"type": "color", "value": [0.15, 0.1, 0.04]},
+      "light": {"type": "color", "value": [0.4, 0.3, 0.15]},
+      "flowerVisibility": 0.15
+    }
+  },
+  "fire": {
+    "day": {
+      "smokeAlphaSecondStop": 0.08
+    },
+    "night": {
+      "smokeAlphaSecondStop": 0.04
+    }
+  },
+  "fallingLeaves": {
+    "color": {"type": "color", "value": [1.0, 0.388, 0.278]}
+  },
+  "windLines": {
+    "color": {"type": "color", "value": [1.0, 0.918, 0.839]}
+  },
+  "tent": {
+    "lampColor": {"type": "color", "value": [1.0, 0.886, 0.525]}
+  },
+  "rocks": {
+    "day": {
+      "uRockColor1": {"type": "color", "value": [0.95, 0.75, 0.55]},
+      "uRockColor2": {"type": "color", "value": [0.9, 0.7, 0.5]},
+      "uRockColor3": {"type": "color", "value": [0.5, 0.35, 0.2]},
+      "uMossColor1": {"type": "color", "value": [0.85, 0.6, 0.3]},
+      "uMossColor2": {"type": "color", "value": [0.8, 0.55, 0.25]},
+      "uMossColor3": {"type": "color", "value": [0.3, 0.2, 0.1]}
+    },
+    "night": {
+      "uRockColor1": {"type": "color", "value": [0.7, 0.55, 0.4]},
+      "uRockColor2": {"type": "color", "value": [0.65, 0.5, 0.35]},
+      "uRockColor3": {"type": "color", "value": [0.35, 0.25, 0.15]},
+      "uMossColor1": {"type": "color", "value": [0.6, 0.4, 0.2]},
+      "uMossColor2": {"type": "color", "value": [0.55, 0.35, 0.18]},
+      "uMossColor3": {"type": "color", "value": [0.2, 0.15, 0.08]}
+    }
+  }
+}

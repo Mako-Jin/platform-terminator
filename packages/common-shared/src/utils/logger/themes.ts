@@ -2,12 +2,12 @@
 import type {ThemeColors} from './types';
 
 export const DEFAULT_THEME: ThemeColors = {
-    info: { fg: '#0c4a6e', bg: '#7dd3fc', border: '#38bdf8' },
-    success: { fg: '#14532d', bg: '#86efac', border: '#22c55e' },
-    warn: { fg: '#713f12', bg: '#fde047', border: '#eab308' },
-    error: { fg: '#7f1d1d', bg: '#fca5a5', border: '#ef4444' },
-    debug: { fg: '#581c87', bg: '#d8b4fe', border: '#a855f7' },
-    perf: { fg: '#164e63', bg: '#67e8f9', border: '#06b6d4' }
+    info: { fg: '#00CD00', bg: '#111111', border: '#38bdf8' },
+    success: { fg: '#14532d', bg: '#111111', border: '#22c55e' },
+    warn: { fg: '#CDCD00', bg: '#111111', border: '#eab308' },
+    error: { fg: '#CD0000', bg: '#111111', border: '#ef4444' },
+    debug: { fg: '#ffffff', bg: '#111111', border: '#a855f7' },
+    perf: { fg: '#164e63', bg: '#111111', border: '#06b6d4' }
 };
 
 export const DARK_THEME: ThemeColors = {

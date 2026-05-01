@@ -193,6 +193,10 @@ export default class Renderer {
         );
     }
 
+    public getRendererInstance() {
+        return this.rendererInstance;
+    }
+
     public update() {
         // if (this.perf) {
         //     this.perf.beginFrame();
