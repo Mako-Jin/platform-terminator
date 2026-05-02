@@ -51,7 +51,7 @@ class Weather {
         this.camera = new Camera(this.container, this.sizes, this.scene);
         this.renderer = new Renderer(this.container, this.sizes, this.scene, this.camera, isDebugMode);
 
-        this.world = new World(this.scene, this.renderer);
+        this.world = new World(this.scene, this.renderer, isDebugMode);
 
         this.clock.on('animate', () => {
             this.update();

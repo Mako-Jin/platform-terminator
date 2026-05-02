@@ -1,4 +1,21 @@
 {
+  "skydome": {
+    "day": {
+      "zenithColor": {"type": "color", "value": [0.25, 0.3, 0.4]},
+      "horizonColor": {"type": "color", "value": [0.4, 0.5, 0.6]},
+      "groundColor": {"type": "color", "value": [0.5, 0.6, 0.7]},
+      "sunColor": {"type": "color", "value": [0.7, 0.7, 0.8]},
+      "sunGlowColor": {"type": "color", "value": [0.6, 0.6, 0.7]}
+    },
+    "night": {
+      "zenithColor": {"type": "color", "value": [0.03, 0.05, 0.08]},
+      "horizonColor": {"type": "color", "value": [0.06, 0.1, 0.15]},
+      "groundColor": {"type": "color", "value": [0.1, 0.15, 0.2]},
+      "moonColor": {"type": "color", "value": [0.6, 0.7, 0.8]},
+      "moonGlowColor": {"type": "color", "value": [0.5, 0.6, 0.8]},
+      "starColor": {"type": "color", "value": [0.7, 0.8, 0.9]}
+    }
+  },
   "bush": {
     "day": {
       "shadowColor": [0.0, 0.019, 0.019],

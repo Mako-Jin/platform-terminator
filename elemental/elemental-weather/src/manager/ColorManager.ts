@@ -85,6 +85,10 @@ export default class ColorManager {
         return this.getComponentConfig('fire', easing);
     }
 
+    public getSkydomeColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
+        return this.getComponentConfig('skydome', easing);
+    }
+
     public getComponentConfig(component: string, easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
         const currentSeason = this.seasonManager.season;
         const cacheKey = `${currentSeason}_${component}_${easing}`;

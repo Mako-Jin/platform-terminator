@@ -18,6 +18,7 @@ export interface SeasonColorConfigs {
     fallingLeaves?: SeasonColorComponent;
     windLines?: SeasonColorComponent;
     tent?: SeasonColorComponent;
+    skydome?: SeasonColorComponent;
     [key: string]: SeasonColorComponent | undefined;
 }
 
