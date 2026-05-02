@@ -1,31 +1,29 @@
 import * as Three from 'three';
 import Sizes from "./Size";
 import Camera from "./Camera";
-import {eventBus} from "common-shared";
+import {eventBus, LoggerFactory} from "common-shared";
 import {WeatherEvents} from "/@/events/types";
 import type {TimeChangedEventData} from "/@/events/types";
 import moment from "moment";
 
 export default class Renderer {
 
+    private logger = LoggerFactory.create("weather-renderer");
+
     private container: HTMLElement;
     private sizes: Sizes;
     private scene: Three.Scene;
     private camera: Camera;
-    private renderer: Renderer;
     private isDebugMode: boolean;
     private rendererInstance: Three.WebGLRenderer;
 
     constructor(
-        container: HTMLElement, sizes: Sizes, scene: Three.Scene, camera: Camera, renderer: Renderer,
-        isDebugMode: boolean
+        container: HTMLElement, sizes: Sizes, scene: Three.Scene, camera: Camera, isDebugMode: boolean
     ) {
         this.container = container;
         this.sizes = sizes;
         this.scene = scene;
         this.camera = camera;
-
-        this.renderer = renderer;
 
         this.isDebugMode = isDebugMode;
 
@@ -90,7 +88,7 @@ export default class Renderer {
 
             return presetSettings[quality] || defaults;
         } catch (error) {
-            console.warn(
+            this.logger.warn(
                 'Failed to load graphics settings from localStorage:',
                 error
             );
@@ -116,7 +114,6 @@ export default class Renderer {
             antialias: useAntialias,
             powerPreference: 'high-performance',
         });
-        this.container.appendChild(this.rendererInstance.domElement);
 
         this.updateToneMapping(moment().format("YYYY-MM-DD HH:mm:ss"));
 
@@ -131,15 +128,33 @@ export default class Renderer {
         this.rendererInstance.shadowMap.type =
             shadowMapTypes[graphicsSettings.shadowMapType] || Three.PCFShadowMap;
 
-        this.rendererInstance.setSize(this.sizes.getWidth(), this.sizes.getHeight());
+        // 先添加到 DOM
+        this.container.appendChild(this.rendererInstance.domElement);
 
-        this.rendererInstance.setPixelRatio(
-            Math.min(this.sizes.getPixelRatio(), graphicsSettings.pixelRatioCap)
-        );
+        // 使用 Sizes 提供的尺寸
+        const width = this.sizes.getWidth();
+        const height = this.sizes.getHeight();
+        
+        // 强制设置 Canvas 属性
+        this.rendererInstance.domElement.width = width;
+        this.rendererInstance.domElement.height = height;
+        
+        this.rendererInstance.setSize(width, height, false);
+        this.rendererInstance.setPixelRatio(Math.min(this.sizes.getPixelRatio(), graphicsSettings.pixelRatioCap));
 
         if (this.isDebugMode) {
             this.setUpPerformanceMonitor();
         }
+    }
+
+    public resize() {
+        const width = this.sizes.getWidth();
+        const height = this.sizes.getHeight();
+        
+        this.rendererInstance.domElement.width = width;
+        this.rendererInstance.domElement.height = height;
+        this.rendererInstance.setSize(width, height, false);
+        this.rendererInstance.setPixelRatio(this.sizes.getPixelRatio());
     }
 
     updateToneMapping(time) {
@@ -182,15 +197,6 @@ export default class Renderer {
 
     setUpPerformanceMonitor() {
         // this.perf = new PerformanceMonitor(this.rendererInstance);
-    }
-
-    public resize() {
-        this.rendererInstance.setSize(this.sizes.getWidth(), this.sizes.getHeight());
-
-        const graphicsSettings = this.getInitialGraphicsSettings();
-        this.rendererInstance.setPixelRatio(
-            Math.min(this.sizes.getPixelRatio(), graphicsSettings.pixelRatioCap)
-        );
     }
 
     public getRendererInstance() {

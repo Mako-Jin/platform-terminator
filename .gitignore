@@ -141,3 +141,4 @@ vite.config.ts.timestamp-*
 /.idea/
 /platform/platform-auth/package-lock.json
 /games/games-farm/package-lock.json
+/elemental/Elemental-Serenity-main/

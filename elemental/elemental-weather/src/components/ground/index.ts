@@ -14,9 +14,12 @@ import waterVertexCommonChunk from '/@/shaders/Chunks/water/water.vertex_common_
 import waterVertexBeginChunk from '/@/shaders/Chunks/water/water.vertex_begin_chunk.glsl';
 import waterFragmentCommonChunk from '/@/shaders/Chunks/water/water.fragment_common_chunk.glsl';
 import waterFragmentColorChunk from '/@/shaders/Chunks/water/water.fragment_color_chunk.glsl';
+import {LoggerFactory} from "common-shared";
 
 
 export default class Ground {
+
+    private logger = LoggerFactory.create("weather-ground");
 
     private scene: Three.Scene;
     private renderer: Renderer;
@@ -63,23 +66,57 @@ export default class Ground {
         this.colorManager = ColorManager.getInstance();
         this.timeManager = TimeManager.getInstance();
 
-        this.setupColorUpdateListener();
-        this.addGrid();
+        this.setupEventListeners();
+        this.initializeGround();
     }
 
-    private setupColorUpdateListener(): void {
+    private setupEventListeners(): void {
         this.colorManager.onColorChange((data) => {
             if (data.component === 'ground' && this.customGroundUniforms) {
                 this.updateGroundColors(data.config);
             }
         });
+
+        this.timeManager.onHourChange(() => {
+            this.refreshGroundColors();
+        });
+
+        this.seasonManager.onSeasonChange(() => {
+            this.refreshGroundColors();
+        });
+    }
+
+    private async initializeGround(): Promise<void> {
+        await this.waitForDependencies();
+        this.logger.info('[Ground] Starting to add grid...');
+        this.addGrid();
+        this.logger.info('[Ground] Grid added successfully');
+    }
+
+    private async waitForDependencies(): Promise<void> {
+        try {
+            await this.seasonManager.waitForInitialization();
+        } catch (error) {
+            this.logger.error('[Ground] Failed to wait for SeasonManager initialization:', error);
+        }
+    }
+
+    private refreshGroundColors(): void {
+        if (!this.customGroundUniforms) {
+            return;
+        }
+
+        const colors = this.getGroundColorConfig();
+        if (colors) {
+            this.updateGroundColors(colors);
+        }
     }
 
     private getGroundColorConfig() {
         const colors = this.colorManager.getGroundColorConfig('smoothstep');
         
         if (!colors) {
-            console.warn('[Ground] Ground color config not available yet, using defaults');
+            this.logger.warn('[Ground] Ground color config not available yet, using defaults');
             return {
                 uGroundColorLight: new Three.Color(0.2784, 0.1372, 0.0235),
                 uGroundColorDark: new Three.Color(0.94, 0.58, 0.22),
@@ -110,42 +147,40 @@ export default class Ground {
 
         const biomeTexture = this.resourceManager.getItem("grassPathDensityDataTexture");
         if (!biomeTexture) {
-            console.warn('[Ground] grassPathDensityDataTexture not found in ResourceManager');
+            this.logger.error('[Ground] grassPathDensityDataTexture not found in ResourceManager');
             return;
         }
         biomeTexture.wrapS = biomeTexture.wrapT = Three.ClampToEdgeWrapping;
 
         const displacementTexture = this.resourceManager.getItem("displacementMap");
         if (!displacementTexture) {
-            console.warn('[Ground] displacementMap not found in ResourceManager');
+            this.logger.error('[Ground] displacementMap not found in ResourceManager');
             return;
         }
         displacementTexture.wrapS = displacementTexture.wrapT = Three.RepeatWrapping;
         
         const perlinNoise = this.resourceManager.getItem("perlinNoise");
         if (!perlinNoise) {
-            console.warn('[Ground] perlinNoise not found in ResourceManager');
+            this.logger.error('[Ground] perlinNoise not found in ResourceManager');
             return;
         }
         perlinNoise.wrapS = perlinNoise.wrapT = Three.RepeatWrapping;
 
         const groundRockMap = this.resourceManager.getItem("groundRockMap");
         if (!groundRockMap) {
-            console.warn('[Ground] groundRockMap not found in ResourceManager');
+            this.logger.error('[Ground] groundRockMap not found in ResourceManager');
             return;
         }
         groundRockMap.wrapS = groundRockMap.wrapT = Three.RepeatWrapping;
 
         const groundRockAO = this.resourceManager.getItem("groundRockAOMap");
         if (!groundRockAO) {
-            console.warn('[Ground] groundRockAOMap not found in ResourceManager');
+            this.logger.error('[Ground] groundRockAOMap not found in ResourceManager');
             return;
         }
         groundRockAO.wrapS = groundRockAO.wrapT = Three.RepeatWrapping;
 
         const colors = this.getGroundColorConfig();
-
-        console.log('[Ground] Color config:', colors ? 'Loaded' : 'Using defaults');
 
         this.customGroundUniforms = {
             uDensityMap: { value: biomeTexture },
@@ -206,8 +241,8 @@ export default class Ground {
                 '#include <color_fragment>',
                 groundFragmentColorChunk
             );
-            
-            console.log('[Ground] Shader compiled successfully');
+
+            this.logger.info('[Ground] Shader compiled successfully');
         };
 
         const geometries = [];
@@ -237,28 +272,6 @@ export default class Ground {
         groundMesh.receiveShadow = true;
         groundMesh.name = 'GroundMesh';
         this.group.add(groundMesh);
-        
-        console.log('[Ground] Ground mesh created and added to scene', {
-            position: groundMesh.position,
-            rotation: groundMesh.rotation,
-            scale: groundMesh.scale,
-            visible: groundMesh.visible,
-            geometry: mergedGeometry,
-            material: this.groundMaterial,
-            group: this.group,
-            groupPosition: this.group.position,
-            sceneChildren: this.scene.children.length
-        });
-        
-        const camera = this.scene.children.find(child => child.isCamera);
-        if (camera) {
-            console.log('[Ground] Camera info:', {
-                position: camera.position,
-                far: camera.far,
-                near: camera.near,
-                fov: camera.fov
-            });
-        }
     }
 
     private updateGroundColors(colors: any): void {

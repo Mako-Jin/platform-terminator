@@ -7,6 +7,8 @@ import SeasonManager from "/@/manager/SeasonManager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import TimeManager from "/@/manager/TimeManager.ts";
 
+let resourceLoader: ResourceLoader | null = null;
+
 const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => {
 
     const logger = LoggerFactory.create("weather-container");
@@ -32,6 +34,11 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
             return;
         }
 
+        if (resourceLoader) {
+            logger.info('ResourceLoader already exists, skipping initialization');
+            return;
+        }
+
         const initializeManagers = async () => {
             try {
                 logger.info('Initializing season and color managers...');
@@ -50,20 +57,23 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         };
 
         initializeManagers().then(() => {
-            const resources = new ResourceLoader(ASSETS, isDebugMode);
+            const resourceLoader = new ResourceLoader(ASSETS, isDebugMode);
             // 启动事件监听器
             startListener(
                 targetContainer,
-                resources,
+                resourceLoader,
                 debugMode,
                 shaderContainerRef.current || targetContainer
             );
         });
+
+        return () => {
+            logger.info('WeatherView unmounting');
+        };
     }, []);
 
     return (
-        <div className="weather-container">
-            <div ref={weatherContainerRef} className="weather-container-wrapper"/>
+        <div className="weather-container" ref = {weatherContainerRef}>
             {/* 着色器显示覆盖层 */}
             <div ref={shaderContainerRef}/>
         </div>

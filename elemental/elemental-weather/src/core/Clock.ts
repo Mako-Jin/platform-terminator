@@ -4,16 +4,16 @@ import {LoggerFactory} from "common-shared";
 
 export default class Clock {
 
-    private Logger = LoggerFactory.create("weather-clock");
+    private logger = LoggerFactory.create("weather-clock");
 
-    private start: number;
+    private startTime: number;
     private current: number;
     private elapsedTime: number;
     private delta: number;
 
     constructor() {
-        this.start = performance.now();
-        this.current = this.start;
+        this.startTime = performance.now();
+        this.current = this.startTime;
         this.elapsedTime = 0;
         this.delta = 0;
 
@@ -26,7 +26,7 @@ export default class Clock {
         const currentTime = performance.now();
         this.delta = Math.min((currentTime - this.current) / 1000, 0.1);
         this.current = currentTime;
-        this.elapsedTime = (this.current - this.start) / 1000;
+        this.elapsedTime = (this.current - this.startTime) / 1000;
 
         eventBus.emit('animate');
 
@@ -35,14 +35,19 @@ export default class Clock {
         });
     }
 
+    public start() {
+        this.animate();
+        this.logger.info('[Clock] Animation loop started');
+    }
+
     public on(event: string, callback: () => void) {
         if (typeof event === 'undefined' || event === '') {
-            this.Logger.warn('wrong event names');
+            this.logger.warn('wrong event names');
             return false;
         }
 
         if (typeof callback === 'undefined') {
-            this.Logger.warn('wrong callback');
+            this.logger.warn('wrong callback');
             return false;
         }
 

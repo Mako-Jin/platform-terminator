@@ -11,7 +11,7 @@ class Weather {
 
     private static instance: Weather;
 
-    private Logger = LoggerFactory.create("weather");
+    private logger = LoggerFactory.create("weather");
     private isDebugMode: boolean;
     private resources: ResourceLoader;
     private container: HTMLElement;
@@ -45,11 +45,11 @@ class Weather {
         this.container = container;
         this.resources = resources;
         this.clock = new Clock();
-        this.sizes = new Sizes();
+        this.sizes = new Sizes(this.container);
 
         this.scene = new Three.Scene();
         this.camera = new Camera(this.container, this.sizes, this.scene);
-        this.renderer = new Renderer(this.container, this.sizes, this.scene, this.camera, this.renderer, isDebugMode);
+        this.renderer = new Renderer(this.container, this.sizes, this.scene, this.camera, isDebugMode);
 
         this.world = new World(this.scene, this.renderer);
 
@@ -62,7 +62,7 @@ class Weather {
     }
 
     public start() {
-
+        this.clock.start();
     }
 
     resize() {
@@ -74,6 +74,17 @@ class Weather {
         this.camera.update();
         this.world.update(this.clock.getDelta(), this.clock.getElapsedTime());
         this.renderer.update();
+
+        if (this.isDebugMode && Math.random() < 0.01) {
+            this.logger.debug(`Rendering frame - Delta: ${this.clock.getDelta().toFixed(4)}, Elapsed: ${this.clock.getElapsedTime().toFixed(2)}`);
+        }
+
+        if (this.isDebugMode) {
+            const frameCount = Math.floor(this.clock.getElapsedTime() * 60);
+            if (frameCount % 60 === 0) {
+                this.logger.info(`[Weather] Rendering frame #${frameCount}`);
+            }
+        }
     }
 
 }
