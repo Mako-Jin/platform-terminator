@@ -8,6 +8,7 @@ import TreesTrunks from "/@components/tree/trunks.ts";
 import FallingLeaves from "/@components/leaves/falling.ts";
 import Rain from "/@components/rain";
 import Snow from "/@components/snow";
+import Fog from "/@/components/fog";
 
 
 export default class World {
@@ -21,6 +22,8 @@ export default class World {
     private treeTrunks: TreesTrunks;
     private fallingLeaves: FallingLeaves;
     private rain: Rain;
+    private snow: Snow;
+    private fog: Fog;
 
     constructor(scene: Three.Scene, renderer: Renderer, isDebugMode: boolean = false) {
         this.scene = scene;
@@ -38,6 +41,8 @@ export default class World {
         this.rain = new Rain(this.scene);
         // 雪
         this.snow = new Snow(this.scene);
+
+        this.fog = new Fog(this.scene, this.ground.getWordSize());
     }
 
     public update(delta: number, elapsedTime: number) {

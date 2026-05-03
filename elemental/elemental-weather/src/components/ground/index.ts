@@ -299,4 +299,8 @@ export default class Ground {
         this.group.clear();
     }
 
+    public getWordSize() {
+        return this.worldSize;
+    }
+
 }
