@@ -1,5 +1,5 @@
 import {ResourceLoader} from "/@/resources";
-import {LoggerFactory} from "common-shared";
+import {LoggerFactory} from "common-tools";
 import Clock from "/@/core/Clock";
 import Sizes from "/@/core/Size";
 import * as Three from "three";

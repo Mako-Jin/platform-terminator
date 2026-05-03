@@ -6,7 +6,7 @@ import TimeManager from "/@/manager/TimeManager.ts";
 
 import BushFragmentShader from '/@/shaders/Materials/bush/fragment.glsl';
 import BushVertexShader from '/@/shaders/Materials/bush/vertex.glsl';
-import {LoggerFactory} from "common-shared";
+import {LoggerFactory} from "common-tools";
 import BushManager from "/@/manager/BushManager.ts";
 import {loadBushDefinitions, type BushDefinition} from "/@components/bush/loader.ts";
 

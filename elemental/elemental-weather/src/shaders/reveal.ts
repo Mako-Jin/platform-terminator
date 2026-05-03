@@ -1,4 +1,4 @@
-import {LoggerFactory} from "common-shared";
+import {LoggerFactory} from "common-tools";
 
 import revealVertexShader from '/@/shaders/Materials/reveal/vertex.glsl';
 import revealFragmentShader from '/@/shaders/Materials/reveal/fragment.glsl';

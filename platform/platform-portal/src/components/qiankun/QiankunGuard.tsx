@@ -1,7 +1,7 @@
 import {JSX, useEffect, useState} from 'react';
 import { startQiankun } from '.';
 import { message } from 'antd';
-import { LoggerFactory } from 'common-shared';
+import { LoggerFactory } from 'common-tools';
 
 const Logger = LoggerFactory.create("qiankun-guard");
 

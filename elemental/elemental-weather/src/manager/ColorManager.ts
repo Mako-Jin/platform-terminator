@@ -1,5 +1,5 @@
-import {LoggerFactory} from "common-shared";
-import {eventBus} from "common-shared";
+import {LoggerFactory} from "common-tools";
+import {eventBus} from "common-tools";
 import ColorInterpolator, {type ConfigObject} from "/@/utils/color";
 import TimeManager, {type EasingType} from "/@/manager/TimeManager";
 import SeasonManager from "/@/manager/SeasonManager.ts";

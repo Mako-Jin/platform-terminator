@@ -1,4 +1,4 @@
-import {LoggerFactory} from "common-shared";
+import {LoggerFactory} from "common-tools";
 import * as Three from 'three';
 import TimeManager, {type HourChangedData} from "/@/manager/TimeManager.ts";
 import SeasonManager, {type SeasonChangedData} from "/@/manager/SeasonManager.ts";

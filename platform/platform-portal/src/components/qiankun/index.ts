@@ -2,7 +2,7 @@ import { registerMicroApps, start } from 'qiankun';
 import type { QiankunStartOptions } from './types';
 import { getAllApps } from './apps';
 import { lifecycleHooks } from './lifecycles';
-import { LoggerFactory } from 'common-shared';
+import { LoggerFactory } from 'common-tools';
 
 const Logger = LoggerFactory.create("qiankun");
 

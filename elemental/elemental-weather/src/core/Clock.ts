@@ -1,5 +1,5 @@
-import {eventBus} from "common-shared";
-import {LoggerFactory} from "common-shared";
+import {eventBus} from "common-tools";
+import {LoggerFactory} from "common-tools";
 
 
 export default class Clock {

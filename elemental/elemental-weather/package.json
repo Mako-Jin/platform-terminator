@@ -10,7 +10,8 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "common-shared": "workspace:*",
+    "common-tools": "workspace:*",
+    "common-three": "workspace:*",
     "gsap": "^3.15.0",
     "lil-gui": "^0.21.0",
     "mersennetwister": "^0.2.3",

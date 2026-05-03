@@ -1,6 +1,6 @@
 import moment from 'moment';
-import {LoggerFactory} from "common-shared";
-import {eventBus} from "common-shared";
+import {LoggerFactory} from "common-tools";
+import {eventBus} from "common-tools";
 import {type TimeChangedEventData, WeatherEvents} from "/@/events/types";
 
 export type EnvTime = 'day' | 'night';

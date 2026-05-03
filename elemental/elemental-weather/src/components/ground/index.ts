@@ -14,7 +14,7 @@ import waterVertexCommonChunk from '/@/shaders/Chunks/water/water.vertex_common_
 import waterVertexBeginChunk from '/@/shaders/Chunks/water/water.vertex_begin_chunk.glsl';
 import waterFragmentCommonChunk from '/@/shaders/Chunks/water/water.fragment_common_chunk.glsl';
 import waterFragmentColorChunk from '/@/shaders/Chunks/water/water.fragment_color_chunk.glsl';
-import {LoggerFactory} from "common-shared";
+import {LoggerFactory} from "common-tools";
 
 
 export default class Ground {

@@ -2,7 +2,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { globalActions } from './qiankun/apps';
 import { updateApps } from './qiankun';
 import { message } from 'antd';
-import { Logger } from 'common-shared/utils/logger';
+import { Logger } from 'common-tools/utils/logger';
 
 interface FeatureConfig {
   elementalWeather: boolean;

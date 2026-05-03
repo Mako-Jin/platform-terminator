@@ -5,7 +5,7 @@ import ResourcesManager from "/@/resources/manager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import type {ConfigObject} from "/@/utils/color.ts";
 import type {SeasonChangedData} from "/@/manager/SeasonManager.ts";
-import {LoggerFactory} from "common-shared";
+import {LoggerFactory} from "common-tools";
 
 
 export default class Lighting {

@@ -1,7 +1,7 @@
-import {LoggerFactory} from "common-shared";
+import {LoggerFactory} from "common-tools";
 import {useEffect, useRef} from "react";
 import {ASSETS, ResourceLoader} from "/@/resources";
-import {isDebugMode} from "common-shared";
+import {isDebugMode} from "common-tools";
 import { start as startListener } from "./listener"
 import SeasonManager from "/@/manager/SeasonManager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";

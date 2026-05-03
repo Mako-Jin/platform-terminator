@@ -6,8 +6,8 @@ export default defineConfig({
     build: {
         lib: {
             entry: resolve(__dirname, 'src/index.ts'), // 你的库入口文件
-            name: 'CommonShared',
-            fileName: 'common-shared',
+            name: 'common-tools',
+            fileName: 'common-tools',
             formats: ['es', 'cjs']
         },
         outDir: 'dist',

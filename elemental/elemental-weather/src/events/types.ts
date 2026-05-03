@@ -1,4 +1,4 @@
-import type {EventMap} from "common-shared";
+import type {EventMap} from "common-tools";
 
 
 export const WeatherEvents = {

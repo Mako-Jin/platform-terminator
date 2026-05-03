@@ -3,7 +3,7 @@ import {createRoot, type Root} from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import Farm from "./farm";
-import {LoggerFactory} from "common-shared";
+import {LoggerFactory} from "common-tools";
 
 
 const Logger = LoggerFactory.create("games-farm");

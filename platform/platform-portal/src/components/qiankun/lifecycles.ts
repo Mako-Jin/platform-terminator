@@ -1,6 +1,6 @@
 import type { MicroApp } from 'qiankun';
 import type { LifecycleHooks } from './types';
-import { LoggerFactory } from 'common-shared';
+import { LoggerFactory } from 'common-tools';
 
 let loadingElement: HTMLDivElement | null = null;
 

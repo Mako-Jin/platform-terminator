@@ -1,6 +1,6 @@
-import {eventBus, LoggerFactory} from "common-shared";
-import {AppEvents} from "common-shared";
-import type {ResourceProgressData, ResourceErrorData, ResourceLoadedData} from "common-shared";
+import {eventBus, LoggerFactory} from "common-tools";
+import {AppEvents} from "common-tools";
+import type {ResourceProgressData, ResourceErrorData, ResourceLoadedData} from "common-tools";
 import Weather from "./weather";
 import {ResourceLoader} from "../resources";
 import ShaderReveal from "/src/shaders/reveal";

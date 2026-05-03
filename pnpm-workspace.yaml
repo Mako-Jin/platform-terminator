@@ -1,6 +1,7 @@
 packages:
   # 公共依赖
-  - 'packages/common-shared'
+  - 'packages/common-tools'
+  - 'packages/common-three'
   # 平台系统元素
   - 'elemental/elemental-weather'
   # 平台级功能子应用

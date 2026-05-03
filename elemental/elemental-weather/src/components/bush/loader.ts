@@ -1,4 +1,4 @@
-import { LoggerFactory } from "common-shared";
+import { LoggerFactory } from "common-tools";
 
 export interface BushDefinition {
     position: [number, number, number];

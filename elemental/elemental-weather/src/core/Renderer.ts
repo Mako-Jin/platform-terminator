@@ -1,7 +1,7 @@
 import * as Three from 'three';
 import Sizes from "./Size";
 import Camera from "./Camera";
-import {eventBus, LoggerFactory} from "common-shared";
+import {eventBus, LoggerFactory} from "common-tools";
 import {WeatherEvents} from "/@/events/types";
 import type {TimeChangedEventData} from "/@/events/types";
 import moment from "moment";

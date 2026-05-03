@@ -1,4 +1,4 @@
-import {eventBus, LoggerFactory} from "common-shared";
+import {eventBus, LoggerFactory} from "common-tools";
 
 export default class Sizes {
 

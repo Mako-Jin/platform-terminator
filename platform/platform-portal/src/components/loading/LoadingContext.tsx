@@ -1,5 +1,5 @@
 import { createContext, useContext, useReducer, useCallback } from 'react';
-import { LoggerFactory } from '@platform/common-shared';
+import { LoggerFactory } from '@platform/common-tools';
 
 const logger = LoggerFactory.create('LoadingManager');
 

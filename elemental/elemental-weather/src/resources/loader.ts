@@ -1,5 +1,5 @@
-import {AppEvents, eventBus, LoggerFactory} from "common-shared";
-import type {ResourceErrorData, ResourceProgressData} from "common-shared";
+import {AppEvents, eventBus, LoggerFactory} from "common-tools";
+import type {ResourceErrorData, ResourceProgressData} from "common-tools";
 import type {Asset} from "/@/resources";
 import {AudioLoader, CubeTextureLoader, LoadingManager, TextureLoader} from "three";
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
