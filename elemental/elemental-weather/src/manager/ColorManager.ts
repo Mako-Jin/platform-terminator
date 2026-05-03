@@ -3,6 +3,7 @@ import {eventBus} from "common-shared";
 import ColorInterpolator, {type ConfigObject} from "/@/utils/color";
 import TimeManager, {type EasingType} from "/@/manager/TimeManager";
 import SeasonManager from "/@/manager/SeasonManager.ts";
+import * as Three from "three";
 
 
 export interface ColorChangedData {
@@ -80,6 +81,11 @@ export default class ColorManager {
     public getRocksColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
         return this.getComponentConfig('rocks', easing);
     }
+
+    public getFallingLeavesColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
+        return this.getComponentConfig('fallingLeaves', easing);
+    }
+
 
     public getFireColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
         return this.getComponentConfig('fire', easing);
