@@ -251,9 +251,9 @@ export default class Rain {
     }
 
     updateVisibility() {
-        // const isRainySeason = this.seasonManager.season === 'rainy';
-        // this.rainSystem.setVisible(isRainySeason);
-        this.rainSystem.setVisible(true);
+        const isRainySeason = this.seasonManager.season === 'rainy';
+        this.rainSystem.setVisible(isRainySeason);
+        // this.rainSystem.setVisible(true);
     }
 
     update(delta: number, elapsedTime: number) {

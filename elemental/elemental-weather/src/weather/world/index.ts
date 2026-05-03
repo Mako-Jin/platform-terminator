@@ -7,6 +7,7 @@ import Bush from "/@components/bush";
 import TreesTrunks from "/@components/tree/trunks.ts";
 import FallingLeaves from "/@components/leaves/falling.ts";
 import Rain from "/@components/rain";
+import Snow from "/@components/snow";
 
 
 export default class World {
@@ -35,6 +36,8 @@ export default class World {
         this.fallingLeaves = new FallingLeaves(this.scene);
         // 雨
         this.rain = new Rain(this.scene);
+        // 雪
+        this.snow = new Snow(this.scene);
     }
 
     public update(delta: number, elapsedTime: number) {
@@ -43,5 +46,6 @@ export default class World {
         this.bush.update();
         this.fallingLeaves.update(delta);
         this.rain.update(delta, elapsedTime);
+        this.snow.update(delta, elapsedTime);
     }
 }
