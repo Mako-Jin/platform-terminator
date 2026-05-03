@@ -6,6 +6,7 @@ import Skydome from "/@components/skydome";
 import Bush from "/@components/bush";
 import TreesTrunks from "/@components/tree/trunks.ts";
 import FallingLeaves from "/@components/leaves/falling.ts";
+import Rain from "/@components/rain";
 
 
 export default class World {
@@ -18,6 +19,7 @@ export default class World {
     private bush: Bush;
     private treeTrunks: TreesTrunks;
     private fallingLeaves: FallingLeaves;
+    private rain: Rain;
 
     constructor(scene: Three.Scene, renderer: Renderer, isDebugMode: boolean = false) {
         this.scene = scene;
@@ -31,6 +33,8 @@ export default class World {
         this.bush = new Bush(this.scene, this.isDebugMode);
         this.treeTrunks = new TreesTrunks(this.scene, this.isDebugMode);
         this.fallingLeaves = new FallingLeaves(this.scene);
+        // 雨
+        this.rain = new Rain(this.scene);
     }
 
     public update(delta: number, elapsedTime: number) {
@@ -38,5 +42,6 @@ export default class World {
         this.ground.update();
         this.bush.update();
         this.fallingLeaves.update(delta);
+        this.rain.update(delta, elapsedTime);
     }
 }

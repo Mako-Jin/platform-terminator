@@ -29,8 +29,7 @@ export class FallingLeavesSystem {
         this.colorManager = ColorManager.getInstance();
 
         const leafColor = this.getFallingLeavesColor();
-        console.log('[FallingLeavesSystem] Initial leaf color:', leafColor);
-        
+
         this.material = new Three.MeshStandardMaterial({
             color: leafColor,
         });
@@ -64,28 +63,20 @@ export class FallingLeavesSystem {
         const currentSeason = this.seasonManager.season;
         const seasonConfig = this.seasonManager.getSeasonConfig(currentSeason);
         
-        console.log('[FallingLeavesSystem] Getting color for season:', currentSeason);
-        console.log('[FallingLeavesSystem] Season config:', seasonConfig);
-        
         if (seasonConfig?.fallingLeaves) {
             const fallingLeavesConfig = seasonConfig.fallingLeaves as any;
-            console.log('[FallingLeavesSystem] FallingLeaves config:', fallingLeavesConfig);
-            
+
             if (fallingLeavesConfig.color) {
                 const colorValue = fallingLeavesConfig.color;
-                console.log('[FallingLeavesSystem] Color value:', colorValue, 'Type:', typeof colorValue);
-                
+
                 if (colorValue instanceof Three.Color) {
-                    console.log('[FallingLeavesSystem] Returning Three.Color');
                     return colorValue;
                 } else if (Array.isArray(colorValue) && colorValue.length === 3) {
-                    console.log('[FallingLeavesSystem] Creating color from array:', colorValue);
                     return new Three.Color(colorValue[0], colorValue[1], colorValue[2]);
                 }
             }
         }
         
-        console.log('[FallingLeavesSystem] Using default color');
         return new Three.Color(1.0, 0.388, 0.278);
     }
 
