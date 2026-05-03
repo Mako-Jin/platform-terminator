@@ -1,6 +1,6 @@
 import * as Three from "three";
 import * as BufferGeometryUtils from 'three/addons/utils/BufferGeometryUtils.js';
-import ResourceManager from "/@/resources/manager";
+import ResourcesManager from "/@/resources/manager";
 import SeasonManager from "/@/manager/SeasonManager";
 import ColorManager from "/@/manager/ColorManager";
 import TimeManager from "/@/manager/TimeManager";
@@ -34,7 +34,7 @@ export default class Ground {
     private gridGeometry: Three.PlaneGeometry;
     private groundMaterial: Three.MeshStandardMaterial;
 
-    private resourceManager: ResourceManager;
+    private resourcesManager: ResourcesManager;
     private seasonManager: SeasonManager;
     private colorManager: ColorManager;
     private timeManager: TimeManager;
@@ -61,7 +61,7 @@ export default class Ground {
         this.group = new Three.Group();
         this.scene.add(this.group);
 
-        this.resourceManager = ResourceManager.getInstance();
+        this.resourcesManager = ResourcesManager.getInstance();
         this.seasonManager = SeasonManager.getInstance();
         this.colorManager = ColorManager.getInstance();
         this.timeManager = TimeManager.getInstance();
@@ -145,37 +145,37 @@ export default class Ground {
             color: 0x8B7355,
         });
 
-        const biomeTexture = this.resourceManager.getItem("grassPathDensityDataTexture");
+        const biomeTexture = this.resourcesManager.getItem("grassPathDensityDataTexture");
         if (!biomeTexture) {
-            this.logger.error('[Ground] grassPathDensityDataTexture not found in ResourceManager');
+            this.logger.error('[Ground] grassPathDensityDataTexture not found in ResourcesManager');
             return;
         }
         biomeTexture.wrapS = biomeTexture.wrapT = Three.ClampToEdgeWrapping;
 
-        const displacementTexture = this.resourceManager.getItem("displacementMap");
+        const displacementTexture = this.resourcesManager.getItem("displacementMap");
         if (!displacementTexture) {
-            this.logger.error('[Ground] displacementMap not found in ResourceManager');
+            this.logger.error('[Ground] displacementMap not found in ResourcesManager');
             return;
         }
         displacementTexture.wrapS = displacementTexture.wrapT = Three.RepeatWrapping;
         
-        const perlinNoise = this.resourceManager.getItem("perlinNoise");
+        const perlinNoise = this.resourcesManager.getItem("perlinNoise");
         if (!perlinNoise) {
-            this.logger.error('[Ground] perlinNoise not found in ResourceManager');
+            this.logger.error('[Ground] perlinNoise not found in ResourcesManager');
             return;
         }
         perlinNoise.wrapS = perlinNoise.wrapT = Three.RepeatWrapping;
 
-        const groundRockMap = this.resourceManager.getItem("groundRockMap");
+        const groundRockMap = this.resourcesManager.getItem("groundRockMap");
         if (!groundRockMap) {
-            this.logger.error('[Ground] groundRockMap not found in ResourceManager');
+            this.logger.error('[Ground] groundRockMap not found in ResourcesManager');
             return;
         }
         groundRockMap.wrapS = groundRockMap.wrapT = Three.RepeatWrapping;
 
-        const groundRockAO = this.resourceManager.getItem("groundRockAOMap");
+        const groundRockAO = this.resourcesManager.getItem("groundRockAOMap");
         if (!groundRockAO) {
-            this.logger.error('[Ground] groundRockAOMap not found in ResourceManager');
+            this.logger.error('[Ground] groundRockAOMap not found in ResourcesManager');
             return;
         }
         groundRockAO.wrapS = groundRockAO.wrapT = Three.RepeatWrapping;

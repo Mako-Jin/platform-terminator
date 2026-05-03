@@ -1,5 +1,5 @@
 import * as Three from 'three';
-import ResourceManager from "/@/resources/manager.ts";
+import ResourcesManager from "/@/resources/manager.ts";
 import SeasonManager from "/@/manager/SeasonManager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import TimeManager from "/@/manager/TimeManager.ts";
@@ -19,7 +19,7 @@ export default class Bush {
     private isDebugMode: boolean;
     private keyLight: Three.Object3D | undefined;
 
-    private resourceManager: ResourceManager;
+    private resourcesManager: ResourcesManager;
     private seasonManager: SeasonManager;
     private colorManager: ColorManager;
     private timeManager: TimeManager;
@@ -35,7 +35,7 @@ export default class Bush {
 
         this.keyLight = this.scene.getObjectByName('keyLight');
 
-        this.resourceManager = ResourceManager.getInstance();
+        this.resourcesManager = ResourcesManager.getInstance();
         this.seasonManager = SeasonManager.getInstance();
         this.colorManager = ColorManager.getInstance();
         this.timeManager = TimeManager.getInstance();
@@ -186,7 +186,7 @@ export default class Bush {
     }
 
     createMaterial() {
-        const leavesAlphaMap = this.resourceManager.getItem("leavesAlphaMap");
+        const leavesAlphaMap = this.resourcesManager.getItem("leavesAlphaMap");
         
         if (!leavesAlphaMap) {
             this.logger.error('leavesAlphaMap not found! This will cause rendering issues.');
@@ -257,7 +257,7 @@ export default class Bush {
     }
 
     prepareSamplerMesh() {
-        const model = this.resourceManager.getItem("BushEmitterModel");
+        const model = this.resourcesManager.getItem("BushEmitterModel");
         if (!model) {
             this.logger.warn('BushEmitterModel not found in resources');
             return new Three.Mesh(

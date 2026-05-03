@@ -1,7 +1,7 @@
 import * as Three from 'three';
 import TimeManager from "/@/manager/TimeManager.ts";
 import SeasonManager from "/@/manager/SeasonManager.ts";
-import ResourceManager from "/@/resources/manager.ts";
+import ResourcesManager from "/@/resources/manager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import type {ConfigObject} from "/@/utils/color.ts";
 import type {SeasonChangedData} from "/@/manager/SeasonManager.ts";
@@ -27,7 +27,7 @@ export default class Lighting {
 
     private seasonManager: SeasonManager;
     private timeManager: TimeManager;
-    private resourceManager: ResourceManager;
+    private resourcesManager: ResourcesManager;
     private colorManager: ColorManager;
 
     private environmentMap: {
@@ -48,7 +48,7 @@ export default class Lighting {
 
         this.timeManager = TimeManager.getInstance();
         this.seasonManager = SeasonManager.getInstance();
-        this.resourceManager = ResourceManager.getInstance();
+        this.resourcesManager = ResourcesManager.getInstance();
         this.colorManager = ColorManager.getInstance();
 
         this.lights = {
@@ -158,11 +158,11 @@ export default class Lighting {
     }
 
     setupEnvironment(): void {
-        const dayTexture = this.resourceManager.getItem<Three.Texture>("environmentMapDayTexture");
-        const nightTexture = this.resourceManager.getItem<Three.Texture>("environmentMapNightTexture");
+        const dayTexture = this.resourcesManager.getItem<Three.Texture>("environmentMapDayTexture");
+        const nightTexture = this.resourcesManager.getItem<Three.Texture>("environmentMapNightTexture");
 
         if (!dayTexture || !nightTexture) {
-            this.logger.warn('[Lighting] Environment map textures not found in ResourceManager');
+            this.logger.warn('[Lighting] Environment map textures not found in ResourcesManager');
             return;
         }
 

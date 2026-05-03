@@ -7,9 +7,10 @@ import type { ResourceLoadedData } from "common-shared";
  * 资源管理器（全局资源池）
  * 单例模式，管理所有已加载的资源
  */
-class ResourceManager {
-    private static instance: ResourceManager;
-    private Logger = LoggerFactory.create("ResourceManager");
+class ResourcesManager {
+
+    private static instance: ResourcesManager;
+    private Logger = LoggerFactory.create("weather-resources-manager");
 
     // 资源存储池
     private items: Record<string, any> = {};
@@ -23,11 +24,11 @@ class ResourceManager {
     /**
      * 获取单例实例
      */
-    static getInstance(): ResourceManager {
-        if (!ResourceManager.instance) {
-            ResourceManager.instance = new ResourceManager();
+    static getInstance(): ResourcesManager {
+        if (!ResourcesManager.instance) {
+            ResourcesManager.instance = new ResourcesManager();
         }
-        return ResourceManager.instance;
+        return ResourcesManager.instance;
     }
 
     /**
@@ -141,6 +142,6 @@ class ResourceManager {
 }
 
 // 导出单例实例
-export const resourceManager = ResourceManager.getInstance();
+export const resourcesManager = ResourcesManager.getInstance();
 
-export default ResourceManager;
+export default ResourcesManager;

@@ -5,7 +5,7 @@ import {AudioLoader, CubeTextureLoader, LoadingManager, TextureLoader} from "thr
 import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
 import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
-import { resourceManager } from "./manager";
+import { resourcesManager } from "./manager";
 
 
 /**
@@ -123,7 +123,7 @@ export class ResourceLoader {
     }
 
     private onLoadComplete() {
-        resourceManager.markAsLoaded(this.toLoad);
+        resourcesManager.markAsLoaded(this.toLoad);
 
         if (this.isDebugMode) {
             this.Logger.info('[Loader] All resources loaded successfully');
@@ -182,7 +182,7 @@ export class ResourceLoader {
             const { type, path, id } = source;
 
             const onLoad = (file: any) => {
-                resourceManager.addItem(id, file);
+                resourcesManager.addItem(id, file);
                 if (this.isDebugMode) {
                     this.Logger.info(`[ResourceLoader] Loaded and stored: ${id}`);
                 }
