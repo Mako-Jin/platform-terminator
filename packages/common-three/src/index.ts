@@ -32,11 +32,19 @@ export { DebugPanelManager, debugPanel } from './debugger';
 export { SizeManager, sizeManager } from './size';
 
 // 相机导出
-export { CameraManager, cameraManager } from './core/camera';
-export { PerspectiveCameraWrapper } from './core/camera';
-export { OrthographicCameraWrapper } from './core/camera';
-export { FirstPersonCamera } from './core/camera';
-export { BaseCamera } from './core/camera';
+export { CameraManager, cameraManager } from './core';
+export { PerspectiveCameraWrapper } from './core';
+export { OrthographicCameraWrapper } from './core';
+export { FirstPersonCamera } from './core';
+export { BaseCamera } from './core';
+
+// 渲染器导出
+export type { RendererConfig } from './core';
+export { RendererWrapper } from './core';
+
+// 场景导出
+export { SceneWrapper } from './core';
+export type { SceneConfig } from './core';
 
 // 默认导出
-export { default } from './core';
+export { Object3DComponent as default } from './core';
