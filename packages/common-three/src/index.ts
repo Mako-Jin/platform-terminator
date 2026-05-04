@@ -31,5 +31,12 @@ export { DebugPanelManager, debugPanel } from './debugger';
 
 export { SizeManager, sizeManager } from './size';
 
+// 相机导出
+export { CameraManager, cameraManager } from './core/camera';
+export { PerspectiveCameraWrapper } from './core/camera';
+export { OrthographicCameraWrapper } from './core/camera';
+export { FirstPersonCamera } from './core/camera';
+export { BaseCamera } from './core/camera';
+
 // 默认导出
 export { default } from './core';
