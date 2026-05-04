@@ -1,7 +1,7 @@
 import {LoggerFactory} from "common-tools";
 import GUI from "lil-gui";
 import type {DebugConfig} from "./types.ts";
-import type {IObject3DComponent} from "../types";
+import Object3DComponent from "../core/object3d.ts";
 
 
 /**
@@ -168,7 +168,7 @@ export class DebugPanelManager {
      * 自动配置组件参数
      * 尝试自动检测并添加可调试的参数
      */
-    private autoConfigure(folder: GUI, component: IObject3DComponent): void {
+    private autoConfigure(folder: GUI, component: Object3DComponent): void {
         // 添加基本信息
         folder.add({ name: component.name }, 'name').disable();
         folder.add({ initialized: component.isInitialized }, 'initialized').disable();
@@ -209,7 +209,7 @@ export class DebugPanelManager {
     /**
      * 提取材质 Uniforms
      */
-    private extractMaterialUniforms(folder: GUI, component: IObject3DComponent): void {
+    private extractMaterialUniforms(folder: GUI, component: Object3DComponent): void {
         // 检查组件是否有 material 属性
         const componentAny = component as any;
 

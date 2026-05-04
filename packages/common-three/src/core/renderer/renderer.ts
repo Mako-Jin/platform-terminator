@@ -290,7 +290,7 @@ export class RendererWrapper {
     // ==================== Object3DComponent 阴影辅助方法 ====================
 
     /**
-     * 为 Object3DComponent 及其子对象设置投射阴影
+     * 为 Object3DComponent 设置投射阴影
      *
      * @param component 要设置的组件
      * @param castShadow 是否投射阴影
@@ -298,7 +298,7 @@ export class RendererWrapper {
     setCastShadow(component: IObject3DComponent, castShadow: boolean = true): void {
         const root = component.root;
         if (!root) {
-            this.logger.warn(`Component ${component.name} has no root object`);
+            this.logger.debug(`Component ${component.name} has no root object yet, skipping cast shadow setup`);
             return;
         }
 
@@ -311,15 +311,15 @@ export class RendererWrapper {
     }
 
     /**
-     * 为 Object3DComponent 及其子对象设置接收阴影
+     * 为 Object3DComponent 设置接收阴影
      *
      * @param component 要设置的组件
      * @param receiveShadow 是否接收阴影
      */
-    setReceiveShadow(component: IObject3DComponent, receiveShadow: boolean = true): void {
+    setReceiveShadow(component: IObject3DComponent, receiveShadow: boolean = false): void {
         const root = component.root;
         if (!root) {
-            this.logger.warn(`Component ${component.name} has no root object`);
+            this.logger.debug(`Component ${component.name} has no root object yet, skipping receive shadow setup`);
             return;
         }
 
@@ -373,7 +373,7 @@ export class RendererWrapper {
     logComponentShadowStatus(component: IObject3DComponent): void {
         const root = component.root;
         if (!root) {
-            this.logger.warn(`Component ${component.name} has no root object`);
+            this.logger.debug(`Component ${component.name} has no root object`);
             return;
         }
 

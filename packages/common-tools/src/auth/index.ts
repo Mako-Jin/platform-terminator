@@ -1,4 +1,4 @@
-import { storage } from '../storage';
+import {storage} from '../storage';
 
 const TOKEN_KEY = 'sts-yaocode-platform-auth::token';
 const USER_KEY = 'sts-yaocode-platform-auth::user';

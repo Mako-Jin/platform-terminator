@@ -1,22 +1,39 @@
 import * as Three from 'three';
-import SeasonManager from "/@/manager/SeasonManager.ts";
+import type GUI from 'lil-gui';
+import {
+    type ComponentConfig,
+    type DateChangedData,
+    datetimeManager,
+    type IObject3DComponent,
+    Object3DComponent,
+    SceneWrapper,
+    type SeasonChangedData,
+    type TimeChangedData,
+    type UpdateParams
+} from "common-three";
 
 
-export class SnowSystem {
-    private scene: Three.Scene;
+class SnowSystem {
+    private scene: SceneWrapper;
     private bounds: any;
-    private seasonManager: any;
     private count: number;
     private visible: boolean;
-    private geometry: Three.BufferGeometry;
-    private material: Three.PointsMaterial;
-    private mesh: Three.Points;
-    private particles: any[];
+    private geometry!: Three.BufferGeometry;
+    private material!: Three.PointsMaterial;
+    private mesh!: Three.Points;
+    private particles!: Array<{
+        pos: Three.Vector3;
+        vel: Three.Vector3;
+        life: number;
+        maxLife: number;
+        size: number;
+        rotationSpeed: number;
+        spawnDelay: number;
+    }>;
 
-    constructor(scene: Three.Scene, bounds: any) {
+    constructor(scene: SceneWrapper, bounds: any) {
         this.scene = scene;
         this.bounds = bounds;
-        this.seasonManager = SeasonManager.getInstance();
 
         this.count = 600;
         this.visible = false;
@@ -27,7 +44,7 @@ export class SnowSystem {
         this.initializeParticles();
     }
 
-    createSnowGeometry() {
+    createSnowGeometry(): void {
         this.geometry = new Three.BufferGeometry();
 
         const positions = new Float32Array(this.count * 3);
@@ -42,11 +59,11 @@ export class SnowSystem {
         this.geometry.setAttribute('size', new Three.BufferAttribute(sizes, 1));
     }
 
-    createSnowMaterial() {
+    createSnowMaterial(): void {
         const canvas = document.createElement('canvas');
         canvas.width = 8;
         canvas.height = 8;
-        const context = canvas.getContext('2d');
+        const context = canvas.getContext('2d')!;
 
         const gradient = context.createRadialGradient(2, 2, 0, 2, 2, 2);
         gradient.addColorStop(0, 'rgba(255, 255, 255, 1)');
@@ -69,13 +86,13 @@ export class SnowSystem {
         });
     }
 
-    createSnowMesh() {
+    createSnowMesh(): void {
         this.mesh = new Three.Points(this.geometry, this.material);
         this.mesh.visible = this.visible;
-        this.scene.add(this.mesh);
+        this.scene.addObject(this.mesh);
     }
 
-    initializeParticles() {
+    initializeParticles(): void {
         this.particles = [];
 
         for (let i = 0; i < this.count; i++) {
@@ -98,7 +115,15 @@ export class SnowSystem {
         this.updateGeometry();
     }
 
-    respawnParticle(particle: any) {
+    respawnParticle(particle: {
+        pos: Three.Vector3;
+        vel: Three.Vector3;
+        life: number;
+        maxLife: number;
+        size: number;
+        rotationSpeed: number;
+        spawnDelay: number;
+    }): void {
         particle.pos.x =
             this.bounds.originX + (Math.random() - 0.5) * this.bounds.xRange;
         particle.pos.y = this.bounds.yMax + Math.random() * 8.0;
@@ -115,7 +140,7 @@ export class SnowSystem {
         particle.spawnDelay = 0;
     }
 
-    updateGeometry() {
+    updateGeometry(): void {
         const positions = this.geometry.attributes.position.array;
         const colors = this.geometry.attributes.color.array;
         const sizes = this.geometry.attributes.size.array;
@@ -151,14 +176,14 @@ export class SnowSystem {
         this.geometry.attributes.size.needsUpdate = true;
     }
 
-    setVisible(visible: boolean) {
+    setVisible(visible: boolean): void {
         this.visible = visible;
         if (this.mesh) {
             this.mesh.visible = visible;
         }
     }
 
-    update(delta: number, elapsedTime: number) {
+    update(delta: number, elapsedTime: number): void {
         if (!this.visible) return;
 
         const cappedDt = Math.min(delta, 0.2);
@@ -193,9 +218,9 @@ export class SnowSystem {
         this.updateGeometry();
     }
 
-    dispose() {
+    dispose(): void {
         if (this.mesh) {
-            this.scene.remove(this.mesh);
+            this.scene.removeObject(this.mesh);
             this.geometry.dispose();
             this.material.dispose();
         }
@@ -203,13 +228,25 @@ export class SnowSystem {
 }
 
 
+export default class Snow extends Object3DComponent {
+    
+    private snowSystem: SnowSystem | null = null;
+    private snowGroup: Three.Group | null = null;
+    
+    constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
+        super(scene, 'Snow', options.isDebugMode);
+    }
 
-export default class Snow {
-    private seasonManager: any;
-    private snowSystem: SnowSystem;
+    /**
+     * 初始化阶段 - 创建雪系统
+     */
+    protected async onInitialize(_config?: ComponentConfig): Promise<void> {
+        this.logger.info('[Snow] Initializing...');
 
-    constructor(scene: Three.Scene) {
-        this.seasonManager = SeasonManager.getInstance();
+        // 创建组作为根节点
+        this.snowGroup = new Three.Group();
+        this.snowGroup.name = 'SnowGroup';
+        this.setRoot(this.snowGroup);
 
         const snowBounds = {
             yMin: 15.0,
@@ -219,28 +256,101 @@ export default class Snow {
             originX: 0.0,
             originZ: 0.0,
         };
+        
+        this.snowSystem = new SnowSystem(this.scene, snowBounds);
 
-        this.snowSystem = new SnowSystem(scene, snowBounds);
+        // 更新可见性
+        this.updateVisibility();
 
-        this.seasonManager.onSeasonChange((newSeason: string, oldSeason: string) => {
-            this.onSeasonChanged(newSeason, oldSeason);
-        });
+        this.logger.info('[Snow] Initialization complete');
+    }
 
+    /**
+     * 激活阶段 - 应用配置
+     */
+    protected onActivate(): void {
+        this.logger.info('[Snow] Activating...');
+    }
+
+    /**
+     * 更新阶段 - 每帧调用
+     */
+    protected onUpdate(params: UpdateParams): void {
+        if (this.snowSystem) {
+            this.snowSystem.update(params.delta, params.elapsedTime);
+        }
+    }
+
+    /**
+     * 失活阶段
+     */
+    protected onDeactivate(): void {
+        this.logger.info('[Snow] Deactivated');
+    }
+
+    /**
+     * 销毁阶段
+     */
+    protected onDispose(): void {
+        this.logger.info('[Snow] Disposing...');
+        
+        // 清理雪系统
+        if (this.snowSystem) {
+            this.snowSystem.dispose();
+            this.snowSystem = null;
+        }
+        
+        this.snowGroup = null;
+    }
+
+    /**
+     * ✅ 时间变化监听器 - 每分钟调用（可选）
+     */
+    public onTimeChanged(_data: TimeChangedData): void {
+        // Snow 不需要响应时间变化
+    }
+
+    /**
+     * ✅ 日期变化监听器 - 每天午夜调用（可选）
+     */
+    public onDateChanged(data: DateChangedData): void {
+        this.logger.info(`[Snow] Date changed: ${data.currentDate}`);
+        if (data.solarTerm) {
+            this.logger.info(`[Snow] Solar term: ${data.solarTerm}`);
+        }
+    }
+
+    /**
+     * ✅ 季节变化监听器 - 季节切换时调用
+     */
+    public onSeasonChanged(data: SeasonChangedData): void {
+        this.logger.info(`[Snow] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
         this.updateVisibility();
     }
 
-    onSeasonChanged(newSeason: string, oldSeason: string) {
-        this.updateVisibility();
+    /**
+     * ✅ 配置调试面板（必须实现的抽象方法）
+     */
+    protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
+        // 添加基本信息
+        gui.add({ name: component.name }, 'name').name('Component').disable();
+        gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
+        gui.add({ active: component.isActive }, 'active').name('Active').disable();
+        gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
+        
+        // 可以添加更多雪相关的调试选项
+        // 例如：粒子数量、雪花大小等
     }
 
-    updateVisibility() {
-        const isWinterSeason = this.seasonManager.currentSeason === 'winter';
+    /**
+     * 更新可见性
+     */
+    private updateVisibility(): void {
+        if (!this.snowSystem) return;
+        
+        const isWinterSeason = datetimeManager.getCurrentSeason() === 'winter';
         this.snowSystem.setVisible(isWinterSeason);
-        // this.snowSystem.setVisible(true);
-    }
-
-    update(delta: number, elapsedTime: number) {
-        this.snowSystem.update(delta, elapsedTime);
+        // this.snowSystem.setVisible(true); // 测试用
     }
 }
 

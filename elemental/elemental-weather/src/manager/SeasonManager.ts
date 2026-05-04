@@ -1,5 +1,4 @@
-import {LoggerFactory} from "common-tools";
-import {eventBus} from "common-tools";
+import {eventBus, LoggerFactory} from "common-tools";
 import * as THREE from 'three';
 import {type ConfigObject} from "/@/utils/color";
 

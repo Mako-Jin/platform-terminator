@@ -1,4 +1,4 @@
-import type { MicroApp } from 'qiankun';
+import type {MicroApp} from 'qiankun';
 
 export interface MicroAppProps {
     basename: string;

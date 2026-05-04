@@ -19,6 +19,27 @@ export interface TimeChangedData {
 }
 
 
+/**
+ * 季节类型
+ */
+export type SeasonType = 'spring' | 'summer' | 'autumn' | 'winter';
+
+/**
+ * 季节变化事件数据
+ */
+export interface SeasonChangedData {
+    /** 当前季节 */
+    currentSeason: SeasonType;
+    /** 前一季节 */
+    previousSeason: SeasonType;
+    /** 当前节气 */
+    solarTerm: string;
+    /** 日期 */
+    date: string;
+    /** 时间戳 */
+    timestamp: number;
+}
+
 
 /**
  * 日期变化事件数据
@@ -48,6 +69,10 @@ export interface DateChangedData {
     isImportant: boolean;
     /** 重要日期描述（如果有） */
     importantDescription?: string;
+    /** 当前节气（如果有） */
+    solarTerm?: string;
+    /** 当前季节 */
+    season?: SeasonType;
 }
 
 /**

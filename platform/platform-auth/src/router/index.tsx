@@ -1,6 +1,6 @@
 // router/index.tsx
 import React from 'react';
-import { createBrowserRouter, Navigate } from 'react-router-dom';
+import {createBrowserRouter, Navigate} from 'react-router-dom';
 import LoginPage from '/@/views/login';
 import AuthGuard from '/@/components/auth/AuthGuard';
 import PortalPage from "../views/portal";

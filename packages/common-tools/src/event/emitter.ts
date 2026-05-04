@@ -12,18 +12,18 @@
  * - 自动清理和内存泄漏防护
  */
 
-import { LoggerFactory } from '../utils/logger';
+import {LoggerFactory} from '../utils/logger';
 import type {
-    EventMeta,
-    EventHandler,
-    EmitOptions,
-    RequestOptions,
-    ResponseData,
-    PendingRequest,
     BroadcastMessage,
-    EventMap
+    EmitOptions,
+    EventHandler,
+    EventMap,
+    EventMeta,
+    PendingRequest,
+    RequestOptions,
+    ResponseData
 } from './types';
-import { AppEvents } from './types';
+import {AppEvents} from './types';
 
 // 创建模块专用的 logger
 const logger = LoggerFactory.create('EventBus');

@@ -1,7 +1,6 @@
-
 import * as Three from 'three';
-import { BaseCamera } from './basic';
-import type { CameraConfig } from './types';
+import {BaseCamera} from './basic';
+import type {CameraConfig} from './types';
 import {sizeManager} from "../../size";
 
 

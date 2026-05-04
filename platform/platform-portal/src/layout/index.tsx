@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Layout as AntLayout } from 'antd';
+import React, {useEffect, useState} from 'react';
+import {Layout as AntLayout} from 'antd';
 import Header from './header';
 import './index.scss'; // 用于内容区域样式
 

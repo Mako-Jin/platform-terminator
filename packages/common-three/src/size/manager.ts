@@ -1,4 +1,3 @@
-
 import {eventBus, LoggerFactory} from "common-tools";
 import type {SizeChangedData} from "./types";
 

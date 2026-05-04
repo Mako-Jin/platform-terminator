@@ -1,5 +1,5 @@
 import React from 'react';
-import { Layout } from 'antd';
+import {Layout} from 'antd';
 import './index.scss'; // 使用 CSS Modules 避免样式冲突
 
 const { Header: AntHeader } = Layout;

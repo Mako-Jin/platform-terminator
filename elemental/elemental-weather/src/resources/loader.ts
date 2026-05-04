@@ -1,11 +1,11 @@
-import {AppEvents, eventBus, LoggerFactory} from "common-tools";
 import type {ResourceErrorData, ResourceProgressData} from "common-tools";
+import {AppEvents, eventBus, LoggerFactory} from "common-tools";
 import type {Asset} from "/@/resources";
 import {AudioLoader, CubeTextureLoader, LoadingManager, TextureLoader} from "three";
-import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
-import { DRACOLoader } from 'three/addons/loaders/DRACOLoader.js';
-import { HDRLoader } from 'three/addons/loaders/HDRLoader.js';
-import { resourcesManager } from "./manager";
+import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
+import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
+import {HDRLoader} from 'three/addons/loaders/HDRLoader.js';
+import {resourcesManager} from "./manager";
 
 
 /**

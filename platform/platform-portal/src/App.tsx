@@ -1,7 +1,6 @@
-
 import './App.scss';
-import { LoggerFactory } from 'common-tools';
-import { QiankunGuard } from '/@/components/qiankun/QiankunGuard';
+import {LoggerFactory} from 'common-tools';
+import {QiankunGuard} from '/@/components/qiankun/QiankunGuard';
 
 const Logger = LoggerFactory.create("platform-portal-app");
 

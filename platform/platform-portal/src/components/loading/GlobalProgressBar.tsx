@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { useLoading, LoadingPhase, PHASES } from './LoadingContext';
+import {useEffect, useState} from 'react';
+import {LoadingPhase, PHASES, useLoading} from './LoadingContext';
 import './GlobalProgressBar.scss';
 
 /**

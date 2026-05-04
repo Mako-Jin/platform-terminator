@@ -1,11 +1,9 @@
-import {LoggerFactory} from "common-tools";
+import {isDebugMode, LoggerFactory} from "common-tools";
 import {useEffect, useRef} from "react";
 import {ASSETS, ResourceLoader} from "/@/resources";
-import {isDebugMode} from "common-tools";
-import { start as startListener } from "./listener"
+import {start as startListener} from "./listener"
 import SeasonManager from "/@/manager/SeasonManager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
-import TimeManager from "/@/manager/TimeManager.ts";
 
 let resourceLoader: ResourceLoader | null = null;
 
@@ -44,7 +42,6 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
                 logger.info('Initializing season and color managers...');
 
                 const seasonManager = SeasonManager.getInstance();
-                const timeManager = TimeManager.getInstance();
                 const colorManager = ColorManager.getInstance();
 
                 // 等待季节配置加载完成

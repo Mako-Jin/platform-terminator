@@ -1,5 +1,5 @@
-import type {IObject3DComponent} from "../types";
 import type GUI from "lil-gui";
+import Object3DComponent from "../core/object3d.ts";
 
 
 /**
@@ -7,9 +7,9 @@ import type GUI from "lil-gui";
  */
 export interface DebugConfig {
     /** 组件实例 */
-    component: IObject3DComponent;
+    component: Object3DComponent;
     /** 自定义配置函数 */
-    configure?: (gui: GUI, component: IObject3DComponent) => void;
+    configure?: (gui: GUI, component: Object3DComponent) => void;
     /** 是否默认展开 */
     expanded?: boolean;
 }

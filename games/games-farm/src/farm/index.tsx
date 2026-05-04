@@ -1,7 +1,7 @@
 // src/App.tsx
-import { useRef, useEffect } from 'react'
+import {useEffect, useRef} from 'react'
 import * as THREE from 'three'
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import './farm.css';
 
 const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {

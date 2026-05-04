@@ -1,6 +1,6 @@
 // tests/utils/logger.test.ts
-import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
-import { LoggerFactory, LoggerInstance } from '../../src/utils/logger';
+import {afterEach, beforeEach, describe, expect, it, vi} from 'vitest';
+import {LoggerFactory, LoggerInstance} from '../../src/utils/logger';
 
 describe('Logger', () => {
     describe('工厂方法', () => {

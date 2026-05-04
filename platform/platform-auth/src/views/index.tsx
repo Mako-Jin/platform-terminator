@@ -1,4 +1,3 @@
-import Login from "./login";
 import Loading from "./login/loading";
 import {useState} from "react";
 

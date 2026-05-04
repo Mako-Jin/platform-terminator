@@ -1,9 +1,10 @@
-import {LoggerFactory} from "common-tools";
-import {eventBus} from "common-tools";
+import {eventBus, LoggerFactory} from "common-tools";
 import ColorInterpolator, {type ConfigObject} from "/@/utils/color";
-import TimeManager, {type EasingType} from "/@/manager/TimeManager";
 import SeasonManager from "/@/manager/SeasonManager.ts";
-import * as Three from "three";
+import {datetimeManager} from "common-three";
+
+
+export type EasingType = 'linear' | 'easeInOut' | 'smoothstep';
 
 
 export interface ColorChangedData {
@@ -18,12 +19,21 @@ export default class ColorManager {
     private Logger = LoggerFactory.create("weather-color");
 
     private static instance: ColorManager | null = null;
-
-    private timeManager: TimeManager;
+    
     private seasonManager: SeasonManager;
 
     private cachedConfigs: Map<string, ConfigObject | null | undefined> = new Map();
     private autoUpdateEnabled: boolean = true;
+
+    // 日出日落时间配置
+    private readonly SUN_RISE_hour = 6;
+    private readonly SUNSET_hour = 18;
+
+    // 颜色插值过渡时间段
+    private readonly DAY_FULL_START = 8;
+    private readonly DAY_FULL_END = 16;
+    private readonly NIGHT_FULL_START = 20;
+    private readonly NIGHT_FULL_END = 4;
 
     constructor() {
         if (ColorManager.instance) {
@@ -31,7 +41,6 @@ export default class ColorManager {
         }
         ColorManager.instance = this;
 
-        this.timeManager = TimeManager.getInstance();
         this.seasonManager = SeasonManager.getInstance();
 
         this.setupAutoUpdate();
@@ -120,7 +129,7 @@ export default class ColorManager {
             return null;
         }
 
-        const timeFactor = this.timeManager.getColorInterpolationFactor(easing);
+        const timeFactor = this.getColorInterpolationFactor(easing);
         const interpolated = ColorInterpolator.interpolateConfig(
             componentConfig.day,
             componentConfig.night,
@@ -142,7 +151,7 @@ export default class ColorManager {
             return {};
         }
 
-        const timeFactor = this.timeManager.getColorInterpolationFactor(easing);
+        const timeFactor = this.getColorInterpolationFactor(easing);
         return ColorInterpolator.batchInterpolate(seasonConfigs, timeFactor);
     }
 
@@ -180,5 +189,63 @@ export default class ColorManager {
     public reset(): void {
         this.cachedConfigs.clear();
         this.Logger.debug('ColorManager reset');
+    }
+
+    /**
+     * 应用缓动函数
+     */
+    applyEasing(linearFactor: number, easing: EasingType = 'smoothstep'): number {
+        switch (easing) {
+            case 'linear':
+                return linearFactor;
+
+            case 'easeInOut':
+                return linearFactor < 0.5
+                    ? 2 * linearFactor * linearFactor
+                    : -1 + (4 - 2 * linearFactor) * linearFactor;
+
+            case 'smoothstep':
+                return linearFactor * linearFactor * (3 - 2 * linearFactor);
+
+            default:
+                return linearFactor;
+        }
+    }
+
+    /**
+     * 获取颜色插值因子 (0=完全白天, 1=完全夜晚)
+     * 考虑晨昏平滑过渡
+     *
+     * 时间轴：
+     * 0-4点:   深夜 (factor=1)
+     * 4-6点:   黎明过渡 (1→0)
+     * 6-8点:   清晨过渡 (1→0)
+     * 8-16点:  完全白天 (factor=0)
+     * 16-18点: 黄昏过渡 (0→1)
+     * 18-20点: 傍晚过渡 (0→1)
+     * 20-24点: 深夜 (factor=1)
+     */
+    getColorInterpolationFactor(easing: EasingType = 'smoothstep'): number {
+        let linearFactor: number;
+
+        const hour = datetimeManager.getHour();
+        
+        if (hour >= this.DAY_FULL_START && hour <= this.DAY_FULL_END) {
+            linearFactor = 0; // 完全白天
+        } else if (hour >= this.NIGHT_FULL_START || hour < this.NIGHT_FULL_END) {
+            linearFactor = 1; // 完全夜晚
+        } else if (hour >= this.SUN_RISE_hour && hour < this.DAY_FULL_START) {
+            linearFactor = 1 - (hour - this.SUN_RISE_hour) / (this.DAY_FULL_START - this.SUN_RISE_hour);
+        } else if (hour >= this.DAY_FULL_END && hour < this.SUNSET_hour) {
+            linearFactor = (hour - this.DAY_FULL_END) / (this.SUNSET_hour - this.DAY_FULL_END);
+        } else if (hour >= this.SUNSET_hour && hour < this.NIGHT_FULL_START) {
+            linearFactor = (hour - this.SUNSET_hour) / (this.NIGHT_FULL_START - this.SUNSET_hour);
+        } else {
+            linearFactor = 1 - (hour - this.NIGHT_FULL_END) / (this.SUN_RISE_hour - this.NIGHT_FULL_END);
+        }
+
+        linearFactor = Math.max(0, Math.min(1, linearFactor));
+
+        return this.applyEasing(linearFactor, easing);
     }
 }

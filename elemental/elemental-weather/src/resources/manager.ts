@@ -1,7 +1,5 @@
-
-import { LoggerFactory } from "common-tools";
-import { AppEvents, eventBus } from "common-tools";
-import type { ResourceLoadedData } from "common-tools";
+import type {ResourceLoadedData} from "common-tools";
+import {AppEvents, eventBus, LoggerFactory} from "common-tools";
 
 /**
  * 资源管理器（全局资源池）

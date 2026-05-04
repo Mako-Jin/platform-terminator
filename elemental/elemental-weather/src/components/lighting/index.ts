@@ -1,21 +1,24 @@
 import * as Three from 'three';
-import TimeManager from "/@/manager/TimeManager.ts";
+import type GUI from 'lil-gui';
+import {
+    type ComponentConfig,
+    type DateChangedData,
+    type IObject3DComponent,
+    Object3DComponent,
+    SceneWrapper,
+    type SeasonChangedData,
+    type TimeChangedData,
+    type UpdateParams
+} from "common-three";
 import SeasonManager from "/@/manager/SeasonManager.ts";
 import ResourcesManager from "/@/resources/manager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import type {ConfigObject} from "/@/utils/color.ts";
-import type {SeasonChangedData} from "/@/manager/SeasonManager.ts";
-import {LoggerFactory} from "common-tools";
 
 
-export default class Lighting {
-
-    private logger = LoggerFactory.create("weather-lighting");
-
-    private isDebugMode: boolean;
+export default class Lighting extends Object3DComponent {
+    
     private helperEnabled: boolean;
-
-    private scene: Three.Scene;
 
     private lights: { 
         key: Three.DirectionalLight | null; 
@@ -26,7 +29,6 @@ export default class Lighting {
     };
 
     private seasonManager: SeasonManager;
-    private timeManager: TimeManager;
     private resourcesManager: ResourcesManager;
     private colorManager: ColorManager;
 
@@ -41,12 +43,15 @@ export default class Lighting {
     private envMapRotationX: number = 0;
     private envMapRotationZ: number = 0;
 
-    constructor(scene: Three.Scene, options: { isDebugMode?: boolean } = {}) {
-        this.scene = scene;
+    // 灯光组（作为根节点）
+    private lightsGroup: Three.Group | null = null;
+
+    constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
+        super(scene, 'weather-lighting', options.isDebugMode);
+        
         this.isDebugMode = options.isDebugMode ?? false;
         this.helperEnabled = this.isDebugMode;
 
-        this.timeManager = TimeManager.getInstance();
         this.seasonManager = SeasonManager.getInstance();
         this.resourcesManager = ResourcesManager.getInstance();
         this.colorManager = ColorManager.getInstance();
@@ -60,39 +65,125 @@ export default class Lighting {
         };
 
         this.environmentMap = null;
-
-        this.setupEventListeners();
-        this.initializeLighting().then();
     }
 
-    private setupEventListeners(): void {
-        this.timeManager.onHourChange(() => {
-            this.refreshLightingConfig();
-        });
-
-        this.seasonManager.onSeasonChange((data: SeasonChangedData) => {
-            this.onSeasonChanged(data.season, data.previousSeason, data);
-        });
-    }
-
-    private async initializeLighting(): Promise<void> {
-        this.logger.info('[Lighting] Waiting for dependencies...');
+    /**
+     * 初始化阶段 - 创建灯光和环境
+     */
+    protected async onInitialize(_config?: ComponentConfig): Promise<void> {
+        this.logger.info('[Lighting] Initializing...');
+        
+        // 等待依赖初始化
         await this.waitForDependencies();
 
+        // 创建灯光组作为根节点
+        this.lightsGroup = new Three.Group();
+        this.lightsGroup.name = 'LightsGroup';
+        this.setRoot(this.lightsGroup);
+
+        // 创建灯光
         this.logger.info('[Lighting] Creating lights...');
         this.createLights();
         this.configureShadows();
         this.setupEnvironment();
 
-        this.logger.info('[Lighting] Refreshing lighting config...');
-        this.refreshLightingConfig();
-        
-        if (this.helperEnabled) {
-            this.addHelpers();
-        }
         this.logger.info('[Lighting] Initialization complete');
     }
 
+    /**
+     * 激活阶段 - 应用配置
+     */
+    protected onActivate(): void {
+        this.logger.info('[Lighting] Activating...');
+        
+        // 刷新灯光配置
+        this.refreshLightingConfig();
+        
+        // 添加调试辅助
+        if (this.helperEnabled) {
+            this.addHelpers();
+        }
+    }
+
+    /**
+     * 更新阶段 - 每帧调用（目前不需要）
+     */
+    protected onUpdate(params: UpdateParams): void {
+        // Lighting 不需要每帧更新
+        // 时间和季节变化通过事件监听器处理
+    }
+
+    /**
+     * 失活阶段
+     */
+    protected onDeactivate(): void {
+        this.logger.info('[Lighting] Deactivated');
+    }
+
+    /**
+     * 销毁阶段
+     */
+    protected onDispose(): void {
+        this.logger.info('[Lighting] Disposing...');
+        
+        // 清理环境贴图引用
+        if (this.environmentMap) {
+            this.environmentMap.current = null;
+            this.environmentMap = null;
+        }
+
+        // 清理灯光引用
+        this.lights.key = null;
+        this.lights.fill = null;
+        this.lights.ambient = null;
+        this.lights.rim = null;
+        this.lights.lamp = null;
+    }
+
+    /**
+     * ✅ 时间变化监听器 - 每分钟调用
+     */
+    public onTimeChanged(_data: TimeChangedData): void {
+        // 根据时间更新色调映射和灯光
+        this.refreshLightingConfig();
+    }
+
+    /**
+     * ✅ 日期变化监听器 - 每天午夜调用
+     */
+    public onDateChanged(data: DateChangedData): void {
+        this.logger.info(`[Lighting] Date changed: ${data.currentDate}`);
+        if (data.isFestival) {
+            this.logger.info(`[Lighting] Festival detected: ${data.festivalName}`);
+            // 可以在这里添加节日特效
+        }
+    }
+
+    /**
+     * ✅ 季节变化监听器 - 季节切换时调用
+     */
+    public onSeasonChanged(data: SeasonChangedData): void {
+        this.logger.info(`[Lighting] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
+        this.refreshLightingConfig();
+    }
+
+    /**
+     * ✅ 配置调试面板（必须实现的抽象方法）
+     */
+    protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
+        // 添加基本信息
+        gui.add({ name: component.name }, 'name').name('Component').disable();
+        gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
+        gui.add({ active: component.isActive }, 'active').name('Active').disable();
+        gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
+        
+        // 可以添加更多灯光相关的调试选项
+        // 例如：灯光强度、颜色等
+    }
+
+    /**
+     * 等待依赖初始化
+     */
     private async waitForDependencies(): Promise<void> {
         try {
             await this.seasonManager.waitForInitialization();
@@ -101,44 +192,56 @@ export default class Lighting {
         }
     }
 
+    /**
+     * 刷新灯光配置
+     */
     private refreshLightingConfig(): void {
-        this.logger.info('[Lighting] Getting lighting config from ColorManager...');
+        this.logger.debug('[Lighting] Refreshing lighting config...');
         const config = this.colorManager.getLightingConfig('smoothstep');
         
         if (config) {
-            this.logger.info('[Lighting] Config received, applying...');
             this.applyLightingConfig(config);
         } else {
             this.logger.warn('[Lighting] Lighting config not available yet');
         }
     }
 
-    onSeasonChanged(newSeason: string, oldSeason: string, data: SeasonChangedData): void {
-        this.refreshLightingConfig();
-    }
+    /**
+     * 创建灯光
+     */
+    private createLights(): void {
+        if (!this.lightsGroup) return;
 
-    createLights(): void {
+        // 点光源（台灯）
         this.lights.lamp = new Three.PointLight();
-        this.scene.add(this.lights.lamp);
+        this.lights.lamp.name = 'lampLight';
+        this.lightsGroup.add(this.lights.lamp);
 
+        // 主光源（太阳光）
         this.lights.key = new Three.DirectionalLight();
         this.lights.key.name = 'keyLight';
-        this.scene.add(this.lights.key);
+        this.lightsGroup.add(this.lights.key);
 
+        // 补光
         this.lights.fill = new Three.DirectionalLight();
         this.lights.fill.name = 'fillLight';
-        this.scene.add(this.lights.fill);
+        this.lightsGroup.add(this.lights.fill);
 
+        // 环境光
         this.lights.ambient = new Three.AmbientLight();
         this.lights.ambient.name = 'ambientLight';
-        this.scene.add(this.lights.ambient);
+        this.lightsGroup.add(this.lights.ambient);
 
+        // 边缘光
         this.lights.rim = new Three.DirectionalLight();
         this.lights.rim.name = 'rimLight';
-        this.scene.add(this.lights.rim);
+        this.lightsGroup.add(this.lights.rim);
     }
 
-    configureShadows(): void {
+    /**
+     * 配置阴影
+     */
+    private configureShadows(): void {
         const shadowSize = 2048;
         const frustumSize = 12;
 
@@ -157,7 +260,10 @@ export default class Lighting {
         }
     }
 
-    setupEnvironment(): void {
+    /**
+     * 设置环境贴图
+     */
+    private setupEnvironment(): void {
         const dayTexture = this.resourcesManager.getItem<Three.Texture>("environmentMapDayTexture");
         const nightTexture = this.resourcesManager.getItem<Three.Texture>("environmentMapNightTexture");
 
@@ -177,13 +283,18 @@ export default class Lighting {
         this.environmentMap.night.colorSpace = Three.SRGBColorSpace;
     }
 
-    applyLightingConfig(config: ConfigObject): void {
+    /**
+     * 应用灯光配置
+     */
+    private applyLightingConfig(config: ConfigObject): void {
         const interpolatedConfig = config as any;
 
         if (this.lights.lamp && interpolatedConfig.lamp) {
             this.lights.lamp.color.setHex(interpolatedConfig.lamp.color);
             this.lights.lamp.intensity = interpolatedConfig.lamp.intensity;
-            this.lights.lamp.position.set(...interpolatedConfig.lamp.position);
+            // ✅ 修复：显式转换为 number[] 类型
+            const lampPos = interpolatedConfig.lamp.position as number[];
+            this.lights.lamp.position.set(lampPos[0], lampPos[1], lampPos[2]);
             this.lights.lamp.castShadow = interpolatedConfig.lamp.castShadow;
             this.lights.lamp.distance = interpolatedConfig.lamp.distance;
             this.lights.lamp.decay = interpolatedConfig.lamp.decay;
@@ -192,14 +303,18 @@ export default class Lighting {
         if (this.lights.key && interpolatedConfig.key) {
             this.lights.key.color.setHex(interpolatedConfig.key.color);
             this.lights.key.intensity = interpolatedConfig.key.intensity;
-            this.lights.key.position.set(...interpolatedConfig.key.position);
+            // ✅ 修复：显式转换为 number[] 类型
+            const keyPos = interpolatedConfig.key.position as number[];
+            this.lights.key.position.set(keyPos[0], keyPos[1], keyPos[2]);
             this.lights.key.castShadow = interpolatedConfig.key.castShadow;
         }
 
         if (this.lights.fill && interpolatedConfig.fill) {
             this.lights.fill.color.setHex(interpolatedConfig.fill.color);
             this.lights.fill.intensity = interpolatedConfig.fill.intensity;
-            this.lights.fill.position.set(...interpolatedConfig.fill.position);
+            // ✅ 修复：显式转换为 number[] 类型
+            const fillPos = interpolatedConfig.fill.position as number[];
+            this.lights.fill.position.set(fillPos[0], fillPos[1], fillPos[2]);
         }
 
         if (this.lights.ambient && interpolatedConfig.ambient) {
@@ -210,7 +325,9 @@ export default class Lighting {
         if (this.lights.rim && interpolatedConfig.rim) {
             this.lights.rim.color.setHex(interpolatedConfig.rim.color);
             this.lights.rim.intensity = interpolatedConfig.rim.intensity;
-            this.lights.rim.position.set(...interpolatedConfig.rim.position);
+            // ✅ 修复：显式转换为 number[] 类型
+            const rimPos = interpolatedConfig.rim.position as number[];
+            this.lights.rim.position.set(rimPos[0], rimPos[1], rimPos[2]);
         }
 
         if (interpolatedConfig.environment) {
@@ -218,31 +335,41 @@ export default class Lighting {
         }
     }
 
-    updateEnvironment(envSettings: any): void {
+    /**
+     * 更新环境
+     */
+    private updateEnvironment(envSettings: any): void {
         if (!this.environmentMap) {
             return;
         }
 
-        const timeFactor = this.timeManager.getColorInterpolationFactor('smoothstep');
+        // ✅ 使用 colorManager 获取颜色插值因子
+        const timeFactor = this.colorManager.getColorInterpolationFactor('smoothstep');
         this.environmentMap.current = this.interpolateEnvironmentMap(timeFactor);
         this.environmentMap.intensity = envSettings.intensity;
 
-        this.scene.environment = this.environmentMap.current;
-        this.scene.background = this.environmentMap.current;  // 使用环境贴图作为背景
-        this.scene.environmentIntensity = envSettings.intensity;
+        const scene = this.getScene();
+        if (scene) {
+            scene.environment = this.environmentMap.current;
+            scene.background = this.environmentMap.current;
+            scene.environmentIntensity = envSettings.intensity;
 
-        this.envMapRotationY = envSettings.rotationY || 0;
-        this.envMapRotationX = envSettings.rotationX || 0;
-        this.envMapRotationZ = envSettings.rotationZ || 0;
+            this.envMapRotationY = envSettings.rotationY || 0;
+            this.envMapRotationX = envSettings.rotationX || 0;
+            this.envMapRotationZ = envSettings.rotationZ || 0;
 
-        this.scene.environmentRotation.y = this.envMapRotationY;
-        this.scene.environmentRotation.x = this.envMapRotationX;
-        this.scene.environmentRotation.z = this.envMapRotationZ;
+            scene.environmentRotation.y = this.envMapRotationY;
+            scene.environmentRotation.x = this.envMapRotationX;
+            scene.environmentRotation.z = this.envMapRotationZ;
+        }
 
         this.updateMaterials();
     }
 
-    interpolateEnvironmentMap(timeFactor: number): Three.Texture | null {
+    /**
+     * 插值环境贴图
+     */
+    private interpolateEnvironmentMap(timeFactor: number): Three.Texture | null {
         if (!this.environmentMap) {
             return null;
         }
@@ -256,12 +383,18 @@ export default class Lighting {
         }
     }
 
-    updateMaterials(): void {
+    /**
+     * 更新材质环境贴图
+     */
+    private updateMaterials(): void {
         if (!this.environmentMap?.current) {
             return;
         }
 
-        this.scene.traverse((child) => {
+        const scene = this.getScene();
+        if (!scene) return;
+
+        scene.traverse((child) => {
             if (child instanceof Three.Mesh && child.material) {
                 const material = child.material as Three.Material;
 
@@ -283,7 +416,8 @@ export default class Lighting {
                 ) {
                     material.envMap = this.environmentMap!.current;
                     
-                    const timeFactor = this.timeManager.getColorInterpolationFactor('smoothstep');
+                    // ✅ 使用 colorManager 获取颜色插值因子
+                    const timeFactor = this.colorManager.getColorInterpolationFactor('smoothstep');
                     material.reflectivity = 0.5 - timeFactor * 0.2;
                     material.needsUpdate = true;
                 }
@@ -291,8 +425,29 @@ export default class Lighting {
         });
     }
 
-    addHelpers(): void {
+    /**
+     * 添加调试辅助
+     */
+    private addHelpers(): void {
         this.logger.info('[Lighting] Lighting helpers enabled (not implemented yet)');
     }
 
+    /**
+     * 获取场景实例
+     */
+    private getScene(): Three.Scene | null {
+        const root = this.root;
+        if (!root) return null;
+        
+        // 从根节点向上查找场景
+        let parent: Three.Object3D | null = root.parent;
+        while (parent) {
+            if (parent instanceof Three.Scene) {
+                return parent;
+            }
+            parent = parent.parent;
+        }
+        
+        return null;
+    }
 }

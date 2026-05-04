@@ -1,7 +1,8 @@
 // context/AuthContext.tsx
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
-import {clearAuth, getAuth, saveAuth} from "/@types/auth";
+import React, {createContext, ReactNode, useContext, useEffect, useState} from 'react';
 import type {UserInfo} from "/@types/auth";
+import {clearAuth, getAuth, saveAuth} from "/@types/auth";
+
 // import { UserInfo, getAuth, saveAuth, clearAuth, isAuthenticated } from '/@types/auth';
 
 interface AuthContextType {

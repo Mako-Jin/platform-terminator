@@ -1,8 +1,8 @@
 // components/AuthGuard.tsx
 import React, {useEffect, useState} from 'react';
 
-import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
-import { isAuthenticated, getGlobalState } from '../../utils/auth';
+import {qiankunWindow} from 'vite-plugin-qiankun/dist/helper';
+import {getGlobalState, isAuthenticated} from '../../utils/auth';
 
 interface AuthGuardProps {
     children: React.ReactNode;

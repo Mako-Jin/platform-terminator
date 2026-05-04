@@ -4,7 +4,7 @@
  */
 
 import * as Three from 'three';
-import type {DateChangedData, TimeChangedData} from "../datetimes";
+import type {DateChangedData, SeasonChangedData, TimeChangedData} from "../datetimes";
 import type {SizeChangedData} from "../size";
 
 /**
@@ -133,6 +133,14 @@ export interface IObject3DComponent {
     onDateChanged?(data: DateChangedData): void;
 
     /**
+     * ✅ 季节变化回调
+     * 当季节变化时调用，子类可实现此方法来响应季节/节气变化
+     *
+     * @param data 季节变化数据
+     */
+    onSeasonChanged?(data: SeasonChangedData): void;
+
+    /**
      * 尺寸变化回调
      * 当窗口或容器尺寸变化时调用，子类可实现此方法来响应尺寸变化
      *
@@ -152,12 +160,4 @@ export interface IObject3DComponent {
      * @param height 高度
      */
     onResize?(width: number, height: number): void;
-
-    /**
-     * 时间变化回调
-     * 当时间每分钟更新时调用，子类可实现此方法来响应时间变化
-     *
-     * @param data 时间变化数据
-     */
-    onTimeChanged?(data: TimeChangedData): void;
 }

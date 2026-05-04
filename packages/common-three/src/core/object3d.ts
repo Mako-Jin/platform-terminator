@@ -3,9 +3,10 @@ import {LoggerFactory} from "common-tools";
 import * as Three from 'three';
 import type GUI from "lil-gui";
 import {debugPanel} from "../debugger";
-import { datetimeManager } from '../datetimes';
-import type {TimeChangedData, DateChangedData} from "../datetimes";
+import type {DateChangedData, SeasonChangedData, TimeChangedData} from "../datetimes";
+import {datetimeManager} from '../datetimes';
 import {type SizeChangedData, sizeManager} from "../size";
+import {SceneWrapper} from "./scene";
 
 /**
  * Object3D 组件抽象基类
@@ -14,7 +15,7 @@ import {type SizeChangedData, sizeManager} from "../size";
 export abstract class Object3DComponent implements IObject3DComponent {
 
     protected logger: ReturnType<typeof LoggerFactory.create>;
-    protected scene: Three.Scene;
+    protected scene: SceneWrapper;
     protected isDebugMode: boolean;
 
     private _name: string;
@@ -23,7 +24,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
     private _isVisible: boolean = true;
     protected _root: Three.Object3D | null = null;
 
-    protected constructor(scene: Three.Scene, name: string, isDebugMode: boolean = false) {
+    protected constructor(scene: SceneWrapper, name: string, isDebugMode: boolean = false) {
         this.scene = scene;
         this._name = name;
         this.isDebugMode = isDebugMode;
@@ -88,16 +89,22 @@ export abstract class Object3DComponent implements IObject3DComponent {
                 this.logger.debug(`[${this._name}] Registered date changed listener`);
             }
 
-            // 6. 注册尺寸变化监听器（如果子类实现了 onSizeChanged）
+            // ✅ 6. 注册季节变化监听器（如果子类实现了 onSeasonChanged）
+            if (this.onSeasonChanged) {
+                datetimeManager.onSeasonChanged(this.handleSeasonChanged.bind(this));
+                this.logger.debug(`[${this._name}] Registered season changed listener`);
+            }
+
+            // 7. 注册尺寸变化监听器（如果子类实现了 onSizeChanged）
             if (this.onSizeChanged) {
                 sizeManager.onSizeChanged(this.handleSizeChanged.bind(this));
                 this.logger.debug(`[${this._name}] Registered size changed listener`);
             }
 
-            // 7. 标记为已初始化
+            // 8. 标记为已初始化
             this._isInitialized = true;
 
-            // 8. 如果启用调试模式，自动添加到调试面板
+            // 9. 如果启用调试模式，自动添加到调试面板
             if (this.isDebugMode) {
                 this.addToDebugPanel();
             }
@@ -132,7 +139,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
 
             // 2. 将根对象添加到场景
             if (this._root) {
-                this.scene.add(this._root);
+                this.scene.addObject(this._root);
             }
 
             // 3. 标记为激活状态
@@ -181,7 +188,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
 
             // 2. 从场景中移除根对象
             if (this._root) {
-                this.scene.remove(this._root);
+                this.scene.removeObject(this._root);
             }
 
             // 3. 标记为失活状态
@@ -219,25 +226,31 @@ export abstract class Object3DComponent implements IObject3DComponent {
                 this.logger.debug(`[${this._name}] Removed date changed listener`);
             }
 
-            // 4. 移除尺寸变化监听器
+            // ✅ 4. 移除季节变化监听器
+            if (this.onSeasonChanged) {
+                datetimeManager.offSeasonChanged(this.handleSeasonChanged.bind(this));
+                this.logger.debug(`[${this._name}] Removed season changed listener`);
+            }
+
+            // 5. 移除尺寸变化监听器
             if (this.onSizeChanged) {
                 sizeManager.offSizeChanged(this.handleSizeChanged.bind(this));
                 this.logger.debug(`[${this._name}] Removed size changed listener`);
             }
 
-            // 5. 从调试面板移除
+            // 6. 从调试面板移除
             this.removeFromDebugPanel();
 
-            // 6. 执行子类特定的销毁逻辑
+            // 7. 执行子类特定的销毁逻辑
             this.onDispose();
 
-            // 7. 清理根对象
+            // 8. 清理根对象
             if (this._root) {
                 this.disposeObject3D(this._root);
                 this._root = null;
             }
 
-            // 8. 重置状态
+            // 9. 重置状态
             this._isInitialized = false;
 
             this.logger.info(`[${this._name}] Disposed`);
@@ -273,7 +286,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
      *
      * @param data 时间变化数据
      */
-    onTimeChanged?(data: TimeChangedData): void;
+    public onTimeChanged?(data: TimeChangedData): void;
 
     /**
      * 处理时间变化事件
@@ -297,7 +310,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
      *
      * @param data 日期变化数据
      */
-    onDateChanged?(data: DateChangedData): void;
+    public onDateChanged?(data: DateChangedData): void;
 
     /**
      * 处理日期变化事件
@@ -313,6 +326,30 @@ export abstract class Object3DComponent implements IObject3DComponent {
         }
     }
 
+    // ==================== ✅ 季节变化处理 ====================
+
+    /**
+     * 季节变化回调（可选）
+     * 子类可以重写此方法来响应季节变化
+     *
+     * @param data 季节变化数据
+     */
+    public onSeasonChanged?(data: SeasonChangedData): void;
+
+    /**
+     * 处理季节变化事件
+     * 调用子类的 onSeasonChanged 方法
+     */
+    private handleSeasonChanged(data: SeasonChangedData): void {
+        if (this.onSeasonChanged && this._isActive) {
+            try {
+                this.onSeasonChanged(data);
+            } catch (error) {
+                this.logger.error(`[${this._name}] Error in onSeasonChanged:`, error);
+            }
+        }
+    }
+
     // ==================== 尺寸变化处理 ====================
 
     /**
@@ -321,7 +358,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
      *
      * @param data 尺寸变化数据
      */
-    onSizeChanged?(data: SizeChangedData): void;
+    public onSizeChanged?(data: SizeChangedData): void;
 
     /**
      * 处理尺寸变化事件

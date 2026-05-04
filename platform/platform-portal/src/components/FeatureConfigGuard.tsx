@@ -1,8 +1,9 @@
-import { useEffect, useState, useCallback } from 'react';
-import { globalActions } from './qiankun/apps';
-import { updateApps } from './qiankun';
-import { message } from 'antd';
-import { Logger } from 'common-tools/utils/logger';
+// 创建 Context
+import {createContext, useCallback, useContext, useEffect, useState} from 'react';
+import {globalActions} from './qiankun/apps';
+import {updateApps} from './qiankun';
+import {message} from 'antd';
+import {Logger} from 'common-tools/utils/logger';
 
 interface FeatureConfig {
   elementalWeather: boolean;
@@ -130,9 +131,6 @@ export const FeatureConfigGuard: React.FC<FeatureConfigGuardProps> = ({
     </FeatureConfigContext.Provider>
   );
 };
-
-// 创建 Context
-import { createContext, useContext } from 'react';
 
 const FeatureConfigContext = createContext<{
   config: FeatureConfig | null;

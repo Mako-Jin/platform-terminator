@@ -1,5 +1,5 @@
-import { initGlobalState } from 'qiankun';
-import { LoggerFactory } from 'common-tools';
+import {initGlobalState} from 'qiankun';
+import {LoggerFactory} from 'common-tools';
 
 const initialState = {
     theme: 'dark',

@@ -1,9 +1,7 @@
-import {eventBus, LoggerFactory} from "common-tools";
-import {AppEvents} from "common-tools";
-import type {ResourceProgressData, ResourceErrorData, ResourceLoadedData} from "common-tools";
+import type {ResourceErrorData, ResourceLoadedData, ResourceProgressData} from "common-tools";
+import {AppEvents, eventBus, LoggerFactory} from "common-tools";
 import Weather from "./weather";
 import {ResourceLoader} from "../resources";
-import ShaderReveal from "/src/shaders/reveal";
 
 let hasInitialized = false;
 
@@ -36,10 +34,9 @@ export const start = (
         
         logger.info('[Weather] Initializing weather application...');
         const weather = Weather.getInstance();
-        weather.init(weatherContainer, resources, isDebugMode);
+        weather.init(weatherContainer, resources, isDebugMode).then();
         (window as any).weatherInstance = weather;
         // const shaderReveal = new ShaderReveal(shaderContainer);
-        weather.start();
         // shaderReveal.start()
         logger.info('[Weather] Weather application started successfully');
     });

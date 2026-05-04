@@ -1,4 +1,3 @@
-
 import type {ThemeColors} from './types';
 
 export const DEFAULT_THEME: ThemeColors = {

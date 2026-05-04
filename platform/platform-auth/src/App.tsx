@@ -2,9 +2,9 @@
 import React from 'react';
 import './App.scss';
 
-import { BrowserRouter } from 'react-router-dom';
+import {BrowserRouter} from 'react-router-dom';
 import AuthGuard from "./components/auth/AuthGuard";
-import { qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
+import {qiankunWindow} from 'vite-plugin-qiankun/dist/helper';
 
 // 主应用组件
 const App: React.FC = () => {

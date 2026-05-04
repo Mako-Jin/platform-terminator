@@ -1,7 +1,7 @@
 // views/portal/index.tsx (简单的门户页面)
 import React from 'react';
-import { useAuth } from '/@/components/auth/AuthContext';
-import { useNavigate } from 'react-router-dom';
+import {useAuth} from '/@/components/auth/AuthContext';
+import {useNavigate} from 'react-router-dom';
 // import './index.module.scss';
 import styles from './index.module.scss';
 

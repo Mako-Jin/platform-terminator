@@ -1,4 +1,4 @@
-import { LoggerFactory } from '../utils/logger';
+import {LoggerFactory} from '../utils/logger';
 
 const logger = LoggerFactory.create('common-storage');
 

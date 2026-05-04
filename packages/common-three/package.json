@@ -20,7 +20,8 @@
   },
   "dependencies": {
     "common-tools": "workspace:*",
-    "lil-gui": "^0.21.0"
+    "lil-gui": "^0.21.0",
+    "lunar-javascript": "^1.7.7"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",

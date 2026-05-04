@@ -15,7 +15,8 @@ export type {
     TimeChangedData, 
     DateChangedData, 
     FestivalConfig, 
-    ImportantDateConfig 
+    ImportantDateConfig,
+    SeasonChangedData
 } from './datetimes';
 
 export type { DebugConfig } from './debugger';
@@ -27,11 +28,14 @@ export { Object3DComponent } from './core';
 
 export { DateTimeManager, datetimeManager } from './datetimes';
 
+export { ClockManager, clockManager } from './clock';
+
 export { DebugPanelManager, debugPanel } from './debugger';
 
 export { SizeManager, sizeManager } from './size';
 
 // 相机导出
+export { CameraType } from './core';
 export { CameraManager, cameraManager } from './core';
 export { PerspectiveCameraWrapper } from './core';
 export { OrthographicCameraWrapper } from './core';

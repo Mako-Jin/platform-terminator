@@ -1,8 +1,7 @@
-
 import * as Three from 'three';
-import { LoggerFactory } from 'common-tools';
-import type { SceneConfig } from './types';
-import type { IObject3DComponent } from '../../types';
+import {LoggerFactory} from 'common-tools';
+import type {SceneConfig} from './types';
+import type {IObject3DComponent} from '../../types';
 
 /**
  * 场景包装类
@@ -121,11 +120,11 @@ export class SceneWrapper {
     }
 
     /**
-     * 添加组件到场景
+     * 添加组件到场景管理器
      *
      * @param component 要添加的组件
      */
-    addComponent(component: IObject3DComponent): void {
+    async addComponent(component: IObject3DComponent): Promise<void> {
         const name = component.name;
         
         if (this.components.has(name)) {
@@ -135,12 +134,23 @@ export class SceneWrapper {
 
         this.components.set(name, component);
         
-        // 如果组件已激活，添加到场景
-        if (component.isActive && component.root) {
-            this.scene.add(component.root);
+        // ✅ 自动初始化并激活组件
+        try {
+            await component.initialize();
+            component.activate();
+            
+            // 将组件的根对象添加到场景
+            if (component.root) {
+                this.scene.add(component.root);
+                this.logger.debug(`Component ${name} added to scene with root object`);
+            } else {
+                this.logger.warn(`Component ${name} has no root object`);
+            }
+        } catch (error) {
+            this.logger.error(`Failed to initialize component ${name}:`, error);
         }
 
-        this.logger.debug(`Component ${name} added to scene`);
+        this.logger.info(`Component ${name} registered and activated`);
     }
 
     /**
@@ -156,6 +166,11 @@ export class SceneWrapper {
             return;
         }
 
+        // 失活并清理组件
+        if (component.isActive) {
+            component.deactivate();
+        }
+        
         // 从场景中移除
         if (component.root) {
             this.scene.remove(component.root);

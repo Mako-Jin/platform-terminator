@@ -1,9 +1,9 @@
-import { StrictMode } from 'react'
-import { createRoot, Root } from 'react-dom/client'
+import {StrictMode} from 'react'
+import {createRoot, Root} from 'react-dom/client'
 import './index.scss'
 import App from './App.tsx'
 
-import { renderWithQiankun, qiankunWindow } from 'vite-plugin-qiankun/dist/helper';
+import {qiankunWindow, renderWithQiankun} from 'vite-plugin-qiankun/dist/helper';
 
 let root: Root | null = null;
 

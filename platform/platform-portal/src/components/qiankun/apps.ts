@@ -1,7 +1,6 @@
 // src/qiankun/apps.ts
-import type { MicroAppConfig } from './types';
-import { globalActions } from './state';
-import { LoggerFactory } from 'common-tools';
+import type {MicroAppConfig} from './types';
+import {globalActions} from './state';
 
 const isDev = import.meta.env.DEV;
 
