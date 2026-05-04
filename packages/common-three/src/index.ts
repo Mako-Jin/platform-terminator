@@ -18,11 +18,18 @@ export type {
     ImportantDateConfig 
 } from './datetimes';
 
+export type { DebugConfig } from './debugger';
+
+export type { SizeChangedData } from './size';
+
 // 核心类导出
 export { Object3DComponent } from './core';
-export { DebugPanelManager, debugPanel } from './debugger';
+
 export { DateTimeManager, datetimeManager } from './datetimes';
-export type { DebugConfig } from './debugger';
+
+export { DebugPanelManager, debugPanel } from './debugger';
+
+export { SizeManager, sizeManager } from './size';
 
 // 默认导出
 export { default } from './core';

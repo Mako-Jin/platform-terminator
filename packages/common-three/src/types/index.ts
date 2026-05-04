@@ -4,8 +4,8 @@
  */
 
 import * as Three from 'three';
-import type {TimeChangedData} from "../datetimes/types.ts";
-import type {DateChangedData} from "../date";
+import type {DateChangedData, TimeChangedData} from "../datetimes";
+import type {SizeChangedData} from "../size";
 
 /**
  * 组件初始化配置
@@ -131,6 +131,14 @@ export interface IObject3DComponent {
      * @param data 日期变化数据
      */
     onDateChanged?(data: DateChangedData): void;
+
+    /**
+     * 尺寸变化回调
+     * 当窗口或容器尺寸变化时调用，子类可实现此方法来响应尺寸变化
+     *
+     * @param data 尺寸变化数据
+     */
+    onSizeChanged?(data: SizeChangedData): void;
 
     /**
      * 获取资源依赖信息

@@ -3,8 +3,9 @@ import {LoggerFactory} from "common-tools";
 import * as Three from 'three';
 import type GUI from "lil-gui";
 import {debugPanel} from "../debugger";
-import { timeManager } from '../datetimes';
+import { datetimeManager } from '../datetimes';
 import type {TimeChangedData, DateChangedData} from "../datetimes";
+import {type SizeChangedData, sizeManager} from "../size";
 
 /**
  * Object3D 组件抽象基类
@@ -77,20 +78,26 @@ export abstract class Object3DComponent implements IObject3DComponent {
 
             // 4. 注册时间变化监听器（如果子类实现了 onTimeChanged）
             if (this.onTimeChanged) {
-                timeManager.onTimeChanged(this.handleTimeChanged.bind(this));
+                datetimeManager.onTimeChanged(this.handleTimeChanged.bind(this));
                 this.logger.debug(`[${this._name}] Registered time changed listener`);
             }
 
             // 5. 注册日期变化监听器（如果子类实现了 onDateChanged）
             if (this.onDateChanged) {
-                timeManager.onDateChanged(this.handleDateChanged.bind(this));
+                datetimeManager.onDateChanged(this.handleDateChanged.bind(this));
                 this.logger.debug(`[${this._name}] Registered date changed listener`);
             }
 
-            // 6. 标记为已初始化
+            // 6. 注册尺寸变化监听器（如果子类实现了 onSizeChanged）
+            if (this.onSizeChanged) {
+                sizeManager.onSizeChanged(this.handleSizeChanged.bind(this));
+                this.logger.debug(`[${this._name}] Registered size changed listener`);
+            }
+
+            // 7. 标记为已初始化
             this._isInitialized = true;
 
-            // 7. 如果启用调试模式，自动添加到调试面板
+            // 8. 如果启用调试模式，自动添加到调试面板
             if (this.isDebugMode) {
                 this.addToDebugPanel();
             }
@@ -202,29 +209,35 @@ export abstract class Object3DComponent implements IObject3DComponent {
 
             // 2. 移除时间变化监听器
             if (this.onTimeChanged) {
-                timeManager.offTimeChanged(this.handleTimeChanged.bind(this));
+                datetimeManager.offTimeChanged(this.handleTimeChanged.bind(this));
                 this.logger.debug(`[${this._name}] Removed time changed listener`);
             }
 
             // 3. 移除日期变化监听器
             if (this.onDateChanged) {
-                timeManager.offDateChanged(this.handleDateChanged.bind(this));
+                datetimeManager.offDateChanged(this.handleDateChanged.bind(this));
                 this.logger.debug(`[${this._name}] Removed date changed listener`);
             }
 
-            // 4. 从调试面板移除
+            // 4. 移除尺寸变化监听器
+            if (this.onSizeChanged) {
+                sizeManager.offSizeChanged(this.handleSizeChanged.bind(this));
+                this.logger.debug(`[${this._name}] Removed size changed listener`);
+            }
+
+            // 5. 从调试面板移除
             this.removeFromDebugPanel();
 
-            // 5. 执行子类特定的销毁逻辑
+            // 6. 执行子类特定的销毁逻辑
             this.onDispose();
 
-            // 6. 清理根对象
+            // 7. 清理根对象
             if (this._root) {
                 this.disposeObject3D(this._root);
                 this._root = null;
             }
 
-            // 7. 重置状态
+            // 8. 重置状态
             this._isInitialized = false;
 
             this.logger.info(`[${this._name}] Disposed`);
@@ -296,6 +309,30 @@ export abstract class Object3DComponent implements IObject3DComponent {
                 this.onDateChanged(data);
             } catch (error) {
                 this.logger.error(`[${this._name}] Error in onDateChanged:`, error);
+            }
+        }
+    }
+
+    // ==================== 尺寸变化处理 ====================
+
+    /**
+     * 尺寸变化回调（可选）
+     * 子类可以重写此方法来响应窗口/容器尺寸变化
+     *
+     * @param data 尺寸变化数据
+     */
+    onSizeChanged?(data: SizeChangedData): void;
+
+    /**
+     * 处理尺寸变化事件
+     * 调用子类的 onSizeChanged 方法
+     */
+    private handleSizeChanged(data: SizeChangedData): void {
+        if (this.onSizeChanged && this._isActive) {
+            try {
+                this.onSizeChanged(data);
+            } catch (error) {
+                this.logger.error(`[${this._name}] Error in onSizeChanged:`, error);
             }
         }
     }
