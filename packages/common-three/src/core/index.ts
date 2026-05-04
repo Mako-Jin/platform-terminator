@@ -3,6 +3,8 @@ import {LoggerFactory} from "common-tools";
 import * as Three from 'three';
 import type GUI from "lil-gui";
 import {debugPanel} from "../debugger";
+import { timeManager } from '../datetimes';
+import type {TimeChangedData, DateChangedData} from "../datetimes";
 
 /**
  * Object3D 组件抽象基类
@@ -73,8 +75,25 @@ export abstract class Object3DComponent implements IObject3DComponent {
             // 3. 执行子类特定的初始化逻辑
             await this.onInitialize(config);
 
-            // 4. 标记为已初始化
+            // 4. 注册时间变化监听器（如果子类实现了 onTimeChanged）
+            if (this.onTimeChanged) {
+                timeManager.onTimeChanged(this.handleTimeChanged.bind(this));
+                this.logger.debug(`[${this._name}] Registered time changed listener`);
+            }
+
+            // 5. 注册日期变化监听器（如果子类实现了 onDateChanged）
+            if (this.onDateChanged) {
+                timeManager.onDateChanged(this.handleDateChanged.bind(this));
+                this.logger.debug(`[${this._name}] Registered date changed listener`);
+            }
+
+            // 6. 标记为已初始化
             this._isInitialized = true;
+
+            // 7. 如果启用调试模式，自动添加到调试面板
+            if (this.isDebugMode) {
+                this.addToDebugPanel();
+            }
 
             this.logger.info(`[${this._name}] Initialized successfully`);
         } catch (error) {
@@ -181,16 +200,31 @@ export abstract class Object3DComponent implements IObject3DComponent {
                 this.deactivate();
             }
 
-            // 2. 执行子类特定的销毁逻辑
+            // 2. 移除时间变化监听器
+            if (this.onTimeChanged) {
+                timeManager.offTimeChanged(this.handleTimeChanged.bind(this));
+                this.logger.debug(`[${this._name}] Removed time changed listener`);
+            }
+
+            // 3. 移除日期变化监听器
+            if (this.onDateChanged) {
+                timeManager.offDateChanged(this.handleDateChanged.bind(this));
+                this.logger.debug(`[${this._name}] Removed date changed listener`);
+            }
+
+            // 4. 从调试面板移除
+            this.removeFromDebugPanel();
+
+            // 5. 执行子类特定的销毁逻辑
             this.onDispose();
 
-            // 3. 清理根对象
+            // 6. 清理根对象
             if (this._root) {
                 this.disposeObject3D(this._root);
                 this._root = null;
             }
 
-            // 4. 重置状态
+            // 7. 重置状态
             this._isInitialized = false;
 
             this.logger.info(`[${this._name}] Disposed`);
@@ -216,6 +250,54 @@ export abstract class Object3DComponent implements IObject3DComponent {
         }
         this._isVisible = false;
         this.onHide();
+    }
+
+    // ==================== 时间变化处理 ====================
+
+    /**
+     * 时间变化回调（可选）
+     * 子类可以重写此方法来响应时间变化
+     * 
+     * @param data 时间变化数据
+     */
+    onTimeChanged?(data: TimeChangedData): void;
+
+    /**
+     * 处理时间变化事件
+     * 调用子类的 onTimeChanged 方法
+     */
+    private handleTimeChanged(data: TimeChangedData): void {
+        if (this.onTimeChanged && this._isActive) {
+            try {
+                this.onTimeChanged(data);
+            } catch (error) {
+                this.logger.error(`[${this._name}] Error in onTimeChanged:`, error);
+            }
+        }
+    }
+
+    // ==================== 日期变化处理 ====================
+
+    /**
+     * 日期变化回调（可选）
+     * 子类可以重写此方法来响应日期/节日变化
+     * 
+     * @param data 日期变化数据
+     */
+    onDateChanged?(data: DateChangedData): void;
+
+    /**
+     * 处理日期变化事件
+     * 调用子类的 onDateChanged 方法
+     */
+    private handleDateChanged(data: DateChangedData): void {
+        if (this.onDateChanged && this._isActive) {
+            try {
+                this.onDateChanged(data);
+            } catch (error) {
+                this.logger.error(`[${this._name}] Error in onDateChanged:`, error);
+            }
+        }
     }
 
     // ==================== 调试面板集成 ====================

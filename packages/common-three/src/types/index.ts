@@ -4,6 +4,8 @@
  */
 
 import * as Three from 'three';
+import type {TimeChangedData} from "../datetimes/types.ts";
+import type {DateChangedData} from "../date";
 
 /**
  * 组件初始化配置
@@ -115,6 +117,22 @@ export interface IObject3DComponent {
     hide(): void;
 
     /**
+     * 时间变化回调
+     * 当时间每分钟更新时调用，子类可实现此方法来响应时间变化
+     *
+     * @param data 时间变化数据
+     */
+    onTimeChanged?(data: TimeChangedData): void;
+
+    /**
+     * 日期变化回调
+     * 当日期变化时调用（每天午夜），子类可实现此方法来响应日期/节日变化
+     *
+     * @param data 日期变化数据
+     */
+    onDateChanged?(data: DateChangedData): void;
+
+    /**
      * 获取资源依赖信息
      */
     getResourceDependencies?(): ResourceDependencies;
@@ -126,4 +144,12 @@ export interface IObject3DComponent {
      * @param height 高度
      */
     onResize?(width: number, height: number): void;
+
+    /**
+     * 时间变化回调
+     * 当时间每分钟更新时调用，子类可实现此方法来响应时间变化
+     *
+     * @param data 时间变化数据
+     */
+    onTimeChanged?(data: TimeChangedData): void;
 }
