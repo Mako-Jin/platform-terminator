@@ -1,6 +1,5 @@
 import Ground from "/@/components/ground";
 import type {RendererWrapper, SceneWrapper} from "common-three";
-import type {ResourceLoader} from "/@/resources";
 import Lighting from "/@/components/lighting";
 import Skydome from "/@/components/skydome";
 import Bush from "/@/components/bush";
@@ -9,12 +8,20 @@ import FallingLeaves from "/@/components/leaves/falling";
 import Rain from "/@/components/rain";
 import Snow from "/@/components/snow";
 import Fog from "/@/components/fog";
+import Tent from "/@/components/tent";
+import Bridge from "/@/components/bridge";
+import WindLines from "/@components/wind";
+import Rocks from "/@components/rocks";
+import Camp from "/@components/camp";
+import Fire from "/@components/fire";
+import FireFlies from "/@components/fireflies";
+import {ParticleSystem} from "/@/systems/particle.ts";
+import Lightning from "/@/systems/lightning.ts";
 
 
 export default class World {
     private scene: SceneWrapper;
     private renderer: RendererWrapper;
-    private resources: ResourceLoader;
     private isDebugMode: boolean;
     
     private ground: Ground;
@@ -26,16 +33,23 @@ export default class World {
     private rain: Rain;
     private snow: Snow;
     private fog: Fog;
+    private tent: Tent;
+    private bridge: Bridge;
+    private windLines: WindLines;
+    private rocks: Rocks;
+    private camp: Camp;
+    private fire: Fire;
+    private fireFlies: FireFlies;
+    private particleSystem: ParticleSystem;
+    private lightning: Lightning;
 
     constructor(
         scene: SceneWrapper,
         renderer: RendererWrapper,
-        resources: ResourceLoader,
         isDebugMode: boolean = false
     ) {
         this.scene = scene;
         this.renderer = renderer;
-        this.resources = resources;
         this.isDebugMode = isDebugMode;
 
         // ✅ 创建组件（构造函数中只创建实例）
@@ -59,8 +73,26 @@ export default class World {
 
         this.fog = new Fog(this.scene, {isDebugMode: this.isDebugMode});
 
+        this.tent = new Tent(this.scene, {isDebugMode: this.isDebugMode});
+
+        this.bridge = new Bridge(this.scene, {isDebugMode: this.isDebugMode});
+
+        this.windLines = new WindLines(this.scene, {isDebugMode: this.isDebugMode});
+
+        this.rocks = new Rocks(this.scene, {isDebugMode: this.isDebugMode});
+
+        this.camp = new Camp(this.scene, {isDebugMode: this.isDebugMode});
+
+        this.fire = new Fire(this.scene, {isDebugMode: this.isDebugMode});
+
+        this.fireFlies = new FireFlies(this.scene, {isDebugMode: this.isDebugMode});
+
+        this.particleSystem = new ParticleSystem();
+
+        this.lightning = new Lightning(this.scene, {isDebugMode: this.isDebugMode});
+
         // ✅ 批量设置阴影
-        renderer.setShadowsForComponents(
+        this.renderer.setShadowsForComponents(
             [this.ground, this.bush, this.treeTrunks],
             true,   // castShadow
             true    // receiveShadow
@@ -81,6 +113,14 @@ export default class World {
         await this.scene.addComponent(this.rain);
         await this.scene.addComponent(this.snow);
         await this.scene.addComponent(this.fog);
+        await this.scene.addComponent(this.tent);
+        await this.scene.addComponent(this.bridge);
+        await this.scene.addComponent(this.windLines);
+        await this.scene.addComponent(this.rocks);
+        await this.scene.addComponent(this.camp);
+        await this.scene.addComponent(this.fire);
+        await this.scene.addComponent(this.fireFlies);
+        await this.scene.addComponent(this.lightning);
     }
 
     /**

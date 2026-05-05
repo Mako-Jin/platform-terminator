@@ -1,12 +1,10 @@
-
-
-import { LoggerFactory } from 'common-tools';
-import { BaseCamera } from './basic';
-import { PerspectiveCameraWrapper } from './perspective';
-import { OrthographicCameraWrapper } from './orthographic';
-import { FirstPersonCamera } from './firstperson';
-import type { CameraConfig } from './types';
-import { CameraType } from './types';
+import {LoggerFactory} from 'common-tools';
+import {BaseCamera} from './basic';
+import {PerspectiveCameraWrapper} from './perspective';
+import {OrthographicCameraWrapper} from './orthographic';
+import {FirstPersonCamera} from './firstperson';
+import type {CameraConfig} from './types';
+import {CameraType} from './types';
 import * as Three from 'three';
 
 

@@ -1,7 +1,5 @@
-
-
 import * as Three from 'three';
-import { LoggerFactory } from 'common-tools';
+import {LoggerFactory} from 'common-tools';
 
 
 /**
