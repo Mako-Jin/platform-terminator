@@ -116,6 +116,12 @@ export default class AmbientSoundManager {
      * 更新环境音效
      */
     updateAmbientSounds(): void {
+        // 如果已暂停，不执行更新
+        if (this.isAmbientSoundsPaused) {
+            this.logger.debug("Ambient sounds paused, skipping update");
+            return;
+        }
+
         const season = this.seasonManager.season;
         const hour = datetimeManager.getHour();
         const timeOfDay = hour >= 6 && hour < 18 ? 'day' : 'night';
@@ -231,6 +237,9 @@ export default class AmbientSoundManager {
      * 播放随机鸟叫
      */
     private playRandomBird(): void {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
         const birdSoundId = this.audioManager.getRandomBirdSound();
         this.audioManager.play(birdSoundId, this.config.baseVolume, false);
     }
@@ -239,6 +248,9 @@ export default class AmbientSoundManager {
      * 播放猫头鹰叫声
      */
     private playOwlHowling(): void {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
         this.audioManager.play('owlHowlingSound', this.config.baseVolume, false);
     }
 
@@ -246,6 +258,9 @@ export default class AmbientSoundManager {
      * 播放猫头鹰咕咕声
      */
     private playOwlHooting(): void {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
         this.audioManager.play('owlHootingSound', this.config.baseVolume, false);
     }
 
@@ -253,6 +268,9 @@ export default class AmbientSoundManager {
      * 播放雷声
      */
     private playThunder(): void {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
         this.audioManager.play('thunderDistantSound', this.config.baseVolume * 0.9, false);
     }
 
@@ -260,6 +278,9 @@ export default class AmbientSoundManager {
      * 播放狼嚎
      */
     private playWolf(): void {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
         this.audioManager.play('wolfHowlingSound', this.config.baseVolume * 0.7, false);
     }
 
@@ -276,6 +297,11 @@ export default class AmbientSoundManager {
      * 播放连续音效
      */
     private playContinuousSound(soundId: string): void {
+        // 如果已暂停，不播放
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
+
         if (!this.activeContinuousSounds.has(soundId)) {
             this.audioManager.play(soundId, this.config.baseVolume * 0.7, true);
             this.activeContinuousSounds.add(soundId);
@@ -286,6 +312,11 @@ export default class AmbientSoundManager {
      * 播放基于距离的连续音效
      */
     private playContinuousSoundWithDistance(soundId: string, soundPosition: Three.Vector3): void {
+        // 如果已暂停，不播放
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
+
         if (!this.activeContinuousSounds.has(soundId)) {
             const volume = this.calculateDistanceBasedVolume(soundPosition);
             this.audioManager.play(soundId, volume, true);
@@ -326,12 +357,20 @@ export default class AmbientSoundManager {
      * 调度随机声音
      */
     private scheduleRandomSound(soundKey: string, playFunction: () => void, gapType: string): void {
+        // 如果已暂停，不调度
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
+
         this.clearTimer(soundKey);
 
         const delay = this.getRandomDelay(gapType);
         const timerId = window.setTimeout(() => {
-            playFunction();
-            this.rescheduleRandomSound(soundKey, playFunction, gapType);
+            // 执行前检查暂停状态
+            if (!this.isAmbientSoundsPaused) {
+                playFunction();
+                this.rescheduleRandomSound(soundKey, playFunction, gapType);
+            }
         }, delay);
 
         this.scheduledTimers.set(soundKey, timerId);
@@ -341,15 +380,21 @@ export default class AmbientSoundManager {
      * 重新调度随机声音
      */
     private rescheduleRandomSound(soundKey: string, playFunction: () => void, gapType: string): void {
-        if (this.shouldSoundBePlaying(soundKey)) {
-            const delay = this.getRandomDelay(gapType);
-            const timerId = window.setTimeout(() => {
+        // 如果已暂停或不应播放，则不再调度
+        if (this.isAmbientSoundsPaused || !this.shouldSoundBePlaying(soundKey)) {
+            return;
+        }
+
+        const delay = this.getRandomDelay(gapType);
+        const timerId = window.setTimeout(() => {
+            // 执行前再次检查暂停状态
+            if (!this.isAmbientSoundsPaused) {
                 playFunction();
                 this.rescheduleRandomSound(soundKey, playFunction, gapType);
-            }, delay);
+            }
+        }, delay);
 
-            this.scheduledTimers.set(soundKey, timerId);
-        }
+        this.scheduledTimers.set(soundKey, timerId);
     }
 
     /**
@@ -406,11 +451,15 @@ export default class AmbientSoundManager {
      * 停止所有环境音效
      */
     stopAllAmbientSounds(): void {
+        this.logger.info("Stopping all ambient sounds");
+        
+        // 清除所有定时器
         this.scheduledTimers.forEach((timerId) => {
             clearTimeout(timerId);
         });
         this.scheduledTimers.clear();
 
+        // 停止所有连续音效
         this.activeContinuousSounds.forEach((soundId) => {
             this.audioManager.stop(soundId);
         });
@@ -435,14 +484,19 @@ export default class AmbientSoundManager {
      * 暂停环境音效
      */
     pauseAmbientSounds(): void {
+        this.logger.info("Pausing ambient sounds");
         this.isAmbientSoundsPaused = true;
         this.stopAllAmbientSounds();
+        
+        // 清除所有待处理的定时器引用
+        this.scheduledTimers.clear();
     }
 
     /**
      * 恢复环境音效
      */
     resumeAmbientSounds(): void {
+        this.logger.info("Resuming ambient sounds");
         this.isAmbientSoundsPaused = false;
         this.updateAmbientSounds();
     }

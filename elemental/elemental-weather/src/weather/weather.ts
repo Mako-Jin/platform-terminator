@@ -215,7 +215,7 @@ class Weather {
         if (this.isDebugMode) {
             const frameCount = clockManager.getFrameCount();
             if (frameCount % 60 === 0) {
-                this.logger.info(`[Weather] Rendering frame #${frameCount}, FPS: ${clockManager.getFPS()}`);
+                this.logger.debug(`[Weather] Rendering frame #${frameCount}, FPS: ${clockManager.getFPS()}`);
             }
         }
     }

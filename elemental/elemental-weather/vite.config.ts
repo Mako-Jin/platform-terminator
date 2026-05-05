@@ -44,6 +44,9 @@ export default defineConfig({
             if (id.includes('gsap')) {
               return 'gsap';
             }
+            if (id.includes('lil-gui')) {
+              return 'lil-gui';
+            }
           }
         },
         entryFileNames: 'assets/[name].[hash].js',
@@ -53,7 +56,8 @@ export default defineConfig({
     },
   },
   optimizeDeps: {
-    include: ['three', 'gsap', 'lil-gui']
+    include: ['react', 'react-dom'],
+    exclude: ['three', 'gsap', 'lil-gui']
   },
   define: {
     'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),

@@ -34,11 +34,17 @@ export default class AudioManager {
     private ambientSounds: Set<string> = new Set();
     private uiSounds: Set<string> = new Set();
 
+    // 用户交互状态
+    private userInteracted: boolean = false;
+    private pendingPlays: Array<{soundId: string, volume?: number, loop?: boolean}> = [];
+
     constructor() {
         if (AudioManager.instance) {
             return AudioManager.instance;
         }
         AudioManager.instance = this;
+
+        this.setupUserInteractionListener();
 
         this.logger.info("AudioManager initialized");
     }
@@ -48,6 +54,29 @@ export default class AudioManager {
             AudioManager.instance = new AudioManager();
         }
         return AudioManager.instance;
+    }
+
+    /**
+     * 设置用户交互监听器
+     */
+    private setupUserInteractionListener(): void {
+        const handleInteraction = () => {
+            if (!this.userInteracted) {
+                this.userInteracted = true;
+                this.logger.info("User interacted, processing pending audio plays");
+                
+                // 播放所有待处理的音频
+                this.pendingPlays.forEach(({soundId, volume, loop}) => {
+                    this.play(soundId, volume, loop);
+                });
+                this.pendingPlays = [];
+            }
+        };
+
+        // 监听多种用户交互事件
+        document.addEventListener('click', handleInteraction, { once: true });
+        document.addEventListener('keydown', handleInteraction, { once: true });
+        document.addEventListener('touchstart', handleInteraction, { once: true });
     }
 
     /**
@@ -114,6 +143,17 @@ export default class AudioManager {
             return;
         }
 
+        // 如果用户还未交互，将播放请求加入待处理队列
+        if (!this.userInteracted) {
+            this.logger.debug(`User not interacted yet, queuing: ${soundId}`);
+            // 检查是否已经在队列中，避免重复
+            const alreadyQueued = this.pendingPlays.some(p => p.soundId === soundId);
+            if (!alreadyQueued) {
+                this.pendingPlays.push({soundId, volume, loop});
+            }
+            return;
+        }
+
         // 计算最终音量
         const baseVolume = volume ?? this.getCategoryVolume(soundId);
         const finalVolume = baseVolume * this.masterVolume;
@@ -162,6 +202,17 @@ export default class AudioManager {
     resume(soundId: string): void {
         const sound = this.sounds.get(soundId);
         if (sound && sound.paused) {
+            // 如果用户还未交互，将恢复请求加入待处理队列
+            if (!this.userInteracted) {
+                this.logger.debug(`User not interacted yet, queuing resume: ${soundId}`);
+                // 检查是否已经在队列中，避免重复
+                const alreadyQueued = this.pendingPlays.some(p => p.soundId === soundId);
+                if (!alreadyQueued) {
+                    this.pendingPlays.push({soundId});
+                }
+                return;
+            }
+
             sound.play().catch(error => {
                 this.logger.error(`Failed to resume ${soundId}:`, error);
             });
@@ -337,5 +388,4 @@ export default class AudioManager {
     public getSound(soundId: string): HTMLAudioElement | undefined {
         return this.sounds.get(soundId);
     }
-    
 }

@@ -27,7 +27,7 @@ import lightningArcFragmentShader from '/@/shaders/Materials/lightning/fragment.
 import AmbientSoundManager from "/@/manager/AmbientSoundManager";
 // ✅ 导入闪电按钮 UI
 import LightningButtonUI from "/@/ui/lightning";
-
+import {cameraManager} from "common-three";
 
 interface ColorStop {
     time: number;
@@ -615,8 +615,8 @@ export default class Lightning extends Object3DComponent {
      * ✅ 触发相机震动
      */
     private triggerCameraShake(strikePosition: Three.Vector3 | null = null): void {
-        // 获取当前激活的相机（从 scene 中查找）
-        const camera = this.findCamera();
+        // 从 CameraManager 获取当前激活的相机
+        const camera = cameraManager.getThreeCamera();
         
         if (!camera) {
             this.logger.warn('[Lightning] No camera found for shake effect');
@@ -642,7 +642,8 @@ export default class Lightning extends Object3DComponent {
      * ✅ 更新相机震动
      */
     private updateCameraShake(): void {
-        const camera = this.findCamera();
+        const cameraManager = CameraManager.getInstance();
+        const camera = cameraManager.getThreeCamera();
 
         if (!camera || !this.originalCameraPosition) return;
 
@@ -689,19 +690,12 @@ export default class Lightning extends Object3DComponent {
     }
 
     /**
-     * ✅ 查找场景中的相机
+     * ✅ 查找场景中的相机（已废弃，使用 CameraManager）
+     * @deprecated 使用 CameraManager.getInstance().getThreeCamera() 代替
      */
     private findCamera(): Three.Camera | undefined {
-        const scene = this.scene.getScene();
-        let camera: Three.Camera | undefined = undefined;
-        
-        scene.traverse((object) => {
-            if (!camera && (object instanceof Three.PerspectiveCamera || object instanceof Three.OrthographicCamera)) {
-                camera = object;
-            }
-        });
-        
-        return camera;
+        const cameraManager = CameraManager.getInstance();
+        return cameraManager.getThreeCamera() || undefined;
     }
 
     /**
