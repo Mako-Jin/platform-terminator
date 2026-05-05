@@ -4,6 +4,7 @@ import {ASSETS, ResourceLoader} from "/@/resources";
 import {start as startListener} from "./listener"
 import SeasonManager from "/@/manager/SeasonManager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
+import './index.scss';
 
 let resourceLoader: ResourceLoader | null = null;
 

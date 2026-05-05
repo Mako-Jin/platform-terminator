@@ -23,6 +23,10 @@ import particleExplosionVertexShader from '/@/shaders/Materials/fire/vertex.glsl
 import particleExplosionFragmentShader from '/@/shaders/Materials/fire/fragment.glsl';
 import lightningArcVertexShader from '/@/shaders/Materials/lightning/vertex.glsl';
 import lightningArcFragmentShader from '/@/shaders/Materials/lightning/fragment.glsl';
+// ✅ 导入环境音效管理器
+import AmbientSoundManager from "/@/manager/AmbientSoundManager";
+// ✅ 导入闪电按钮 UI
+import LightningButtonUI from "/@/ui/lightning";
 
 
 interface ColorStop {
@@ -63,6 +67,12 @@ export default class Lightning extends Object3DComponent {
     
     // ✅ 内部管理粒子系统
     private particleSystem: ParticleSystem | null = null;
+    
+    // ✅ 环境音效管理器
+    private ambientSoundManager: AmbientSoundManager | null = null;
+    
+    // ✅ 闪电按钮 UI
+    private lightningButtonUI: LightningButtonUI | null = null;
 
     private explosionMaterial: Three.ShaderMaterial | null = null;
     private activeLightningArcs: Three.Mesh[] = [];
@@ -171,6 +181,13 @@ export default class Lightning extends Object3DComponent {
 
         // ✅ 创建粒子系统
         this.particleSystem = new ParticleSystem();
+        
+        // ✅ 获取环境音效管理器实例
+        try {
+            this.ambientSoundManager = AmbientSoundManager.getInstance();
+        } catch (error) {
+            this.logger.warn('[Lightning] AmbientSoundManager not available');
+        }
 
         // 创建材质
         await this.createExplosionMaterial();
@@ -189,6 +206,11 @@ export default class Lightning extends Object3DComponent {
 
         // 监听窗口 resize
         window.addEventListener('resize', this.handleResize.bind(this));
+        
+        // ✅ 创建闪电按钮 UI
+        this.lightningButtonUI = new LightningButtonUI(() => {
+            this.manualStrike();
+        });
     }
 
     /**
@@ -241,6 +263,12 @@ export default class Lightning extends Object3DComponent {
         // 移除 resize 监听
         window.removeEventListener('resize', this.handleResize.bind(this));
         
+        // ✅ 销毁闪电按钮 UI
+        if (this.lightningButtonUI) {
+            this.lightningButtonUI.destroy();
+            this.lightningButtonUI = null;
+        }
+        
         // 停止相机震动
         this.stopCameraShake();
     }
@@ -270,6 +298,12 @@ export default class Lightning extends Object3DComponent {
             (arc.material as Three.Material).dispose();
         }
         this.activeLightningArcs = [];
+        
+        // ✅ 确保 UI 已销毁
+        if (this.lightningButtonUI) {
+            this.lightningButtonUI.destroy();
+            this.lightningButtonUI = null;
+        }
         
         // 停止相机震动
         this.stopCameraShake();
@@ -686,10 +720,10 @@ export default class Lightning extends Object3DComponent {
         this.createExplosionParticles(position);
         this.triggerCameraShake(position);
 
-        // TODO: 播放雷声音效
-        // if (this.game.ambientSoundManager) {
-        //     this.game.ambientSoundManager.playThunderStrike();
-        // }
+        // ✅ 播放雷声音效
+        if (this.ambientSoundManager) {
+            this.ambientSoundManager.playThunderStrike();
+        }
 
         // 延迟清理闪电弧
         setTimeout(() => {

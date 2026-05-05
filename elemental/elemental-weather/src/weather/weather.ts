@@ -1,4 +1,3 @@
-import {ResourceLoader} from "/@/resources";
 import {LoggerFactory} from "common-tools";
 import {
     cameraManager,
@@ -11,6 +10,13 @@ import {
 } from "common-three";
 import World from "./world";
 import * as Three from "three";
+// ✅ 导入音频管理器
+import AudioManager from "/@/manager/AudioManager";
+import MusicManager from "/@/manager/MusicManager";
+import AmbientSoundManager from "/@/manager/AmbientSoundManager";
+import SeasonManager from "/@/manager/SeasonManager";
+// ✅ 导入音乐控制 UI
+import MusicControlUI from "/@/ui/music";
 
 class Weather {
 
@@ -18,12 +24,19 @@ class Weather {
 
     private logger = LoggerFactory.create("weather");
     private isDebugMode: boolean = false;
-    private resources!: ResourceLoader;
     private container!: HTMLElement;
     private scene!: SceneWrapper;
     private renderer!: RendererWrapper;
     private world!: World;
     private unsubscribeClock: (() => void) | null = null;
+    
+    // ✅ 音频管理器实例
+    private audioManager!: AudioManager;
+    private musicManager!: MusicManager;
+    private ambientSoundManager!: AmbientSoundManager;
+    
+    // ✅ UI 控件实例（只保留音乐控制）
+    private musicControlUI!: MusicControlUI;
 
     constructor() {
         if (Weather.instance) {
@@ -41,12 +54,10 @@ class Weather {
 
     public async init(
         container: HTMLElement,
-        resources: ResourceLoader,
         isDebugMode: boolean = false
     ) {
         this.isDebugMode = isDebugMode;
         this.container = container;
-        this.resources = resources;
 
         // ✅ 使用 SceneWrapper
         this.scene = new SceneWrapper({
@@ -80,16 +91,21 @@ class Weather {
         // ✅ 启动时间管理器
         datetimeManager.start(60000); // 每分钟更新
 
+        // ✅ 初始化音频系统
+        await this.initializeAudioSystem();
+
         // 创建 World，传入包装类
         this.world = new World(
             this.scene,
             this.renderer,
-            this.resources,
             isDebugMode
         );
 
         // ✅ 异步初始化 World（会自动初始化所有组件）
         await this.world.initialize();
+        
+        // ✅ 初始化 UI 控件
+        this.initializeUIControls();
 
         // 监听尺寸变化
         sizeManager.onSizeChanged((data) => {
@@ -105,6 +121,52 @@ class Weather {
         clockManager.start();
 
         this.logger.info('Weather app initialized with common-three');
+    }
+
+    /**
+     * ✅ 初始化音频系统
+     */
+    private async initializeAudioSystem(): Promise<void> {
+        try {
+            this.logger.info('Initializing audio system...');
+            
+            // 1. 创建音频管理器
+            this.audioManager = AudioManager.getInstance();
+            
+            // 2. 加载所有音频资源
+            await this.audioManager.loadAllSounds();
+            
+            // 3. 创建音乐管理器
+            this.musicManager = new MusicManager(this.audioManager);
+            
+            // 4. 创建环境音效管理器
+            const seasonManager = SeasonManager.getInstance();
+            this.ambientSoundManager = new AmbientSoundManager(
+                this.audioManager,
+                seasonManager
+            );
+            
+            // 5. 设置相机引用（用于距离计算）
+            const camera = cameraManager.getActiveCamera();
+            if (camera) {
+                this.ambientSoundManager.setCamera(camera);
+            }
+            
+            // 6. 开始播放随机音乐
+            this.musicManager.startRandomMusic();
+            
+            this.logger.info('Audio system initialized successfully');
+        } catch (error) {
+            this.logger.error('Failed to initialize audio system', error);
+        }
+    }
+    
+    /**
+     * ✅ 初始化 UI 控件
+     */
+    private initializeUIControls(): void {
+        // ✅ 只创建音乐控制按钮
+        this.musicControlUI = new MusicControlUI(this.musicManager);
     }
 
     resize(): void {
@@ -125,6 +187,11 @@ class Weather {
         if (activeCamera) {
             // 注意：需要在相机包装类中暴露 controls
             // 这里暂时跳过，后续优化
+        }
+
+        // ✅ 更新环境音效（每帧更新距离音量）
+        if (this.ambientSoundManager) {
+            this.ambientSoundManager.update();
         }
 
         // ✅ World 的 update 已不需要调用，SceneWrapper 会自动更新所有组件
@@ -161,6 +228,19 @@ class Weather {
         
         // ✅ 停止时钟
         clockManager.stop();
+        
+        // ✅ 清理 UI 控件
+        if (this.musicControlUI) {
+            this.musicControlUI.destroy();
+        }
+        
+        // ✅ 清理音频系统
+        if (this.ambientSoundManager) {
+            this.ambientSoundManager.dispose();
+        }
+        if (this.audioManager) {
+            this.audioManager.dispose();
+        }
         
         // ✅ World 的 dispose 已不需要调用，SceneWrapper 会自动销毁所有组件
         // this.world.dispose();

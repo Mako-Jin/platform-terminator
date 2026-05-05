@@ -40,7 +40,7 @@ export class SeasonConfigLoader {
 
         try {
             const path = `/@/settings/seasons/${season}.json`;
-            const module = await import(path);
+            const module = await import(/* @vite-ignore */ path);
             const rawData = module.default;
 
             const processedConfig = this.processConfig(rawData);
@@ -134,7 +134,7 @@ export default class SeasonManager {
 
     private initPromise: Promise<void> | null = null;
 
-    constructor(initialSeason = 'spring') {
+    constructor(initialSeason = 'rainy') {
         if (SeasonManager.instance) {
             return SeasonManager.instance;
         }

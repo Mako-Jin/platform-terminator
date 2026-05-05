@@ -1,0 +1,531 @@
+import * as THREE from 'three';
+import {LoggerFactory} from "common-tools";
+import AudioManager from "./AudioManager";
+import SeasonManager from "/@/manager/SeasonManager";
+import {BaseCamera, datetimeManager} from "common-three";
+
+
+export interface AmbientSoundConfig {
+    shortGapMin: number;
+    shortGapMax: number;
+    longGapMin: number;
+    longGapMax: number;
+    thunderLongGapMin: number;
+    thunderLongGapMax: number;
+    baseVolume: number;
+    firePosition: THREE.Vector3;
+    lakePosition: THREE.Vector3;
+    maxDistance: number;
+}
+
+
+export default class AmbientSoundManager {
+
+    private logger = LoggerFactory.create("AmbientSoundManager");
+
+    private static instance: AmbientSoundManager | null = null;
+
+    private audioManager!: AudioManager;
+    private seasonManager!: SeasonManager;
+
+    // 配置
+    private config: AmbientSoundConfig = {
+        shortGapMin: 8000,
+        shortGapMax: 10000,
+        longGapMin: 8000,
+        longGapMax: 10000,
+        thunderLongGapMin: 8000,
+        thunderLongGapMax: 10000,
+        baseVolume: 0.8,
+        firePosition: new THREE.Vector3(-5.4, 1.0, -6.9),
+        lakePosition: new THREE.Vector3(0, 0, 0),
+        maxDistance: 35,
+    };
+
+    // 状态管理
+    private activeContinuousSounds: Set<string> = new Set();
+    private scheduledTimers: Map<string, number> = new Map();
+
+    // 可见性状态
+    private wasAmbientPlayingBeforeHide: boolean = false;
+    private isAmbientSoundsPaused: boolean = false;
+
+    // 相机引用（用于距离计算）
+    private camera: BaseCamera | null = null;
+
+    constructor(audioManager: AudioManager, seasonManager: SeasonManager) {
+        if (AmbientSoundManager.instance) {
+            return AmbientSoundManager.instance;
+        }
+        AmbientSoundManager.instance = this;
+
+        this.audioManager = audioManager;
+        this.seasonManager = seasonManager;
+
+        this.init();
+
+        this.logger.info("AmbientSoundManager initialized");
+    }
+
+    static getInstance(): AmbientSoundManager {
+        if (!AmbientSoundManager.instance) {
+            throw new Error("AmbientSoundManager not initialized");
+        }
+        return AmbientSoundManager.instance;
+    }
+
+    /**
+     * 初始化
+     */
+    private init(): void {
+        this.bindEvents();
+        this.setupVisibilityHandlers();
+        this.updateAmbientSounds();
+    }
+
+    /**
+     * 绑定事件
+     */
+    private bindEvents(): void {
+        // 监听季节变化
+        this.seasonManager.onSeasonChange(() => {
+            this.updateAmbientSounds();
+        });
+
+        // 监听时间变化
+        // 注意：需要在 datetimeManager 中实现事件机制
+        // 暂时使用轮询或手动调用
+    }
+
+    /**
+     * 设置可见性处理器
+     */
+    private setupVisibilityHandlers(): void {
+        this.handleVisibilityChange = this.handleVisibilityChange.bind(this);
+        this.handleWindowBlur = this.handleWindowBlur.bind(this);
+        this.handleWindowFocus = this.handleWindowFocus.bind(this);
+        this.handleBeforeUnload = this.handleBeforeUnload.bind(this);
+
+        document.addEventListener('visibilitychange', this.handleVisibilityChange);
+        window.addEventListener('blur', this.handleWindowBlur);
+        window.addEventListener('focus', this.handleWindowFocus);
+        window.addEventListener('beforeunload', this.handleBeforeUnload);
+    }
+
+    /**
+     * 更新环境音效
+     */
+    updateAmbientSounds(): void {
+        const season = this.seasonManager.season;
+        const hour = datetimeManager.getHour();
+        const timeOfDay = hour >= 6 && hour < 18 ? 'day' : 'night';
+
+        this.logger.info(`Updating ambient sounds: season=${season}, time=${timeOfDay}`);
+
+        // 停止所有当前音效
+        this.stopAllAmbientSounds();
+
+        // 根据季节和时间播放相应音效
+        this.handleBirds(season, timeOfDay);
+        this.handleCrickets(season, timeOfDay);
+        this.handleOwl(season, timeOfDay);
+        this.handleRain(season);
+        this.handleThunder(season);
+        this.handleWolf(timeOfDay);
+        this.handleFire(season);
+        this.handleLakeWaves();
+    }
+
+    /**
+     * 处理鸟叫声
+     */
+    private handleBirds(season: string, timeOfDay: string): void {
+        const shouldPlay =
+            (season === 'autumn' || season === 'spring' || season === 'winter') &&
+            timeOfDay === 'day';
+
+        if (shouldPlay) {
+            this.scheduleRandomSound('birds', () => this.playRandomBird(), 'short');
+        }
+    }
+
+    /**
+     * 处理蟋蟀声
+     */
+    private handleCrickets(season: string, timeOfDay: string): void {
+        const shouldPlay =
+            (season === 'autumn' || season === 'spring' || season === 'winter') &&
+            timeOfDay === 'night';
+
+        if (shouldPlay) {
+            this.playContinuousSound('cricketsSound');
+        }
+    }
+
+    /**
+     * 处理猫头鹰声
+     */
+    private handleOwl(season: string, timeOfDay: string): void {
+        if (timeOfDay !== 'night') return;
+
+        if (season === 'autumn' || season === 'spring' || season === 'rainy') {
+            this.scheduleRandomSound('owlHowling', () => this.playOwlHowling(), 'long');
+        } else if (season === 'winter') {
+            this.scheduleRandomSound('owlHooting', () => this.playOwlHooting(), 'long');
+        }
+    }
+
+    /**
+     * 处理雨声
+     */
+    private handleRain(season: string): void {
+        const shouldPlay = season === 'rainy';
+
+        if (shouldPlay) {
+            this.playContinuousSound('rainSound');
+        }
+    }
+
+    /**
+     * 处理雷声
+     */
+    private handleThunder(season: string): void {
+        const shouldPlay = season === 'rainy';
+
+        if (shouldPlay) {
+            this.scheduleRandomSound('thunderDistant', () => this.playThunder(), 'thunder');
+        }
+    }
+
+    /**
+     * 处理狼嚎声
+     */
+    private handleWolf(timeOfDay: string): void {
+        const shouldPlay = timeOfDay === 'night';
+
+        if (shouldPlay) {
+            this.scheduleRandomSound('wolf', () => this.playWolf(), 'long');
+        }
+    }
+
+    /**
+     * 处理火焰声
+     */
+    private handleFire(season: string): void {
+        const shouldPlay = season !== 'rainy';
+
+        if (shouldPlay) {
+            this.playContinuousSoundWithDistance('fireBurningSound', this.config.firePosition);
+        }
+    }
+
+    /**
+     * 处理波浪声
+     */
+    private handleLakeWaves(): void {
+        // 始终播放
+        this.playContinuousSoundWithDistance('lakeWavesSound', this.config.lakePosition);
+    }
+
+    /**
+     * 播放随机鸟叫
+     */
+    private playRandomBird(): void {
+        const birdSoundId = this.audioManager.getRandomBirdSound();
+        this.audioManager.play(birdSoundId, this.config.baseVolume, false);
+    }
+
+    /**
+     * 播放猫头鹰叫声
+     */
+    private playOwlHowling(): void {
+        this.audioManager.play('owlHowlingSound', this.config.baseVolume, false);
+    }
+
+    /**
+     * 播放猫头鹰咕咕声
+     */
+    private playOwlHooting(): void {
+        this.audioManager.play('owlHootingSound', this.config.baseVolume, false);
+    }
+
+    /**
+     * 播放雷声
+     */
+    private playThunder(): void {
+        this.audioManager.play('thunderDistantSound', this.config.baseVolume * 0.9, false);
+    }
+
+    /**
+     * 播放狼嚎
+     */
+    private playWolf(): void {
+        this.audioManager.play('wolfHowlingSound', this.config.baseVolume * 0.7, false);
+    }
+
+    /**
+     * 播放雷击声（闪电时调用）
+     */
+    playThunderStrike(): void {
+        if (!document.hidden && !this.isAmbientSoundsPaused) {
+            this.audioManager.play('thunderStrikeSound', this.config.baseVolume * 0.9, false);
+        }
+    }
+
+    /**
+     * 播放连续音效
+     */
+    private playContinuousSound(soundId: string): void {
+        if (!this.activeContinuousSounds.has(soundId)) {
+            this.audioManager.play(soundId, this.config.baseVolume * 0.7, true);
+            this.activeContinuousSounds.add(soundId);
+        }
+    }
+
+    /**
+     * 播放基于距离的连续音效
+     */
+    private playContinuousSoundWithDistance(soundId: string, soundPosition: THREE.Vector3): void {
+        if (!this.activeContinuousSounds.has(soundId)) {
+            const volume = this.calculateDistanceBasedVolume(soundPosition);
+            this.audioManager.play(soundId, volume, true);
+            this.activeContinuousSounds.add(soundId);
+        } else {
+            this.updateSoundVolume(soundId, soundPosition);
+        }
+    }
+
+    /**
+     * 计算基于距离的音量
+     */
+    private calculateDistanceBasedVolume(soundPosition: THREE.Vector3): number {
+        if (!this.camera) {
+            return this.config.baseVolume * 0.7;
+        }
+
+        const distance = this.camera.getCamera().position.distanceTo(soundPosition);
+        const normalizedDistance = Math.min(distance / this.config.maxDistance, 1.0);
+        const volume = (1.0 - normalizedDistance) * this.config.baseVolume * 0.7;
+
+        return Math.max(volume, 0);
+    }
+
+    /**
+     * 更新音效音量
+     */
+    private updateSoundVolume(soundId: string, soundPosition: THREE.Vector3): void {
+        // 注意：HTMLAudioElement 不支持动态音量更新，需要重新播放
+        // 这里简化处理，实际项目中可能需要 Web Audio API
+        const sound = this.audioManager.getSound(soundId);
+        if (sound && !sound.paused) {
+            sound.volume = this.calculateDistanceBasedVolume(soundPosition);
+        }
+    }
+
+    /**
+     * 调度随机声音
+     */
+    private scheduleRandomSound(soundKey: string, playFunction: () => void, gapType: string): void {
+        this.clearTimer(soundKey);
+
+        const delay = this.getRandomDelay(gapType);
+        const timerId = window.setTimeout(() => {
+            playFunction();
+            this.rescheduleRandomSound(soundKey, playFunction, gapType);
+        }, delay);
+
+        this.scheduledTimers.set(soundKey, timerId);
+    }
+
+    /**
+     * 重新调度随机声音
+     */
+    private rescheduleRandomSound(soundKey: string, playFunction: () => void, gapType: string): void {
+        if (this.shouldSoundBePlaying(soundKey)) {
+            const delay = this.getRandomDelay(gapType);
+            const timerId = window.setTimeout(() => {
+                playFunction();
+                this.rescheduleRandomSound(soundKey, playFunction, gapType);
+            }, delay);
+
+            this.scheduledTimers.set(soundKey, timerId);
+        }
+    }
+
+    /**
+     * 检查声音是否应该继续播放
+     */
+    private shouldSoundBePlaying(soundKey: string): boolean {
+        const season = this.seasonManager.season;
+        const hour = datetimeManager.getHour();
+        const timeOfDay = hour >= 6 && hour < 18 ? 'day' : 'night';
+
+        switch (soundKey) {
+            case 'birds':
+                return (season === 'autumn' || season === 'spring' || season === 'winter') && timeOfDay === 'day';
+            case 'owlHowling':
+                return (season === 'autumn' || season === 'spring' || season === 'rainy') && timeOfDay === 'night';
+            case 'owlHooting':
+                return season === 'winter' && timeOfDay === 'night';
+            case 'thunderDistant':
+                return season === 'rainy';
+            case 'wolf':
+                return timeOfDay === 'night';
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * 获取随机延迟
+     */
+    private getRandomDelay(gapType: string): number {
+        switch (gapType) {
+            case 'short':
+                return Math.random() * (this.config.shortGapMax - this.config.shortGapMin) + this.config.shortGapMin;
+            case 'long':
+                return Math.random() * (this.config.longGapMax - this.config.longGapMin) + this.config.longGapMin;
+            case 'thunder':
+                return Math.random() * (this.config.thunderLongGapMax - this.config.thunderLongGapMin) + this.config.thunderLongGapMin;
+            default:
+                return this.config.shortGapMin;
+        }
+    }
+
+    /**
+     * 清除定时器
+     */
+    private clearTimer(soundKey: string): void {
+        if (this.scheduledTimers.has(soundKey)) {
+            clearTimeout(this.scheduledTimers.get(soundKey)!);
+            this.scheduledTimers.delete(soundKey);
+        }
+    }
+
+    /**
+     * 停止所有环境音效
+     */
+    stopAllAmbientSounds(): void {
+        this.scheduledTimers.forEach((timerId) => {
+            clearTimeout(timerId);
+        });
+        this.scheduledTimers.clear();
+
+        this.activeContinuousSounds.forEach((soundId) => {
+            this.audioManager.stop(soundId);
+        });
+        this.activeContinuousSounds.clear();
+    }
+
+    /**
+     * 设置主音量
+     */
+    setMasterVolume(volume: number): void {
+        this.config.baseVolume = Math.max(0, Math.min(1, volume));
+    }
+
+    /**
+     * 检查是否有活跃的环境音效
+     */
+    hasActiveAmbientSounds(): boolean {
+        return this.activeContinuousSounds.size > 0 || this.scheduledTimers.size > 0;
+    }
+
+    /**
+     * 暂停环境音效
+     */
+    pauseAmbientSounds(): void {
+        this.isAmbientSoundsPaused = true;
+        this.stopAllAmbientSounds();
+    }
+
+    /**
+     * 恢复环境音效
+     */
+    resumeAmbientSounds(): void {
+        this.isAmbientSoundsPaused = false;
+        this.updateAmbientSounds();
+    }
+
+    /**
+     * 设置相机引用
+     */
+    setCamera(camera: BaseCamera): void {
+        this.camera = camera;
+    }
+
+    /**
+     * 更新（每帧调用）
+     */
+    update(): void {
+        // 更新基于距离的音效音量
+        if (this.activeContinuousSounds.has('fireBurningSound')) {
+            this.updateSoundVolume('fireBurningSound', this.config.firePosition);
+        }
+        if (this.activeContinuousSounds.has('lakeWavesSound')) {
+            this.updateSoundVolume('lakeWavesSound', this.config.lakePosition);
+        }
+    }
+
+    /**
+     * 可见性变化处理
+     */
+    private handleVisibilityChange(): void {
+        if (document.hidden) {
+            if (this.hasActiveAmbientSounds()) {
+                this.wasAmbientPlayingBeforeHide = true;
+                this.pauseAmbientSounds();
+            }
+        } else {
+            if (this.wasAmbientPlayingBeforeHide) {
+                this.wasAmbientPlayingBeforeHide = false;
+                setTimeout(() => {
+                    this.resumeAmbientSounds();
+                }, 500);
+            }
+        }
+    }
+
+    /**
+     * 窗口失焦处理
+     */
+    private handleWindowBlur(): void {
+        if (this.hasActiveAmbientSounds()) {
+            this.wasAmbientPlayingBeforeHide = true;
+            this.pauseAmbientSounds();
+        }
+    }
+
+    /**
+     * 窗口聚焦处理
+     */
+    private handleWindowFocus(): void {
+        if (this.wasAmbientPlayingBeforeHide) {
+            this.wasAmbientPlayingBeforeHide = false;
+            setTimeout(() => {
+                this.resumeAmbientSounds();
+            }, 500);
+        }
+    }
+
+    /**
+     * 页面卸载处理
+     */
+    private handleBeforeUnload(): void {
+        this.stopAllAmbientSounds();
+    }
+
+    /**
+     * 清理事件监听器
+     */
+    dispose(): void {
+        this.stopAllAmbientSounds();
+
+        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
+        window.removeEventListener('blur', this.handleWindowBlur);
+        window.removeEventListener('focus', this.handleWindowFocus);
+        window.removeEventListener('beforeunload', this.handleBeforeUnload);
+
+        this.logger.info("AmbientSoundManager disposed");
+    }
+}
