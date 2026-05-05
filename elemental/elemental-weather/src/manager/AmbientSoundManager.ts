@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as Three from 'three';
 import {LoggerFactory} from "common-tools";
 import AudioManager from "./AudioManager";
 import SeasonManager from "/@/manager/SeasonManager";
@@ -13,8 +13,8 @@ export interface AmbientSoundConfig {
     thunderLongGapMin: number;
     thunderLongGapMax: number;
     baseVolume: number;
-    firePosition: THREE.Vector3;
-    lakePosition: THREE.Vector3;
+    firePosition: Three.Vector3;
+    lakePosition: Three.Vector3;
     maxDistance: number;
 }
 
@@ -37,8 +37,8 @@ export default class AmbientSoundManager {
         thunderLongGapMin: 8000,
         thunderLongGapMax: 10000,
         baseVolume: 0.8,
-        firePosition: new THREE.Vector3(-5.4, 1.0, -6.9),
-        lakePosition: new THREE.Vector3(0, 0, 0),
+        firePosition: new Three.Vector3(-5.4, 1.0, -6.9),
+        lakePosition: new Three.Vector3(0, 0, 0),
         maxDistance: 35,
     };
 
@@ -285,7 +285,7 @@ export default class AmbientSoundManager {
     /**
      * 播放基于距离的连续音效
      */
-    private playContinuousSoundWithDistance(soundId: string, soundPosition: THREE.Vector3): void {
+    private playContinuousSoundWithDistance(soundId: string, soundPosition: Three.Vector3): void {
         if (!this.activeContinuousSounds.has(soundId)) {
             const volume = this.calculateDistanceBasedVolume(soundPosition);
             this.audioManager.play(soundId, volume, true);
@@ -298,7 +298,7 @@ export default class AmbientSoundManager {
     /**
      * 计算基于距离的音量
      */
-    private calculateDistanceBasedVolume(soundPosition: THREE.Vector3): number {
+    private calculateDistanceBasedVolume(soundPosition: Three.Vector3): number {
         if (!this.camera) {
             return this.config.baseVolume * 0.7;
         }
@@ -313,7 +313,7 @@ export default class AmbientSoundManager {
     /**
      * 更新音效音量
      */
-    private updateSoundVolume(soundId: string, soundPosition: THREE.Vector3): void {
+    private updateSoundVolume(soundId: string, soundPosition: Three.Vector3): void {
         // 注意：HTMLAudioElement 不支持动态音量更新，需要重新播放
         // 这里简化处理，实际项目中可能需要 Web Audio API
         const sound = this.audioManager.getSound(soundId);

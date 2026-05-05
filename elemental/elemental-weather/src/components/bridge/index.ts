@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as Three from 'three';
 import type GUI from 'lil-gui';
 import {
     Object3DComponent,
@@ -16,14 +16,14 @@ import ResourcesManager from "/@/resources/manager.ts";
 export default class Bridge extends Object3DComponent {
     
     private resourcesManager: ResourcesManager;
-    private bridgeModel: THREE.Group | null = null;
-    private woodColorMultiplier: THREE.Color;
+    private bridgeModel: Three.Group | null = null;
+    private woodColorMultiplier: Three.Color;
     
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'Bridge', options.isDebugMode);
         
         this.resourcesManager = ResourcesManager.getInstance();
-        this.woodColorMultiplier = new THREE.Color(0.55, 0.4, 0.18);
+        this.woodColorMultiplier = new Three.Color(0.55, 0.4, 0.18);
     }
 
     /**
@@ -147,7 +147,7 @@ export default class Bridge extends Object3DComponent {
         const woodAOMap = this.resourcesManager.getItem("woodAOTexture");
 
         this.bridgeModel.traverse((child) => {
-            if (!(child instanceof THREE.Mesh)) return;
+            if (!(child instanceof Three.Mesh)) return;
 
             child.castShadow = true;
             child.receiveShadow = true;
@@ -171,7 +171,7 @@ export default class Bridge extends Object3DComponent {
         if (!this.bridgeModel) return;
 
         this.bridgeModel.traverse((child) => {
-            if (!(child instanceof THREE.Mesh)) return;
+            if (!(child instanceof Three.Mesh)) return;
             
             if (child.material.name === 'Material.001') {
                 child.material.color = this.woodColorMultiplier.clone();

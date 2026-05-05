@@ -1,5 +1,5 @@
 import {eventBus, LoggerFactory} from "common-tools";
-import * as THREE from 'three';
+import * as Three from 'three';
 import {type ConfigObject} from "/@/utils/color";
 
 export interface SeasonColorComponent {
@@ -98,9 +98,9 @@ export class SeasonConfigLoader {
 
         for (const [key, value] of Object.entries(data)) {
             if (Array.isArray(value) && value.length === 3) {
-                result[key] = new THREE.Color(value[0], value[1], value[2]);
+                result[key] = new Three.Color(value[0], value[1], value[2]);
             } else if (typeof value === 'object' && value !== null && value.type === 'color') {
-                result[key] = new THREE.Color(
+                result[key] = new Three.Color(
                     value.value[0],
                     value.value[1],
                     value.value[2]

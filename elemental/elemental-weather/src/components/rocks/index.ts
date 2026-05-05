@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as Three from 'three';
 import type GUI from 'lil-gui';
 import {
     Object3DComponent,
@@ -20,8 +20,8 @@ import rocksFragmentColorChunk from '/@/shaders/Chunks/rocks/rocks.fragment_colo
 export default class Rocks extends Object3DComponent {
     
     private resourcesManager: ResourcesManager;
-    private rocksModel: THREE.Group | null = null;
-    private rocksMaterial: THREE.MeshStandardMaterial | null = null;
+    private rocksModel: Three.Group | null = null;
+    private rocksMaterial: Three.MeshStandardMaterial | null = null;
     private customRockUniforms: any = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
@@ -203,7 +203,7 @@ export default class Rocks extends Object3DComponent {
      * 创建材质
      */
     private createMaterial(): void {
-        this.rocksMaterial = new THREE.MeshStandardMaterial({
+        this.rocksMaterial = new Three.MeshStandardMaterial({
             roughness: 1.0,
             metalness: 0,
         });
@@ -213,10 +213,10 @@ export default class Rocks extends Object3DComponent {
         const perlinNoise = this.resourcesManager.getItem("perlinNoise");
 
         if (displacementTexture) {
-            displacementTexture.wrapS = displacementTexture.wrapT = THREE.RepeatWrapping;
+            displacementTexture.wrapS = displacementTexture.wrapT = Three.RepeatWrapping;
         }
         if (perlinNoise) {
-            perlinNoise.wrapS = perlinNoise.wrapT = THREE.RepeatWrapping;
+            perlinNoise.wrapS = perlinNoise.wrapT = Three.RepeatWrapping;
         }
 
         // 获取初始颜色配置
@@ -268,7 +268,7 @@ export default class Rocks extends Object3DComponent {
         if (!this.rocksModel || !this.rocksMaterial) return;
 
         this.rocksModel.traverse((child) => {
-            if (!(child instanceof THREE.Mesh)) return;
+            if (!(child instanceof Three.Mesh)) return;
 
             child.material = this.rocksMaterial!;
             child.castShadow = true;
@@ -282,12 +282,12 @@ export default class Rocks extends Object3DComponent {
     private getColorConfig(): any {
         // 这里应该从 ColorManager 获取，暂时使用默认值
         return {
-            uRockColor1: new THREE.Color(0.5, 0.5, 0.5),
-            uRockColor2: new THREE.Color(0.3, 0.3, 0.3),
-            uRockColor3: new THREE.Color(0.2, 0.2, 0.2),
-            uMossColor1: new THREE.Color(0.4, 0.5, 0.3),
-            uMossColor2: new THREE.Color(0.35, 0.45, 0.25),
-            uMossColor3: new THREE.Color(0.3, 0.4, 0.2),
+            uRockColor1: new Three.Color(0.5, 0.5, 0.5),
+            uRockColor2: new Three.Color(0.3, 0.3, 0.3),
+            uRockColor3: new Three.Color(0.2, 0.2, 0.2),
+            uMossColor1: new Three.Color(0.4, 0.5, 0.3),
+            uMossColor2: new Three.Color(0.35, 0.45, 0.25),
+            uMossColor3: new Three.Color(0.3, 0.4, 0.2),
         };
     }
 

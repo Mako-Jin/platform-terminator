@@ -82,11 +82,13 @@ class Interpolant {
         );
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     evaluate(time: number): any {
         this.Interpolantor.evaluate(time);
         return this.onEvaluate(this.resultBuffer);
     }
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     protected onEvaluate(result: Float32Array): any {
         return result;
     }

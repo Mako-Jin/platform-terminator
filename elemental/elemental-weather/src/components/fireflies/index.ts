@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as Three from 'three';
 import type GUI from 'lil-gui';
 import {
     Object3DComponent,
@@ -19,9 +19,9 @@ export default class FireFlies extends Object3DComponent {
 
     private resourcesManager: ResourcesManager;
     private sizeManager: SizeManager;
-    private fireFlies: THREE.Points | null = null;
-    private fireFliesMaterial: THREE.ShaderMaterial | null = null;
-    private fireFliesGeometry: THREE.BufferGeometry | null = null;
+    private fireFlies: Three.Points | null = null;
+    private fireFliesMaterial: Three.ShaderMaterial | null = null;
+    private fireFliesGeometry: Three.BufferGeometry | null = null;
 
     private envTime: string = 'day';
     private fireFliesCount: number = 50;
@@ -158,13 +158,13 @@ export default class FireFlies extends Object3DComponent {
         const width = this.sizeManager.getWidth();
         const height = this.sizeManager.getHeight();
 
-        this.fireFliesMaterial = new THREE.ShaderMaterial({
+        this.fireFliesMaterial = new Three.ShaderMaterial({
             vertexShader: fireFliesVertexShader,
             fragmentShader: fireFliesFragmentShader,
             uniforms: {
                 uTime: { value: 0 },
                 uResolution: {
-                    value: new THREE.Vector2(width, height),
+                    value: new Three.Vector2(width, height),
                 },
                 uTexture: {
                     value: particleTexture?.resource || null,
@@ -175,10 +175,10 @@ export default class FireFlies extends Object3DComponent {
             depthWrite: false,
             depthTest: true,
             transparent: true,
-            blending: THREE.AdditiveBlending,
+            blending: Three.AdditiveBlending,
         });
 
-        this.fireFliesGeometry = new THREE.BufferGeometry();
+        this.fireFliesGeometry = new Three.BufferGeometry();
 
         const positions = new Float32Array(this.fireFliesCount * 3);
         const scales = new Float32Array(this.fireFliesCount);
@@ -207,15 +207,15 @@ export default class FireFlies extends Object3DComponent {
 
         this.fireFliesGeometry.setAttribute(
             'position',
-            new THREE.BufferAttribute(positions, 3)
+            new Three.BufferAttribute(positions, 3)
         );
 
         this.fireFliesGeometry.setAttribute(
             'aScale',
-            new THREE.BufferAttribute(scales, 1)
+            new Three.BufferAttribute(scales, 1)
         );
 
-        this.fireFlies = new THREE.Points(
+        this.fireFlies = new Three.Points(
             this.fireFliesGeometry,
             this.fireFliesMaterial
         );

@@ -1,6 +1,6 @@
 // src/App.tsx
 import {useEffect, useRef} from 'react'
-import * as THREE from 'three'
+import * as Three from 'three'
 import {OrbitControls} from 'three/examples/jsm/controls/OrbitControls.js'
 import './farm.css';
 
@@ -22,16 +22,16 @@ const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
         if (!targetContainer) return
 
         // --- 初始化场景、相机、渲染器 ---
-        const scene = new THREE.Scene()
-        scene.background = new THREE.Color(0x111122) // 深色星空背景
-        scene.fog = new THREE.FogExp2(0x111122, 0.008) // 雾效增强景深
+        const scene = new Three.Scene()
+        scene.background = new Three.Color(0x111122) // 深色星空背景
+        scene.fog = new Three.FogExp2(0x111122, 0.008) // 雾效增强景深
 
         // 获取容器的实际尺寸
         const containerWidth = targetContainer.clientWidth || window.innerWidth
         const containerHeight = targetContainer.clientHeight || window.innerHeight
 
         // 透视相机: 视野, 宽高比, 近平面, 远平面
-        const camera = new THREE.PerspectiveCamera(
+        const camera = new Three.PerspectiveCamera(
             45,
             containerWidth / containerHeight,
             0.1,
@@ -40,7 +40,7 @@ const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
         camera.position.set(5, 5, 8)
         camera.lookAt(0, 0, 0)
 
-        const renderer = new THREE.WebGLRenderer({ antialias: true })
+        const renderer = new Three.WebGLRenderer({ antialias: true })
         renderer.setSize(containerWidth, containerHeight)
         renderer.shadowMap.enabled = true // 开启阴影映射
         renderer.setPixelRatio(window.devicePixelRatio)
@@ -56,21 +56,21 @@ const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
         controls.target.set(0, 0, 0)
 
         // --- 辅助元素: 网格辅助线和坐标轴 (可选，帮助理解空间) ---
-        const gridHelper = new THREE.GridHelper(20, 20, 0x88aaff, 0x335588)
+        const gridHelper = new Three.GridHelper(20, 20, 0x88aaff, 0x335588)
         gridHelper.position.y = -1.2
         scene.add(gridHelper)
 
         // 简易坐标轴 (红X, 绿Z, 蓝Y 但为了视觉效果，简单添加一个AxesHelper)
-        // const axesHelper = new THREE.AxesHelper(5)
+        // const axesHelper = new Three.AxesHelper(5)
         // scene.add(axesHelper) // 默认隐藏，需要可取消注释
 
         // --- 添加环境光与点光源，让材质有立体感 ---
         // 环境光
-        const ambientLight = new THREE.AmbientLight(0x404060)
+        const ambientLight = new Three.AmbientLight(0x404060)
         scene.add(ambientLight)
 
         // 主光源: 方向光
-        const directionalLight = new THREE.DirectionalLight(0xffffff, 1)
+        const directionalLight = new Three.DirectionalLight(0xffffff, 1)
         directionalLight.position.set(3, 5, 2)
         directionalLight.castShadow = true
         directionalLight.receiveShadow = true
@@ -79,42 +79,42 @@ const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
         scene.add(directionalLight)
 
         // 补光: 背面暖色光
-        const backLight = new THREE.PointLight(0xcc9966, 0.5)
+        const backLight = new Three.PointLight(0xcc9966, 0.5)
         backLight.position.set(-2, 1, -3)
         scene.add(backLight)
 
         // 增添一个彩色小球体作为趣味光源指示 (可选)
-        const lightSphere = new THREE.Mesh(
-            new THREE.SphereGeometry(0.15, 16, 16),
-            new THREE.MeshStandardMaterial({ color: 0xffaa66, emissive: 0x442200 })
+        const lightSphere = new Three.Mesh(
+            new Three.SphereGeometry(0.15, 16, 16),
+            new Three.MeshStandardMaterial({ color: 0xffaa66, emissive: 0x442200 })
         )
         lightSphere.position.copy(backLight.position)
         scene.add(lightSphere)
 
         // --- 核心物体: 一个旋转的彩色立方体，标准材质与边缘高亮 ---
-        const geometry = new THREE.BoxGeometry(1.5, 1.5, 1.5)
-        const material = new THREE.MeshStandardMaterial({
+        const geometry = new Three.BoxGeometry(1.5, 1.5, 1.5)
+        const material = new Three.MeshStandardMaterial({
             color: 0x3f8efc,
             roughness: 0.3,
             metalness: 0.7,
             emissive: 0x0,
             flatShading: false
         })
-        const cube = new THREE.Mesh(geometry, material)
+        const cube = new Three.Mesh(geometry, material)
         cube.castShadow = true
         cube.receiveShadow = true
         cube.position.set(0, 0, 0)
         scene.add(cube)
 
         // 添加边缘线框，使立方体更酷
-        const edgesGeo = new THREE.EdgesGeometry(geometry)
-        const edgesMat = new THREE.LineBasicMaterial({ color: 0xffffff })
-        const wireframe = new THREE.LineSegments(edgesGeo, edgesMat)
+        const edgesGeo = new Three.EdgesGeometry(geometry)
+        const edgesMat = new Three.LineBasicMaterial({ color: 0xffffff })
+        const wireframe = new Three.LineSegments(edgesGeo, edgesMat)
         cube.add(wireframe) // 将线框附加到立方体上，随立方体一起旋转
 
         // --- 添加一些浮动粒子系统增加视觉效果 ---
         const particleCount = 800
-        const particlesGeometry = new THREE.BufferGeometry()
+        const particlesGeometry = new Three.BufferGeometry()
         const positions = new Float32Array(particleCount * 3)
         for (let i = 0; i < particleCount; i++) {
             // 分布在 [-8, 8] 区间内
@@ -122,41 +122,41 @@ const Farm = ({ container }: { container?: HTMLElement | string } = {}) => {
             positions[i*3+1] = (Math.random() - 0.5) * 10
             positions[i*3+2] = (Math.random() - 0.5) * 16 - 5
         }
-        particlesGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3))
-        const particlesMaterial = new THREE.PointsMaterial({
+        particlesGeometry.setAttribute('position', new Three.BufferAttribute(positions, 3))
+        const particlesMaterial = new Three.PointsMaterial({
             color: 0x77aaff,
             size: 0.08,
             transparent: true,
             opacity: 0.6,
-            blending: THREE.AdditiveBlending
+            blending: Three.AdditiveBlending
         })
-        const particles = new THREE.Points(particlesGeometry, particlesMaterial)
+        const particles = new Three.Points(particlesGeometry, particlesMaterial)
         scene.add(particles)
 
         // 添加一个简单的环面结或环面来丰富场景 (可选，增加趣味)
-        const torusGeometry = new THREE.TorusGeometry(1.2, 0.25, 64, 200)
-        const torusMaterial = new THREE.MeshStandardMaterial({
+        const torusGeometry = new Three.TorusGeometry(1.2, 0.25, 64, 200)
+        const torusMaterial = new Three.MeshStandardMaterial({
             color: 0xff66cc,
             roughness: 0.4,
             metalness: 0.6,
             emissive: 0x331133
         })
-        const torus = new THREE.Mesh(torusGeometry, torusMaterial)
+        const torus = new Three.Mesh(torusGeometry, torusMaterial)
         torus.position.set(2.2, -0.8, -1.5)
         torus.castShadow = true
         scene.add(torus)
 
         // 第二个小立方体绕着主立方体公转 (演示)
-        const satelliteGeo = new THREE.SphereGeometry(0.25, 24, 24)
-        const satelliteMat = new THREE.MeshStandardMaterial({ color: 0xffaa44, metalness: 0.2 })
-        const satellite = new THREE.Mesh(satelliteGeo, satelliteMat)
+        const satelliteGeo = new Three.SphereGeometry(0.25, 24, 24)
+        const satelliteMat = new Three.MeshStandardMaterial({ color: 0xffaa44, metalness: 0.2 })
+        const satellite = new Three.Mesh(satelliteGeo, satelliteMat)
         satellite.castShadow = true
         scene.add(satellite)
 
         // 地面反射感: 加一个半透明平面接收阴影 (简单装饰)
-        const planeMat = new THREE.ShadowMaterial({ opacity: 0.4, color: 0x000000, transparent: true, side: THREE.DoubleSide })
-        const shadowPlane = new THREE.Mesh(
-            new THREE.PlaneGeometry(6, 6),
+        const planeMat = new Three.ShadowMaterial({ opacity: 0.4, color: 0x000000, transparent: true, side: Three.DoubleSide })
+        const shadowPlane = new Three.Mesh(
+            new Three.PlaneGeometry(6, 6),
             planeMat
         )
         shadowPlane.rotation.x = -Math.PI / 2

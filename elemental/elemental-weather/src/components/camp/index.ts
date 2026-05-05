@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as Three from 'three';
 import type GUI from 'lil-gui';
 import {
     Object3DComponent,
@@ -16,7 +16,7 @@ import ResourcesManager from "/@/resources/manager.ts";
 export default class Camp extends Object3DComponent {
     
     private resourcesManager: ResourcesManager;
-    private campModel: THREE.Group | null = null;
+    private campModel: Three.Group | null = null;
     
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'Camp', options.isDebugMode);
@@ -123,7 +123,7 @@ export default class Camp extends Object3DComponent {
         if (!this.campModel) return;
 
         this.campModel.traverse((child) => {
-            if (!(child instanceof THREE.Mesh)) return;
+            if (!(child instanceof Three.Mesh)) return;
 
             child.castShadow = true;
             child.receiveShadow = true;

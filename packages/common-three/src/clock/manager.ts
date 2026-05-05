@@ -2,7 +2,7 @@ import {LoggerFactory} from 'common-tools';
 
 /**
  * 时钟管理器
- * 基于 THREE.Clock，提供统一的时间增量管理
+ * 基于 Three.Clock，提供统一的时间增量管理
  */
 export class ClockManager {
     

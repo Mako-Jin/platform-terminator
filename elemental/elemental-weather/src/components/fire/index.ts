@@ -1,4 +1,4 @@
-import * as THREE from 'three';
+import * as Three from 'three';
 import type GUI from 'lil-gui';
 import {
     Object3DComponent,
@@ -19,7 +19,7 @@ import * as PARTICLES from '/@/systems/particle';
 
 interface ColorStop {
     time: number;
-    value: THREE.Color;
+    value: Three.Color;
 }
 
 interface FloatStop {
@@ -32,14 +32,14 @@ export default class Fire extends Object3DComponent {
 
     private resourcesManager: ResourcesManager;
     private particleSystem: any = null;
-    private fireMaterial: THREE.ShaderMaterial | null = null;
-    private smokeMaterial: THREE.ShaderMaterial | null = null;
-    private amberMaterial: THREE.ShaderMaterial | null = null;
+    private fireMaterial: Three.ShaderMaterial | null = null;
+    private smokeMaterial: Three.ShaderMaterial | null = null;
+    private amberMaterial: Three.ShaderMaterial | null = null;
 
-    private fireGroup: THREE.Group | null = null;
-    private smokeGroup: THREE.Group | null = null;
-    private amberGroup: THREE.Group | null = null;
-    private lightGroup: THREE.Group | null = null;
+    private fireGroup: Three.Group | null = null;
+    private smokeGroup: Three.Group | null = null;
+    private amberGroup: Three.Group | null = null;
+    private lightGroup: Three.Group | null = null;
 
     private envTime: string = 'day';
     private currentSeason: string = 'spring';
@@ -57,8 +57,8 @@ export default class Fire extends Object3DComponent {
     private amberEmitterParams: any = null;
 
     // 灯光
-    private fireLight: THREE.PointLight | null = null;
-    private fireLight2: THREE.PointLight | null = null;
+    private fireLight: Three.PointLight | null = null;
+    private fireLight2: Three.PointLight | null = null;
     private firelight1OriginalIntensity: number = 4;
     private firelight2OriginalIntensity: number = 2;
     private fireLightPresent: boolean = false;
@@ -128,16 +128,16 @@ export default class Fire extends Object3DComponent {
         this.logger.info('[Fire] Initializing...');
 
         // 创建组作为根节点
-        this.fireGroup = new THREE.Group();
+        this.fireGroup = new Three.Group();
         this.fireGroup.name = 'FireGroup';
         this.setRoot(this.fireGroup);
 
         // 创建烟雾和火星组
-        this.smokeGroup = new THREE.Group();
+        this.smokeGroup = new Three.Group();
         this.smokeGroup.name = 'SmokeGroup';
-        this.amberGroup = new THREE.Group();
+        this.amberGroup = new Three.Group();
         this.amberGroup.name = 'AmberGroup';
-        this.lightGroup = new THREE.Group();
+        this.lightGroup = new Three.Group();
         this.lightGroup.name = 'FireLightGroup';
 
         // 添加到根节点
@@ -374,10 +374,10 @@ export default class Fire extends Object3DComponent {
             { time: 1.0, value: 0.0 },
         ];
         this.fireColorStops = [
-            { time: 0.0, value: new THREE.Color(0x946110) },
-            { time: 0.3, value: new THREE.Color(0x9f710f) },
-            { time: 0.7, value: new THREE.Color(0xfd4700) },
-            { time: 1.0, value: new THREE.Color(0xfc0000) },
+            { time: 0.0, value: new Three.Color(0x946110) },
+            { time: 0.3, value: new Three.Color(0x9f710f) },
+            { time: 0.7, value: new Three.Color(0xfd4700) },
+            { time: 1.0, value: new Three.Color(0xfc0000) },
         ];
         this.fireTwinkleStops = [
             { time: 0.0, value: 0.0 },
@@ -397,9 +397,9 @@ export default class Fire extends Object3DComponent {
             { time: 1.0, value: 0.01 },
         ];
         this.smokeColorStops = [
-            { time: 0.0, value: new THREE.Color(0xfff1cc) },
-            { time: 0.3, value: new THREE.Color(0xfffbf0) },
-            { time: 1.0, value: new THREE.Color(0xffffff) },
+            { time: 0.0, value: new Three.Color(0xfff1cc) },
+            { time: 0.3, value: new Three.Color(0xfffbf0) },
+            { time: 1.0, value: new Three.Color(0xffffff) },
         ];
         this.smokeTwinkleStops = [
             { time: 0.0, value: 0.0 },
@@ -418,10 +418,10 @@ export default class Fire extends Object3DComponent {
             { time: 1.0, value: 0.0 },
         ];
         this.amberColorStops = [
-            { time: 0.0, value: new THREE.Color(0xff0000) },
-            { time: 0.4, value: new THREE.Color(0xff2424) },
-            { time: 0.8, value: new THREE.Color(0xffd438) },
-            { time: 1.0, value: new THREE.Color(0xff961f) },
+            { time: 0.0, value: new Three.Color(0xff0000) },
+            { time: 0.4, value: new Three.Color(0xff2424) },
+            { time: 0.8, value: new Three.Color(0xffd438) },
+            { time: 1.0, value: new Three.Color(0xff961f) },
         ];
         this.amberTwinkleStops = [
             { time: 0.0, value: 0.0 },
@@ -430,14 +430,14 @@ export default class Fire extends Object3DComponent {
         ];
 
         this.originalSmokeColorStops = [
-            { time: 0.0, value: new THREE.Color(0xfff1cc) },
-            { time: 0.3, value: new THREE.Color(0xfffbf0) },
-            { time: 1.0, value: new THREE.Color(0xffffff) },
+            { time: 0.0, value: new Three.Color(0xfff1cc) },
+            { time: 0.3, value: new Three.Color(0xfffbf0) },
+            { time: 1.0, value: new Three.Color(0xffffff) },
         ];
         this.rainySmokeColorStops = [
-            { time: 0.0, value: new THREE.Color(0x666666) },
-            { time: 0.3, value: new THREE.Color(0x888888) },
-            { time: 1.0, value: new THREE.Color(0xaaaaaa) },
+            { time: 0.0, value: new Three.Color(0x666666) },
+            { time: 0.3, value: new Three.Color(0x888888) },
+            { time: 1.0, value: new Three.Color(0xaaaaaa) },
         ];
     }
 
@@ -556,7 +556,7 @@ export default class Fire extends Object3DComponent {
 
         this._buildFireInterpolantsAndTextures();
 
-        this.fireMaterial = new THREE.ShaderMaterial({
+        this.fireMaterial = new Three.ShaderMaterial({
             vertexShader: particleVertexShader,
             fragmentShader: particleFragmentShader,
             uniforms: {
@@ -568,12 +568,12 @@ export default class Fire extends Object3DComponent {
                 },
                 uTwinkleOverLife: { value: this.fireTwinkleOverLife.toTexture() },
                 uSizeMultiplier: { value: 1.0 },
-                uColorTint: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
+                uColorTint: { value: new Three.Vector3(1.0, 1.0, 1.0) },
             },
             depthWrite: false,
             depthTest: true,
             transparent: true,
-            blending: THREE.AdditiveBlending,
+            blending: Three.AdditiveBlending,
         });
 
         this.fireMaterial.uniforms.uSizeOverLife.value.needsUpdate = true;
@@ -593,7 +593,7 @@ export default class Fire extends Object3DComponent {
 
         this._buildSmokeInterpolantsAndTextures();
 
-        this.smokeMaterial = new THREE.ShaderMaterial({
+        this.smokeMaterial = new Three.ShaderMaterial({
             vertexShader: particleVertexShader,
             fragmentShader: particleFragmentShader,
             uniforms: {
@@ -605,12 +605,12 @@ export default class Fire extends Object3DComponent {
                 },
                 uTwinkleOverLife: { value: this.smokeTwinkleOverLife.toTexture() },
                 uSizeMultiplier: { value: 1.0 },
-                uColorTint: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
+                uColorTint: { value: new Three.Vector3(1.0, 1.0, 1.0) },
             },
             depthWrite: false,
             depthTest: true,
             transparent: true,
-            blending: THREE.NormalBlending,
+            blending: Three.NormalBlending,
         });
 
         this.smokeMaterial.uniforms.uSizeOverLife.value.needsUpdate = true;
@@ -630,7 +630,7 @@ export default class Fire extends Object3DComponent {
 
         this._buildAmberInterpolantsAndTextures();
 
-        this.amberMaterial = new THREE.ShaderMaterial({
+        this.amberMaterial = new Three.ShaderMaterial({
             vertexShader: particleVertexShader,
             fragmentShader: particleFragmentShader,
             uniforms: {
@@ -642,12 +642,12 @@ export default class Fire extends Object3DComponent {
                 },
                 uTwinkleOverLife: { value: this.amberTwinkleOverLife.toTexture() },
                 uSizeMultiplier: { value: 1.0 },
-                uColorTint: { value: new THREE.Vector3(1.0, 1.0, 1.0) },
+                uColorTint: { value: new Three.Vector3(1.0, 1.0, 1.0) },
             },
             depthWrite: false,
             depthTest: true,
             transparent: true,
-            blending: THREE.AdditiveBlending,
+            blending: Three.AdditiveBlending,
         });
 
         this.amberMaterial.uniforms.uSizeOverLife.value.needsUpdate = true;
@@ -683,16 +683,16 @@ export default class Fire extends Object3DComponent {
         fireEmitterParams.dragCoefficient = 0.5;
         fireEmitterParams.velocityMagnitude = 0.5;
         fireEmitterParams.velocityMagnitudeVariance = 0;
-        fireEmitterParams.rotation = new THREE.Quaternion();
+        fireEmitterParams.rotation = new Three.Quaternion();
         fireEmitterParams.rotation.setFromAxisAngle(
-            new THREE.Vector3(1, 0, 0),
+            new Three.Vector3(1, 0, 0),
             -Math.PI / 32
         );
         fireEmitterParams.rotationAngularVariance = Math.PI / 16;
 
         const fireRendererParams = new PARTICLES.ParticleRendererParams();
         fireRendererParams.maxParticles = fireEmitterParams.maxParticles;
-        fireRendererParams.group = new THREE.Group();
+        fireRendererParams.group = new Three.Group();
 
         fireEmitterParams.renderer = new PARTICLES.ParticleRenderer();
         fireEmitterParams.renderer.initialize(
@@ -730,9 +730,9 @@ export default class Fire extends Object3DComponent {
         smokeEmitterParams.dragCoefficient = 0.0;
         smokeEmitterParams.velocityMagnitude = 0.8;
         smokeEmitterParams.velocityMagnitudeVariance = 1.0;
-        smokeEmitterParams.rotation = new THREE.Quaternion();
+        smokeEmitterParams.rotation = new Three.Quaternion();
         smokeEmitterParams.rotation.setFromAxisAngle(
-            new THREE.Vector3(1, 0, 0),
+            new Three.Vector3(1, 0, 0),
             -Math.PI / 8
         );
         smokeEmitterParams.rotationAngularVariance = Math.PI / 8;
@@ -749,7 +749,7 @@ export default class Fire extends Object3DComponent {
 
         const smokeRendererParams = new PARTICLES.ParticleRendererParams();
         smokeRendererParams.maxParticles = smokeEmitterParams.maxParticles;
-        smokeRendererParams.group = new THREE.Group();
+        smokeRendererParams.group = new Three.Group();
 
         smokeEmitterParams.renderer = new PARTICLES.ParticleRenderer();
         smokeEmitterParams.renderer.initialize(
@@ -783,9 +783,9 @@ export default class Fire extends Object3DComponent {
         amberEmitterParams.dragCoefficient = 2.8;
         amberEmitterParams.velocityMagnitude = 0.12;
         amberEmitterParams.velocityMagnitudeVariance = 0.6;
-        amberEmitterParams.rotation = new THREE.Quaternion();
+        amberEmitterParams.rotation = new Three.Quaternion();
         amberEmitterParams.rotation.setFromAxisAngle(
-            new THREE.Vector3(1, 0, 0),
+            new Three.Vector3(1, 0, 0),
             -Math.PI / 12
         );
         amberEmitterParams.rotationAngularVariance = Math.PI / 6;
@@ -799,7 +799,7 @@ export default class Fire extends Object3DComponent {
 
         const amberRendererParams = new PARTICLES.ParticleRendererParams();
         amberRendererParams.maxParticles = amberEmitterParams.maxParticles;
-        amberRendererParams.group = new THREE.Group();
+        amberRendererParams.group = new Three.Group();
 
         amberEmitterParams.renderer = new PARTICLES.ParticleRenderer();
         amberEmitterParams.renderer.initialize(
@@ -821,8 +821,8 @@ export default class Fire extends Object3DComponent {
     private addFireLighting(): void {
         this.fireLightPresent = true;
 
-        this.fireLight = new THREE.PointLight(
-            new THREE.Color(0.97, 0.42, 0.106),
+        this.fireLight = new Three.PointLight(
+            new Three.Color(0.97, 0.42, 0.106),
             this.firelight1OriginalIntensity,
             4,
             2
@@ -830,8 +830,8 @@ export default class Fire extends Object3DComponent {
         this.fireLight.position.set(-5.5, 1.0, -7.0);
         this.lightGroup!.add(this.fireLight);
 
-        this.fireLight2 = new THREE.PointLight(
-            new THREE.Color(0.97, 0.5, 0.18),
+        this.fireLight2 = new Three.PointLight(
+            new Three.Color(0.97, 0.5, 0.18),
             this.firelight2OriginalIntensity,
             1.0,
             2.0
