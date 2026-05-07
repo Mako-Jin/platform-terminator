@@ -1,20 +1,20 @@
-import Ground from "/@/components/ground";
 import type {RendererWrapper, SceneWrapper} from "common-three";
-import Lighting from "/@/components/lighting";
-import Skydome from "/@/components/skydome";
-import Bush from "/@/components/bush";
-import TreesTrunks from "/@/components/tree/trunks";
-import FallingLeaves from "/@/components/leaves/falling";
-import Rain from "/@/components/rain";
-import Snow from "/@/components/snow";
-import Fog from "/@/components/fog";
-import Tent from "/@/components/tent";
-import Bridge from "/@/components/bridge";
-import WindLines from "/@components/wind";
-import Rocks from "/@components/rocks";
-import Camp from "/@components/camp";
-import Fire from "/@components/fire";
-import FireFlies from "/@components/fireflies";
+import {Ground} from "/@/components";
+import {Lighting} from "/@/components";
+import {Skydome} from "/@/components";
+import {Bush} from "/@/components";
+import {TreesTrunks} from "/@/components";
+import {FallingLeaves} from "/@/components";
+import {Rain} from "/@/components";
+import {Snow} from "/@/components";
+import {Fog} from "/@/components";
+import {Tent} from "/@/components";
+import {Bridge} from "/@/components";
+import {WindLines} from "/@components";
+import {Rocks} from "/@components";
+import {Camp} from "/@components";
+import {Fire} from "/@components";
+import {Fireflies} from "/@components";
 import {ParticleSystem} from "/@/systems/particle.ts";
 import Lightning from "/@/systems/lightning.ts";
 
@@ -23,7 +23,7 @@ export default class World {
     private scene: SceneWrapper;
     private renderer: RendererWrapper;
     private isDebugMode: boolean;
-    
+
     private ground: Ground;
     private lighting: Lighting;
     private skydome: Skydome;
@@ -56,9 +56,9 @@ export default class World {
         this.lighting = new Lighting(this.scene, {
             isDebugMode: this.isDebugMode,
         });
-        
+
         this.skydome = new Skydome(this.scene, {isDebugMode: this.isDebugMode});
-        
+
         this.ground = new Ground(this.scene, {isDebugMode: this.isDebugMode});
 
         this.bush = new Bush(this.scene, {isDebugMode: this.isDebugMode});
@@ -85,7 +85,7 @@ export default class World {
 
         this.fire = new Fire(this.scene, {isDebugMode: this.isDebugMode});
 
-        this.fireFlies = new FireFlies(this.scene, {isDebugMode: this.isDebugMode});
+        this.fireFlies = new Fireflies(this.scene, {isDebugMode: this.isDebugMode});
 
         this.particleSystem = new ParticleSystem();
 

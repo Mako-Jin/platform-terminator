@@ -5,6 +5,7 @@ import type {SceneWrapper} from "common-three";
 import BushVertexShader from '/@/shaders/Materials/bush/vertex.glsl';
 
 import {random} from '/@/utils/math.ts';
+import {LoggerFactory} from "common-tools";
 
 // const mulberry32 = (seed: number) => {
 //     return function (): number {
@@ -38,6 +39,8 @@ interface BushInfo {
 
 export default class BushManager {
 
+    private logger = LoggerFactory.create("weather-bush-manager");
+
     private scene: SceneWrapper;
     private planeGeometry: Three.PlaneGeometry;
     private material: Three.ShaderMaterial;
@@ -59,7 +62,7 @@ export default class BushManager {
     private instanceColorMultiplierAttr: Three.InstancedBufferAttribute | null;
 
     constructor(
-        scene: SceneWrapper, 
+        scene: SceneWrapper,
         options: {
             material: Three.ShaderMaterial;
             samplerMesh: Three.Mesh;
@@ -67,7 +70,7 @@ export default class BushManager {
         }
     ) {
         this.scene = scene;
-        
+
         this.planeGeometry = new Three.PlaneGeometry(1, 1, 1, 1);
         this.material = options.material;
         this.samplerMesh = options.samplerMesh;
@@ -82,7 +85,7 @@ export default class BushManager {
             this.material,
             this.maxLeaves
         );
-        
+
         const depthUniforms = Three.UniformsUtils.clone(this.material.uniforms);
         const depthFragment = `#include <packing>
             varying vec2 vUv;
@@ -137,7 +140,7 @@ export default class BushManager {
         } = config;
 
         if (this.currentLeafIndex + leafCount > this.maxLeaves) {
-            console.warn('[BushManager] Maximum leaf count exceeded');
+            this.logger.warn('[BushManager] Maximum leaf count exceeded');
             return null;
         }
 
@@ -166,23 +169,23 @@ export default class BushManager {
             dummy.updateMatrix();
             this.instancedMesh.setMatrixAt(instanceIndex, dummy.matrix);
 
-            this.instanceNormals[instanceIndex * 3 + 0] = normal.x;
+            this.instanceNormals[instanceIndex * 3] = normal.x;
             this.instanceNormals[instanceIndex * 3 + 1] = normal.y;
             this.instanceNormals[instanceIndex * 3 + 2] = normal.z;
 
-            this.instanceShadowColors[instanceIndex * 3 + 0] = shadowColor.r;
+            this.instanceShadowColors[instanceIndex * 3] = shadowColor.r;
             this.instanceShadowColors[instanceIndex * 3 + 1] = shadowColor.g;
             this.instanceShadowColors[instanceIndex * 3 + 2] = shadowColor.b;
 
-            this.instanceMidColors[instanceIndex * 3 + 0] = midColor.r;
+            this.instanceMidColors[instanceIndex * 3] = midColor.r;
             this.instanceMidColors[instanceIndex * 3 + 1] = midColor.g;
             this.instanceMidColors[instanceIndex * 3 + 2] = midColor.b;
 
-            this.instanceHighlightColors[instanceIndex * 3 + 0] = highlightColor.r;
+            this.instanceHighlightColors[instanceIndex * 3] = highlightColor.r;
             this.instanceHighlightColors[instanceIndex * 3 + 1] = highlightColor.g;
             this.instanceHighlightColors[instanceIndex * 3 + 2] = highlightColor.b;
 
-            this.instanceColorMultiplier[instanceIndex * 3 + 0] = colorMultiplier.r;
+            this.instanceColorMultiplier[instanceIndex * 3] = colorMultiplier.r;
             this.instanceColorMultiplier[instanceIndex * 3 + 1] = colorMultiplier.g;
             this.instanceColorMultiplier[instanceIndex * 3 + 2] = colorMultiplier.b;
         }
@@ -271,14 +274,14 @@ export default class BushManager {
         }
 
         this.instancedMesh.instanceMatrix.needsUpdate = true;
-        
+
         const removedBush = this.bushes.splice(bushIndex, 1)[0];
         const removedCount = removedBush.leafCount;
-        
+
         for (let i = bushIndex; i < this.bushes.length; i++) {
             this.bushes[i].startIndex -= removedCount;
         }
-        
+
         this.currentLeafIndex -= removedCount;
         this.instancedMesh.count = this.currentLeafIndex;
     }
@@ -300,22 +303,22 @@ export default class BushManager {
 
     dispose(): void {
         this.scene.removeObject(this.instancedMesh);
-        
+
         if (this.instancedMesh.geometry) {
             this.instancedMesh.geometry.dispose();
         }
-        
+
         if (this.instancedMesh.customDepthMaterial) {
             this.instancedMesh.customDepthMaterial.dispose();
         }
-        
+
         if (this.instancedMesh.customDistanceMaterial) {
             this.instancedMesh.customDistanceMaterial.dispose();
         }
-        
+
         this.bushes = [];
         this.currentLeafIndex = 0;
-        
+
         this.instanceNormalAttr = null;
         this.instanceShadowColorAttr = null;
         this.instanceMidColorAttr = null;

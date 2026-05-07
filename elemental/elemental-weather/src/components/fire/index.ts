@@ -15,6 +15,7 @@ import particleVertexShader from '/@/shaders/Materials/fire/vertex.glsl';
 import particleFragmentShader from '/@/shaders/Materials/fire/fragment.glsl';
 import * as MATH from '/@/utils/math';
 import * as PARTICLES from '/@/systems/particle';
+import {LoggerFactory} from "common-tools";
 
 
 interface ColorStop {
@@ -29,6 +30,8 @@ interface FloatStop {
 
 
 export default class Fire extends Object3DComponent {
+
+    private logger = LoggerFactory.create("weather-fire");
 
     private resourcesManager: ResourcesManager;
     private particleSystem: any = null;
@@ -353,7 +356,7 @@ export default class Fire extends Object3DComponent {
 
             return presetSettings[quality] || defaults;
         } catch (error) {
-            console.warn('Failed to load particle settings from localStorage:', error);
+            this.logger.warn('Failed to load particle settings from localStorage:', error);
             return defaults;
         }
     }

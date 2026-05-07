@@ -15,7 +15,7 @@ import fireFliesFragmentShader from '/@/shaders/Materials/fireflies/fragment.gls
 import * as MATH from '/@/utils/math';
 
 
-export default class FireFlies extends Object3DComponent {
+export default class Fireflies extends Object3DComponent {
 
     private resourcesManager: ResourcesManager;
     private sizeManager: SizeManager;

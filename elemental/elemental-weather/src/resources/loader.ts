@@ -1,4 +1,4 @@
-import type {ResourceErrorData, ResourceProgressData} from "common-tools";
+import type {ResourceErrorData, ResourceLoadedData, ResourceProgressData} from "common-tools";
 import {AppEvents, eventBus, LoggerFactory} from "common-tools";
 import type {Asset} from "/@/resources";
 import {AudioLoader, CubeTextureLoader, LoadingManager, TextureLoader} from "three";
@@ -124,6 +124,13 @@ export class ResourceLoader {
 
     private onLoadComplete() {
         resourcesManager.markAsLoaded(this.toLoad);
+
+        // ✅ 触发资源加载完成事件
+        const loadedData: ResourceLoadedData = {
+            itemsTotal: this.toLoad,
+            timestamp: Date.now(),
+        };
+        eventBus.emit(AppEvents.RESOURCE_LOADED, loadedData);
 
         if (this.isDebugMode) {
             this.Logger.info('[Loader] All resources loaded successfully');

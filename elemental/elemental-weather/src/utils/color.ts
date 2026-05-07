@@ -1,4 +1,5 @@
 import * as Three from 'three';
+import {LoggerFactory} from "common-tools";
 
 export type ColorInput = Three.Color | [number, number, number] | number;
 
@@ -14,6 +15,9 @@ export interface ConfigObject {
 }
 
 export default class ColorInterpolator {
+
+  private static logger = LoggerFactory.create("weather-color");
+
   static lerpColor(color1: ColorInput, color2: ColorInput, t: number): Three.Color {
     const c1 = this.toColor(color1);
     const c2 = this.toColor(color2);
@@ -46,7 +50,7 @@ export default class ColorInterpolator {
       if (color.length === 3) {
         return new Three.Color(color[0], color[1], color[2]);
       }
-      console.warn('Color array must have 3 elements [r, g, b]:', color);
+      ColorInterpolator.logger.warn('Color array must have 3 elements [r, g, b]:', color);
       return new Three.Color(0xffffff);
     }
 
@@ -54,7 +58,7 @@ export default class ColorInterpolator {
       return new Three.Color(color);
     }
 
-    console.warn('Invalid color format:', color);
+    ColorInterpolator.logger.warn('Invalid color format:', color);
     return new Three.Color(0xffffff);
   }
 
@@ -95,7 +99,7 @@ export default class ColorInterpolator {
         const nightType = typeof nightValue;
 
         if (dayType !== nightType) {
-            console.warn('Type mismatch between day and night values, using day value');
+            ColorInterpolator.logger.warn('Type mismatch between day and night values, using day value');
             return dayValue;
         }
 

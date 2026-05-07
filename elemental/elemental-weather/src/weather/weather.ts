@@ -10,12 +10,10 @@ import {
 } from "common-three";
 import World from "./world";
 import * as Three from "three";
-// ✅ 导入音频管理器
 import AudioManager from "/@/manager/AudioManager";
 import MusicManager from "/@/manager/MusicManager";
 import AmbientSoundManager from "/@/manager/AmbientSoundManager";
 import SeasonManager from "/@/manager/SeasonManager";
-// ✅ 导入音乐控制 UI
 import MusicControlUI from "/@/ui/music";
 
 class Weather {
@@ -29,12 +27,12 @@ class Weather {
     private renderer!: RendererWrapper;
     private world!: World;
     private unsubscribeClock: (() => void) | null = null;
-    
+
     // ✅ 音频管理器实例
     private audioManager!: AudioManager;
     private musicManager!: MusicManager;
     private ambientSoundManager!: AmbientSoundManager;
-    
+
     // ✅ UI 控件实例（只保留音乐控制）
     private musicControlUI!: MusicControlUI;
 
@@ -54,6 +52,7 @@ class Weather {
 
     public async init(
         container: HTMLElement,
+        withMusic: boolean = false,
         isDebugMode: boolean = false
     ) {
         this.isDebugMode = isDebugMode;
@@ -103,7 +102,7 @@ class Weather {
 
         // ✅ 异步初始化 World（会自动初始化所有组件）
         await this.world.initialize();
-        
+
         // ✅ 初始化 UI 控件
         this.initializeUIControls();
 
@@ -116,7 +115,7 @@ class Weather {
         this.unsubscribeClock = clockManager.onUpdate((delta, elapsedTime) => {
             this.update(delta, elapsedTime);
         });
-        
+
         // 启动时钟
         clockManager.start();
 
@@ -129,38 +128,38 @@ class Weather {
     private async initializeAudioSystem(): Promise<void> {
         try {
             this.logger.info('Initializing audio system...');
-            
+
             // 1. 创建音频管理器
             this.audioManager = AudioManager.getInstance();
-            
+
             // 2. 加载所有音频资源
             await this.audioManager.loadAllSounds();
-            
+
             // 3. 创建音乐管理器
             this.musicManager = new MusicManager(this.audioManager);
-            
+
             // 4. 创建环境音效管理器
             const seasonManager = SeasonManager.getInstance();
             this.ambientSoundManager = new AmbientSoundManager(
                 this.audioManager,
                 seasonManager
             );
-            
+
             // 5. 设置相机引用（用于距离计算）
             const camera = cameraManager.getActiveCamera();
             if (camera) {
                 this.ambientSoundManager.setCamera(camera);
             }
-            
+
             // 6. 开始播放随机音乐
             this.musicManager.startRandomMusic();
-            
+
             this.logger.info('Audio system initialized successfully');
         } catch (error) {
             this.logger.error('Failed to initialize audio system', error);
         }
     }
-    
+
     /**
      * ✅ 初始化 UI 控件
      */
@@ -172,11 +171,11 @@ class Weather {
     resize(): void {
         const width = sizeManager.getWidth();
         const height = sizeManager.getHeight();
-        
+
         // ✅ 使用包装类的 onResize
         this.renderer.onResize(width, height);
         cameraManager.onResize(width, height);
-        
+
         // ✅ World 的 onResize 已不需要调用，SceneWrapper 会自动通知所有组件
         // this.world.onResize(width, height);
     }
@@ -225,15 +224,15 @@ class Weather {
         if (this.unsubscribeClock) {
             this.unsubscribeClock();
         }
-        
+
         // ✅ 停止时钟
         clockManager.stop();
-        
+
         // ✅ 清理 UI 控件
         if (this.musicControlUI) {
             this.musicControlUI.destroy();
         }
-        
+
         // ✅ 清理音频系统
         if (this.ambientSoundManager) {
             this.ambientSoundManager.dispose();
@@ -241,15 +240,15 @@ class Weather {
         if (this.audioManager) {
             this.audioManager.dispose();
         }
-        
+
         // ✅ World 的 dispose 已不需要调用，SceneWrapper 会自动销毁所有组件
         // this.world.dispose();
-        
+
         this.renderer.dispose();
         this.scene.dispose();
         cameraManager.dispose();
         datetimeManager.stop();
-        
+
         this.logger.info('Weather app disposed');
     }
 }
