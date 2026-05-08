@@ -10,15 +10,17 @@ interface ControlPanelProps {
   musicManager?: any;
   onSeasonChange?: (season: string) => void;
   onTimeChange?: (time: string) => void;
+  onLightningStrike?: () => void;
 }
 
 const ControlPanel: (
-    { visible, musicManager, onSeasonChange, onTimeChange} : ControlPanelProps
+    {visible, musicManager, onSeasonChange, onTimeChange, onLightningStrike}: ControlPanelProps
 ) => (null | JSX.Element) = ({
   visible = false,
   musicManager,
   onSeasonChange,
   onTimeChange,
+  onLightningStrike,
 }) => {
 
   const logger = LoggerFactory.create("weather-control");
@@ -40,9 +42,12 @@ const ControlPanel: (
       <SeasonToggle onSeasonChange={onSeasonChange} />
 
       {/* 闪电按钮（仅雨天显示） */}
-      <LightningButton onStrike={() => {
+      <LightningButton
+        onStrike={() => {
           logger.debug('Lightning struck!');
-      }} />
+          onLightningStrike?.();
+        }}
+      />
 
       {/* 音乐控制 */}
       {musicManager && <MusicControl musicManager={musicManager} />}

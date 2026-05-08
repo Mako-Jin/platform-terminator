@@ -2,7 +2,6 @@ import {isDebugMode, LoggerFactory} from "common-tools";
 import {useEffect, useRef, useState} from "react";
 import {ASSETS, ResourceLoader} from "/@/resources";
 import { datetimeManager } from "common-three";
-import SeasonManager from "/@/manager/SeasonManager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import LoadingScreen from "/@/ui/loading";
 import ShaderReveal from "/@/ui/ShaderReveal";
@@ -16,6 +15,7 @@ import './index.scss';
 import Weather from "./weather";
 import {eventBus} from "common-tools";
 import {AppEvents} from "common-tools";
+import SeasonConfigManager from "/@/resources/loader";
 
 
 const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => {
@@ -61,6 +61,9 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         weather.init(targetContainer, withMusic, debugMode).then(() => {
             (window as any).weatherInstance = weather;
             logger.info('[Weather] Weather application started successfully');
+
+            // ✅ 获取并设置 musicManager 以便传递给 UI
+            setMusicManager(weather['musicManager']);
         });
     };
 
@@ -80,6 +83,11 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
     const handleTimeChange = (time: string) => {
         logger.info(`Time changed to: ${time}`);
         showDayNightToast(time);
+    };
+
+    const handleLightningStrike = () => {
+        logger.info('Lightning strike triggered');
+        // 这里可以添加闪电触发的具体逻辑
     };
 
     const handleOpenSettings = () => {
@@ -118,11 +126,11 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
             try {
                 logger.info('Initializing season and color managers...');
 
-                const seasonManager = SeasonManager.getInstance();
+                const seasonConfigManager = SeasonConfigManager.getInstance();
                 const colorManager = ColorManager.getInstance();
 
                 // 等待季节配置加载完成
-                await seasonManager.waitForInitialization();
+                await seasonConfigManager.waitForInitialization();
 
                 logger.info('Managers initialized successfully');
             } catch (error) {
@@ -191,6 +199,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
                 musicManager={musicManager}
                 onSeasonChange={handleSeasonChange}
                 onTimeChange={handleTimeChange}
+                onLightningStrike={handleLightningStrike}
             />
 
             {/* 设置模态框 */}

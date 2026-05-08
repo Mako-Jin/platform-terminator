@@ -11,19 +11,19 @@ import {
     type UpdateParams
 } from "common-three";
 import ResourcesManager from "/@/resources/manager.ts";
-import SeasonManager from "/@/manager/SeasonManager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import BushManager from "/@/manager/BushManager.ts";
 import {type BushDefinition, loadBushDefinitions} from "/@components/bush/loader.ts";
 
 import BushFragmentShader from '/@/shaders/Materials/bush/fragment.glsl';
 import BushVertexShader from '/@/shaders/Materials/bush/vertex.glsl';
+import SeasonConfigManager from "/@/resources/loader";
 
 
 export default class Bush extends Object3DComponent {
 
     private resourcesManager: ResourcesManager;
-    private seasonManager: SeasonManager;
+    private seasonConfigManager: SeasonConfigManager;
     private colorManager: ColorManager;
 
     private keyLight: Three.Object3D | null = null;
@@ -34,9 +34,9 @@ export default class Bush extends Object3DComponent {
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'Bush', options.isDebugMode);
-        
+
         this.resourcesManager = ResourcesManager.getInstance();
-        this.seasonManager = SeasonManager.getInstance();
+        this.seasonConfigManager = SeasonConfigManager.getInstance();
         this.colorManager = ColorManager.getInstance();
     }
 
@@ -88,7 +88,7 @@ export default class Bush extends Object3DComponent {
      */
     protected onActivate(): void {
         this.logger.info('[Bush] Activating...');
-        
+
         // 立即更新颜色
         this.updateColors();
     }
@@ -100,7 +100,7 @@ export default class Bush extends Object3DComponent {
         if (this.material) {
             this.material.uniforms.uTime.value += 0.001;
         }
-        
+
         if (this.bushManager) {
             this.bushManager.update();
         }
@@ -118,7 +118,7 @@ export default class Bush extends Object3DComponent {
      */
     protected onDispose(): void {
         this.logger.info('[Bush] Disposing...');
-        
+
         // 清理 BushManager
         if (this.bushManager) {
             this.bushManager.dispose();
@@ -173,7 +173,7 @@ export default class Bush extends Object3DComponent {
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-        
+
         // 添加灌木相关的调试选项
         if (!this.material || !this.bushManager) return;
 
@@ -230,9 +230,9 @@ export default class Bush extends Object3DComponent {
      */
     private async waitForDependencies(): Promise<void> {
         try {
-            await this.seasonManager.waitForInitialization();
+            await this.seasonConfigManager.waitForInitialization();
         } catch (error) {
-            this.logger.error('[Bush] Failed to wait for SeasonManager initialization:', error);
+            this.logger.error('[Bush] Failed to wait for Season Config initialization:', error);
         }
     }
 
@@ -242,7 +242,7 @@ export default class Bush extends Object3DComponent {
     private v3(arr: number[]): Three.Vector3 {
         return new Three.Vector3(arr[0], arr[1], arr[2]);
     }
-    
+
     /**
      * 辅助函数：创建 Color
      */
@@ -329,7 +329,7 @@ export default class Bush extends Object3DComponent {
      */
     private getDefaults() {
         const preset = this.colorManager.getBushColorConfig("smoothstep");
-        
+
         const defaults = {
             leafCount: 45,
             scale: 1.0,
@@ -358,13 +358,13 @@ export default class Bush extends Object3DComponent {
      */
     private createMaterial(): void {
         const leavesAlphaMap = this.resourcesManager.getItem("leavesAlphaMap");
-        
+
         if (!leavesAlphaMap) {
             this.logger.error('[Bush] leavesAlphaMap not found! This will cause rendering issues.');
         } else {
             this.logger.info('[Bush] leavesAlphaMap loaded successfully');
         }
-        
+
         const preset = this.colorManager.getBushColorConfig("smoothstep");
         const fogUniforms = Three.UniformsUtils.merge([Three.UniformsLib['fog']]);
 
@@ -474,7 +474,7 @@ export default class Bush extends Object3DComponent {
                     highlightColor: colors.highlightColor.toArray(),
                     colorMultiplier: colorMultiplier
                 });
-                
+
                 const preset = this.colorManager.getBushColorConfig("smoothstep");
                 this.logger.info('[Bush] Current preset shadowColor:', preset?.shadowColor);
             }

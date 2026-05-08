@@ -12,7 +12,6 @@ import {
     type UpdateParams
 } from "common-three";
 import ResourcesManager from "/@/resources/manager";
-import SeasonManager from "/@/manager/SeasonManager";
 import ColorManager from "/@/manager/ColorManager";
 import type {ConfigObject} from "/@/utils/color";
 
@@ -20,12 +19,13 @@ import groundVertexCommonChunk from '/@/shaders/Chunks/ground/ground.vertex_comm
 import groundVertexBeginChunk from '/@/shaders/Chunks/ground/ground.vertex_begin_chunk.glsl';
 import groundFragmentCommonChunk from '/@/shaders/Chunks/ground/ground.fragment_common_chunk.glsl';
 import groundFragmentColorChunk from '/@/shaders/Chunks/ground/ground.fragment_color_chunk.glsl';
+import SeasonConfigManager from "/@/resources/loader";
 
 
 export default class Ground extends Object3DComponent {
 
     private resourcesManager: ResourcesManager;
-    private seasonManager: SeasonManager;
+    private seasonConfigManager: SeasonConfigManager;
     private colorManager: ColorManager;
 
     private readonly groundSize: number;
@@ -40,8 +40,8 @@ export default class Ground extends Object3DComponent {
     private customGroundUniforms: any = null;
 
     constructor(
-        scene: SceneWrapper, 
-        options: { 
+        scene: SceneWrapper,
+        options: {
             isDebugMode?: boolean;
             groundSize?: number;
             gridCols?: number;
@@ -51,7 +51,7 @@ export default class Ground extends Object3DComponent {
         } = {}
     ) {
         super(scene, 'Ground', options.isDebugMode);
-        
+
         this.groundSize = options.groundSize ?? 11;
         this.gridCols = options.gridCols ?? 5;
         this.gridRows = options.gridRows ?? 5;
@@ -60,7 +60,7 @@ export default class Ground extends Object3DComponent {
         this.worldSize = this.gridCols * this.groundSize;
 
         this.resourcesManager = ResourcesManager.getInstance();
-        this.seasonManager = SeasonManager.getInstance();
+        this.seasonConfigManager = SeasonConfigManager.getInstance();
         this.colorManager = ColorManager.getInstance();
     }
 
@@ -69,7 +69,7 @@ export default class Ground extends Object3DComponent {
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Ground] Initializing...');
-        
+
         // 等待依赖初始化
         await this.waitForDependencies();
 
@@ -85,7 +85,7 @@ export default class Ground extends Object3DComponent {
      */
     protected onActivate(): void {
         this.logger.info('[Ground] Activating...');
-        
+
         // 立即更新地面颜色
         this.refreshGroundColors();
     }
@@ -109,7 +109,7 @@ export default class Ground extends Object3DComponent {
      */
     protected onDispose(): void {
         this.logger.info('[Ground] Disposing...');
-        
+
         // 清理几何体
         if (this.gridGeometry) {
             this.gridGeometry.dispose();
@@ -160,7 +160,7 @@ export default class Ground extends Object3DComponent {
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-        
+
         // 可以添加更多地形的调试选项
         // 例如：网格大小、世界尺寸等
     }
@@ -170,9 +170,9 @@ export default class Ground extends Object3DComponent {
      */
     private async waitForDependencies(): Promise<void> {
         try {
-            await this.seasonManager.waitForInitialization();
+            await this.seasonConfigManager.waitForInitialization();
         } catch (error) {
-            this.logger.error('[Ground] Failed to wait for SeasonManager initialization:', error);
+            this.logger.error('[Ground] Failed to wait for Season config initialization:', error);
         }
     }
 
@@ -204,12 +204,12 @@ export default class Ground extends Object3DComponent {
      */
     private getGroundColorConfig(): ConfigObject | null {
         const colors = this.colorManager.getGroundColorConfig('smoothstep');
-        
+
         if (!colors) {
             this.logger.warn('[Ground] Ground color config not available yet, using defaults');
             return null;
         }
-        
+
         return colors;
     }
 
@@ -250,7 +250,7 @@ export default class Ground extends Object3DComponent {
             return;
         }
         displacementTexture.wrapS = displacementTexture.wrapT = Three.RepeatWrapping;
-        
+
         const perlinNoise = this.resourcesManager.getItem("perlinNoise");
         if (!perlinNoise) {
             this.logger.error('[Ground] perlinNoise not found in ResourcesManager');
@@ -360,7 +360,7 @@ export default class Ground extends Object3DComponent {
         const groundMesh = new Three.Mesh(mergedGeometry, this.groundMaterial);
         groundMesh.receiveShadow = true;
         groundMesh.name = 'GroundMesh';
-        
+
         // 添加到根节点
         root.add(groundMesh);
     }

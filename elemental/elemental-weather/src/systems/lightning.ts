@@ -25,8 +25,6 @@ import lightningArcVertexShader from '/@/shaders/Materials/lightning/vertex.glsl
 import lightningArcFragmentShader from '/@/shaders/Materials/lightning/fragment.glsl';
 // ✅ 导入环境音效管理器
 import AmbientSoundManager from "/@/manager/AmbientSoundManager";
-// ✅ 导入闪电按钮 UI
-import LightningButtonUI from "/@/ui/lightning";
 import {cameraManager} from "common-three";
 
 interface ColorStop {
@@ -64,15 +62,12 @@ export default class Lightning extends Object3DComponent {
 
     private resourcesManager: ResourcesManager;
     private sizeManager: SizeManager;
-    
+
     // ✅ 内部管理粒子系统
     private particleSystem: ParticleSystem | null = null;
-    
+
     // ✅ 环境音效管理器
     private ambientSoundManager: AmbientSoundManager | null = null;
-    
-    // ✅ 闪电按钮 UI
-    private lightningButtonUI: LightningButtonUI | null = null;
 
     private explosionMaterial: Three.ShaderMaterial | null = null;
     private activeLightningArcs: Three.Mesh[] = [];
@@ -118,7 +113,7 @@ export default class Lightning extends Object3DComponent {
     };
 
     private currentSeason: string = 'spring';
-    
+
     // ✅ 相机震动状态
     private isShaking: boolean = false;
     private shakeStart: number = 0;
@@ -181,7 +176,7 @@ export default class Lightning extends Object3DComponent {
 
         // ✅ 创建粒子系统
         this.particleSystem = new ParticleSystem();
-        
+
         // ✅ 获取环境音效管理器实例
         try {
             this.ambientSoundManager = AmbientSoundManager.getInstance();
@@ -206,11 +201,6 @@ export default class Lightning extends Object3DComponent {
 
         // 监听窗口 resize
         window.addEventListener('resize', this.handleResize.bind(this));
-        
-        // ✅ 创建闪电按钮 UI
-        this.lightningButtonUI = new LightningButtonUI(() => {
-            this.manualStrike();
-        });
     }
 
     /**
@@ -262,13 +252,7 @@ export default class Lightning extends Object3DComponent {
 
         // 移除 resize 监听
         window.removeEventListener('resize', this.handleResize.bind(this));
-        
-        // ✅ 销毁闪电按钮 UI
-        if (this.lightningButtonUI) {
-            this.lightningButtonUI.destroy();
-            this.lightningButtonUI = null;
-        }
-        
+
         // 停止相机震动
         this.stopCameraShake();
     }
@@ -298,13 +282,7 @@ export default class Lightning extends Object3DComponent {
             (arc.material as Three.Material).dispose();
         }
         this.activeLightningArcs = [];
-        
-        // ✅ 确保 UI 已销毁
-        if (this.lightningButtonUI) {
-            this.lightningButtonUI.destroy();
-            this.lightningButtonUI = null;
-        }
-        
+
         // 停止相机震动
         this.stopCameraShake();
     }
@@ -603,10 +581,10 @@ export default class Lightning extends Object3DComponent {
         params.shape = shape;
 
         const emitter = new Emitter(params);
-        
+
         // ✅ 添加到内部粒子系统
         this.particleSystem.addEmitter(emitter);
-        
+
         // 添加到场景
         this.scene.getScene().add(rendererParams.group);
     }
@@ -617,7 +595,7 @@ export default class Lightning extends Object3DComponent {
     private triggerCameraShake(strikePosition: Three.Vector3 | null = null): void {
         // 从 CameraManager 获取当前激活的相机
         const camera = cameraManager.getThreeCamera();
-        
+
         if (!camera) {
             this.logger.warn('[Lightning] No camera found for shake effect');
             return;

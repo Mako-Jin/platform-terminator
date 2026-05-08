@@ -11,12 +11,22 @@ export type {
     ResourceDependencies
 } from './types';
 
-export type { 
-    TimeChangedData, 
-    DateChangedData, 
-    FestivalConfig, 
+export type {
+    TimeChangedData,
+    DateChangedData,
+    FestivalConfig,
     ImportantDateConfig,
-    SeasonChangedData
+    SeasonChangedData,
+    SeasonType,
+    TimeOfDayType,
+} from './datetimes';
+
+export {
+    SEASON_DISPLAY_NAMES,
+    SEASON_ICONS,
+    TIME_OF_DAY_DISPLAY_NAMES,
+    TIME_OF_DAY_ICONS,
+    AVAILABLE_SEASONS
 } from './datetimes';
 
 export type { DebugConfig } from './debugger';

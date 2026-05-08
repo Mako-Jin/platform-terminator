@@ -1,7 +1,7 @@
 import {eventBus, LoggerFactory} from "common-tools";
 import ColorInterpolator, {type ConfigObject} from "/@/utils/color";
-import SeasonManager from "/@/manager/SeasonManager.ts";
 import {datetimeManager} from "common-three";
+import SeasonConfigManager from "/@/resources/loader";
 
 
 export type EasingType = 'linear' | 'easeInOut' | 'smoothstep';
@@ -19,8 +19,8 @@ export default class ColorManager {
     private Logger = LoggerFactory.create("weather-color");
 
     private static instance: ColorManager | null = null;
-    
-    private seasonManager: SeasonManager;
+
+    private seasonConfigManager: SeasonConfigManager;
 
     private cachedConfigs: Map<string, ConfigObject | null | undefined> = new Map();
     private autoUpdateEnabled: boolean = true;
@@ -41,7 +41,7 @@ export default class ColorManager {
         }
         ColorManager.instance = this;
 
-        this.seasonManager = SeasonManager.getInstance();
+        this.seasonConfigManager = SeasonConfigManager.getInstance();
 
         this.setupAutoUpdate();
     }
@@ -105,21 +105,21 @@ export default class ColorManager {
     }
 
     public getComponentConfig(component: string, easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
-        const currentSeason = this.seasonManager.season;
+        const currentSeason = datetimeManager.getCurrentSeason();
         const cacheKey = `${currentSeason}_${component}_${easing}`;
 
         if (this.cachedConfigs.has(cacheKey)) {
             return this.cachedConfigs.get(cacheKey);
         }
 
-        const seasonConfigs = this.seasonManager.getSeasonConfig(currentSeason);
+        const seasonConfigs = this.seasonConfigManager.getSeasonConfig(currentSeason);
         if (!seasonConfigs) {
             this.Logger.warn(`No color configs found for season: ${currentSeason}`);
-            
-            if (!this.seasonManager['isInitialized']) {
-                this.Logger.warn(`SeasonManager is not initialized yet. Config will be available after initialization.`);
+
+            if (!this.seasonConfigManager['isInitialized']) {
+                this.Logger.warn(`SeasonConfig is not initialized yet. Config will be available after initialization.`);
             }
-            
+
             return null;
         }
 
@@ -144,8 +144,8 @@ export default class ColorManager {
     }
 
     public getAllConfigs(easing: EasingType = 'smoothstep'): Record<string, ConfigObject | null | undefined> {
-        const currentSeason = this.seasonManager.season;
-        const seasonConfigs = this.seasonManager.getSeasonConfig(currentSeason);
+        const currentSeason = datetimeManager.getCurrentSeason();
+        const seasonConfigs = this.seasonConfigManager.getSeasonConfig(currentSeason);
         if (!seasonConfigs) {
             this.Logger.warn(`No color configs found for season: ${currentSeason}`);
             return {};
@@ -229,7 +229,7 @@ export default class ColorManager {
         let linearFactor: number;
 
         const hour = datetimeManager.getHour();
-        
+
         if (hour >= this.DAY_FULL_START && hour <= this.DAY_FULL_END) {
             linearFactor = 0; // 完全白天
         } else if (hour >= this.NIGHT_FULL_START || hour < this.NIGHT_FULL_END) {

@@ -10,25 +10,25 @@ import {
     type TimeChangedData,
     type UpdateParams
 } from "common-three";
-import SeasonManager from "/@/manager/SeasonManager.ts";
 import ResourcesManager from "/@/resources/manager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import type {ConfigObject} from "/@/utils/color.ts";
+import SeasonConfigManager from "/@/resources/loader";
 
 
 export default class Lighting extends Object3DComponent {
-    
+
     private helperEnabled: boolean;
 
-    private lights: { 
-        key: Three.DirectionalLight | null; 
-        fill: Three.DirectionalLight | null; 
-        ambient: Three.AmbientLight | null; 
-        rim: Three.DirectionalLight | null; 
-        lamp: Three.PointLight | null 
+    private lights: {
+        key: Three.DirectionalLight | null;
+        fill: Three.DirectionalLight | null;
+        ambient: Three.AmbientLight | null;
+        rim: Three.DirectionalLight | null;
+        lamp: Three.PointLight | null
     };
 
-    private seasonManager: SeasonManager;
+    private seasonConfigManager: SeasonConfigManager;
     private resourcesManager: ResourcesManager;
     private colorManager: ColorManager;
 
@@ -48,11 +48,11 @@ export default class Lighting extends Object3DComponent {
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'weather-lighting', options.isDebugMode);
-        
+
         this.isDebugMode = options.isDebugMode ?? false;
         this.helperEnabled = this.isDebugMode;
 
-        this.seasonManager = SeasonManager.getInstance();
+        this.seasonConfigManager = SeasonConfigManager.getInstance();
         this.resourcesManager = ResourcesManager.getInstance();
         this.colorManager = ColorManager.getInstance();
 
@@ -72,7 +72,7 @@ export default class Lighting extends Object3DComponent {
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Lighting] Initializing...');
-        
+
         // 等待依赖初始化
         await this.waitForDependencies();
 
@@ -95,10 +95,10 @@ export default class Lighting extends Object3DComponent {
      */
     protected onActivate(): void {
         this.logger.info('[Lighting] Activating...');
-        
+
         // 刷新灯光配置
         this.refreshLightingConfig();
-        
+
         // 添加调试辅助
         if (this.helperEnabled) {
             this.addHelpers();
@@ -125,7 +125,7 @@ export default class Lighting extends Object3DComponent {
      */
     protected onDispose(): void {
         this.logger.info('[Lighting] Disposing...');
-        
+
         // 清理环境贴图引用
         if (this.environmentMap) {
             this.environmentMap.current = null;
@@ -176,7 +176,7 @@ export default class Lighting extends Object3DComponent {
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-        
+
         // 可以添加更多灯光相关的调试选项
         // 例如：灯光强度、颜色等
     }
@@ -186,9 +186,9 @@ export default class Lighting extends Object3DComponent {
      */
     private async waitForDependencies(): Promise<void> {
         try {
-            await this.seasonManager.waitForInitialization();
+            await this.seasonConfigManager.waitForInitialization();
         } catch (error) {
-            this.logger.error('[Lighting] Failed to wait for SeasonManager initialization:', error);
+            this.logger.error('[Lighting] Failed to wait for Season config initialization:', error);
         }
     }
 
@@ -198,7 +198,7 @@ export default class Lighting extends Object3DComponent {
     private refreshLightingConfig(): void {
         this.logger.debug('[Lighting] Refreshing lighting config...');
         const config = this.colorManager.getLightingConfig('smoothstep');
-        
+
         if (config) {
             this.applyLightingConfig(config);
         } else {
@@ -415,7 +415,7 @@ export default class Lighting extends Object3DComponent {
                     material instanceof Three.MeshBasicMaterial
                 ) {
                     material.envMap = this.environmentMap!.current;
-                    
+
                     // ✅ 使用 colorManager 获取颜色插值因子
                     const timeFactor = this.colorManager.getColorInterpolationFactor('smoothstep');
                     material.reflectivity = 0.5 - timeFactor * 0.2;
@@ -438,7 +438,7 @@ export default class Lighting extends Object3DComponent {
     private getScene(): Three.Scene | null {
         const root = this.root;
         if (!root) return null;
-        
+
         // 从根节点向上查找场景
         let parent: Three.Object3D | null = root.parent;
         while (parent) {
@@ -447,7 +447,7 @@ export default class Lighting extends Object3DComponent {
             }
             parent = parent.parent;
         }
-        
+
         return null;
     }
 }

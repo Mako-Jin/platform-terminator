@@ -1,11 +1,35 @@
 import type {ResourceErrorData, ResourceLoadedData, ResourceProgressData} from "common-tools";
 import {AppEvents, eventBus, LoggerFactory} from "common-tools";
 import type {Asset} from "/@/resources";
-import {AudioLoader, CubeTextureLoader, LoadingManager, TextureLoader} from "three";
+import {AudioLoader, Color, CubeTextureLoader, LoadingManager, TextureLoader} from "three";
 import {GLTFLoader} from 'three/addons/loaders/GLTFLoader.js';
 import {DRACOLoader} from 'three/addons/loaders/DRACOLoader.js';
 import {HDRLoader} from 'three/addons/loaders/HDRLoader.js';
 import {resourcesManager} from "./manager";
+import type {SeasonChangedData} from "common-three";
+import {datetimeManager} from "common-three";
+import type {ConfigObject} from "/@/utils/color";
+import {AVAILABLE_SEASONS} from "common-three";
+
+
+export interface SeasonColorComponent {
+    day?: ConfigObject;
+    night?: ConfigObject;
+}
+
+export interface SeasonColorConfigs {
+    ground?: SeasonColorComponent;
+    lighting?: SeasonColorComponent;
+    grass?: SeasonColorComponent;
+    bush?: SeasonColorComponent;
+    rocks?: SeasonColorComponent;
+    fire?: SeasonColorComponent;
+    fallingLeaves?: SeasonColorComponent;
+    windLines?: SeasonColorComponent;
+    tent?: SeasonColorComponent;
+    skydome?: SeasonColorComponent;
+    [key: string]: SeasonColorComponent | undefined;
+}
 
 
 /**
@@ -220,5 +244,183 @@ export class ResourceLoader {
 
 }
 
-export default ResourceLoader;
+export class SeasonConfigLoader {
 
+    private static Logger = LoggerFactory.create("season-config-loader");
+
+    private static configCache: Map<string, SeasonColorConfigs> = new Map();
+
+    static async loadSeasonConfig(season: string): Promise<SeasonColorConfigs> {
+        if (this.configCache.has(season)) {
+            return this.configCache.get(season)!;
+        }
+
+        try {
+            const path = `/@/settings/seasons/${season}.json`;
+            const module = await import(/* @vite-ignore */ path);
+            const rawData = module.default;
+
+            const processedConfig = this.processConfig(rawData);
+            this.configCache.set(season, processedConfig);
+
+            this.Logger.debug(`Loaded season config: ${season}`);
+            return processedConfig;
+        } catch (error) {
+            this.Logger.error(`Failed to load season config: ${season}`, error);
+            throw error;
+        }
+    }
+
+    static async loadAllSeasons(seasons: string[]): Promise<Map<string, SeasonColorConfigs>> {
+        const configs = new Map<string, SeasonColorConfigs>();
+
+        for (const season of seasons) {
+            try {
+                const config = await this.loadSeasonConfig(season);
+                configs.set(season, config);
+            } catch (error) {
+                this.Logger.warn(`Skipping season ${season} due to load error`);
+            }
+        }
+
+        return configs;
+    }
+
+    private static processConfig(rawData: any): SeasonColorConfigs {
+        const processed: any = {};
+
+        for (const [componentName, componentData] of Object.entries(rawData)) {
+            if (typeof componentData === 'object' && componentData !== null) {
+                processed[componentName] = this.processComponent(componentData);
+            }
+        }
+
+        return processed;
+    }
+
+    private static processComponent(componentData: any): any {
+        const result: any = {};
+
+        for (const [timeOfDay, data] of Object.entries(componentData)) {
+            if (typeof data === 'object' && data !== null) {
+                result[timeOfDay] = this.processValues(data);
+            }
+        }
+
+        return result;
+    }
+
+    private static processValues(data: any): any {
+        const result: any = {};
+
+        for (const [key, value] of Object.entries(data)) {
+            if (Array.isArray(value) && value.length === 3) {
+                result[key] = new Color(value[0], value[1], value[2]);
+            } else if (typeof value === 'object' && value !== null && value.type === 'color') {
+                result[key] = new Color(
+                    value.value[0],
+                    value.value[1],
+                    value.value[2]
+                );
+            } else {
+                result[key] = value;
+            }
+        }
+
+        return result;
+    }
+
+    static clearCache(): void {
+        this.configCache.clear();
+    }
+}
+
+
+export default class SeasonConfigManager {
+
+    private Logger = LoggerFactory.create("weather-season");
+
+    private static instance: SeasonConfigManager | null = null;
+
+    private currentSeason: string;
+
+    private seasonConfigs: Map<string, SeasonColorConfigs> = new Map();
+
+    private isInitialized: boolean = false;
+
+    private initPromise: Promise<void> | null = null;
+
+    constructor() {
+        if (SeasonConfigManager.instance) {
+            return SeasonConfigManager.instance;
+        }
+        SeasonConfigManager.instance = this;
+
+        this.currentSeason = datetimeManager.getCurrentSeason();
+
+        this.initPromise = this.initialize();
+    }
+
+    static getInstance(): SeasonConfigManager {
+        if (!SeasonConfigManager.instance) {
+            SeasonConfigManager.instance = new SeasonConfigManager();
+        }
+        return SeasonConfigManager.instance;
+    }
+
+    async initialize(): Promise<void> {
+        if (this.isInitialized) {
+            return;
+        }
+
+        try {
+            this.Logger.info('Loading season configurations...');
+            this.seasonConfigs = await SeasonConfigLoader.loadAllSeasons(AVAILABLE_SEASONS);
+            this.isInitialized = true;
+            this.Logger.info(`Successfully loaded ${this.seasonConfigs.size} season configurations`);
+        } catch (error) {
+            this.Logger.error('Failed to initialize season configurations', error);
+            throw error;
+        }
+    }
+
+    private emitSeasonChanged(previousSeason: string): void {
+        const data: SeasonChangedData = {
+            season: this.currentSeason,
+            previousSeason,
+            timestamp: Date.now(),
+        };
+
+        eventBus.emit('environment:season:changed', data);
+        this.Logger.debug(`Season changed: ${previousSeason} → ${this.currentSeason}`);
+    }
+
+    async waitForInitialization(): Promise<void> {
+        if (this.isInitialized) {
+            return;
+        }
+
+        if (this.initPromise) {
+            await this.initPromise;
+        } else {
+            await this.initialize();
+        }
+    }
+
+    getSeasonConfig(season?: string): SeasonColorConfigs | undefined {
+        const targetSeason = season || this.currentSeason;
+
+        if (!this.isInitialized) {
+            this.Logger.warn(`Season Config not initialized yet, returning undefined for season: ${targetSeason}`);
+            return undefined;
+        }
+
+        return this.seasonConfigs.get(targetSeason);
+    }
+
+    registerSeasonConfigs(season: string, configs: SeasonColorConfigs): void {
+        this.seasonConfigs.set(season, configs);
+        this.Logger.debug(`Registered custom color configs for season: ${season}`);
+    }
+
+}

@@ -13,8 +13,6 @@ import * as Three from "three";
 import AudioManager from "/@/manager/AudioManager";
 import MusicManager from "/@/manager/MusicManager";
 import AmbientSoundManager from "/@/manager/AmbientSoundManager";
-import SeasonManager from "/@/manager/SeasonManager";
-import MusicControlUI from "/@/ui/music";
 
 class Weather {
 
@@ -30,11 +28,8 @@ class Weather {
 
     // ✅ 音频管理器实例
     private audioManager!: AudioManager;
-    private musicManager!: MusicManager;
+    public musicManager!: MusicManager;
     private ambientSoundManager!: AmbientSoundManager;
-
-    // ✅ UI 控件实例（只保留音乐控制）
-    private musicControlUI!: MusicControlUI;
 
     constructor() {
         if (Weather.instance) {
@@ -103,9 +98,6 @@ class Weather {
         // ✅ 异步初始化 World（会自动初始化所有组件）
         await this.world.initialize();
 
-        // ✅ 初始化 UI 控件
-        this.initializeUIControls();
-
         // 监听尺寸变化
         sizeManager.onSizeChanged((data) => {
             this.resize();
@@ -139,10 +131,8 @@ class Weather {
             this.musicManager = new MusicManager(this.audioManager);
 
             // 4. 创建环境音效管理器
-            const seasonManager = SeasonManager.getInstance();
             this.ambientSoundManager = new AmbientSoundManager(
                 this.audioManager,
-                seasonManager
             );
 
             // 5. 设置相机引用（用于距离计算）
@@ -158,14 +148,6 @@ class Weather {
         } catch (error) {
             this.logger.error('Failed to initialize audio system', error);
         }
-    }
-
-    /**
-     * ✅ 初始化 UI 控件
-     */
-    private initializeUIControls(): void {
-        // ✅ 只创建音乐控制按钮
-        this.musicControlUI = new MusicControlUI(this.musicManager);
     }
 
     resize(): void {
@@ -227,11 +209,6 @@ class Weather {
 
         // ✅ 停止时钟
         clockManager.stop();
-
-        // ✅ 清理 UI 控件
-        if (this.musicControlUI) {
-            this.musicControlUI.destroy();
-        }
 
         // ✅ 清理音频系统
         if (this.ambientSoundManager) {

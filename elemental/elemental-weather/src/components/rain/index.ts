@@ -10,13 +10,14 @@ import {
     type TimeChangedData,
     type UpdateParams
 } from "common-three";
-import SeasonManager from "/@/manager/SeasonManager.ts";
+import SeasonConfigManager from "/@/resources/loader";
+import {datetimeManager} from "common-three";
 
 
 class RainSystem {
     private scene: SceneWrapper;
     private bounds: any;
-    private seasonManager: SeasonManager;
+    private seasonConfigManager: SeasonConfigManager;
     private count: number;
     private visible: boolean;
     private geometry!: Three.BufferGeometry;
@@ -33,7 +34,7 @@ class RainSystem {
     constructor(scene: SceneWrapper, bounds: any) {
         this.scene = scene;
         this.bounds = bounds;
-        this.seasonManager = SeasonManager.getInstance();
+        this.seasonConfigManager = SeasonConfigManager.getInstance();
 
         this.count = 800;
         this.visible = false;
@@ -163,7 +164,7 @@ class RainSystem {
     }
 
     getRainColor(): Three.Color {
-        const season = this.seasonManager.season;
+        const season = datetimeManager.getCurrentSeason();
 
         switch (season) {
             case 'rainy':
@@ -230,15 +231,15 @@ class RainSystem {
 
 
 export default class Rain extends Object3DComponent {
-    
-    private seasonManager: SeasonManager;
+
+    private seasonConfigManager: SeasonConfigManager;
     private rainSystem: RainSystem | null = null;
     private rainGroup: Three.Group | null = null;
-    
+
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'Rain', options.isDebugMode);
-        
-        this.seasonManager = SeasonManager.getInstance();
+
+        this.seasonConfigManager = SeasonConfigManager.getInstance();
     }
 
     /**
@@ -260,7 +261,7 @@ export default class Rain extends Object3DComponent {
             originX: 0.0,
             originZ: 0.0,
         };
-        
+
         this.rainSystem = new RainSystem(this.scene, rainBounds);
 
         // 更新可见性
@@ -297,13 +298,13 @@ export default class Rain extends Object3DComponent {
      */
     protected onDispose(): void {
         this.logger.info('[Rain] Disposing...');
-        
+
         // 清理雨系统
         if (this.rainSystem) {
             this.rainSystem.dispose();
             this.rainSystem = null;
         }
-        
+
         this.rainGroup = null;
     }
 
@@ -341,7 +342,7 @@ export default class Rain extends Object3DComponent {
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-        
+
         // 可以添加更多雨相关的调试选项
         // 例如：粒子数量、雨滴速度等
     }
@@ -351,8 +352,8 @@ export default class Rain extends Object3DComponent {
      */
     private updateVisibility(): void {
         if (!this.rainSystem) return;
-        
-        const isRainySeason = this.seasonManager.season === 'rainy';
+
+        const isRainySeason = datetimeManager.getCurrentSeason() === 'rainy';
         this.rainSystem.setVisible(isRainySeason);
         // this.rainSystem.setVisible(true); // 测试用
     }

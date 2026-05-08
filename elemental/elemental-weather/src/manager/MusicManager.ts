@@ -26,6 +26,7 @@ export default class MusicManager {
     // 当前播放状态
     private currentTrack: MusicTrack | null = null;
     private isPlaying: boolean = false;
+    public isMuted: boolean = false; // ✅ 添加静音状态
 
     // 事件回调
     private onTrackChangeCallback: ((track: MusicTrack) => void) | null = null;
@@ -75,6 +76,7 @@ export default class MusicManager {
         // 播放新曲目
         this.currentTrack = track;
         this.isPlaying = true;
+        this.isMuted = false; // ✅ 播放时取消静音
         this.audioManager.play(track.id);
 
         this.logger.info(`Playing: ${track.name}`);
@@ -103,6 +105,7 @@ export default class MusicManager {
         if (this.currentTrack) {
             this.audioManager.pause(this.currentTrack.id);
             this.isPlaying = false;
+            this.isMuted = true; // ✅ 暂停时标记为静音
             this.logger.info("Music paused");
         }
     }
@@ -114,6 +117,7 @@ export default class MusicManager {
         if (this.currentTrack) {
             this.audioManager.resume(this.currentTrack.id);
             this.isPlaying = true;
+            this.isMuted = false; // ✅ 恢复时取消静音
             this.logger.info("Music resumed");
         }
     }

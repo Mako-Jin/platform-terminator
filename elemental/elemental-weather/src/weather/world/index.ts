@@ -10,11 +10,11 @@ import {Snow} from "/@/components";
 import {Fog} from "/@/components";
 import {Tent} from "/@/components";
 import {Bridge} from "/@/components";
-import {WindLines} from "/@components";
-import {Rocks} from "/@components";
-import {Camp} from "/@components";
-import {Fire} from "/@components";
-import {Fireflies} from "/@components";
+import {WindLines} from "/@/components";
+import {Rocks} from "/@/components";
+import {Camp} from "/@/components";
+import {Fire} from "/@/components";
+import {Fireflies} from "/@/components";
 import {ParticleSystem} from "/@/systems/particle.ts";
 import Lightning from "/@/systems/lightning.ts";
 

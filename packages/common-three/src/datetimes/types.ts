@@ -24,6 +24,52 @@ export interface TimeChangedData {
  */
 export type SeasonType = 'spring' | 'summer' | 'autumn' | 'winter';
 
+export const AVAILABLE_SEASONS: string[] = ['spring', 'summer', 'autumn', 'winter', 'rainy'];
+
+/**
+ * 季节显示名称映射
+ */
+export const SEASON_DISPLAY_NAMES: Record<SeasonType, string> = {
+    spring: 'Blooming Spring',
+    summer: 'Sunny Summer',
+    autumn: 'Cozy Autumn',
+    winter: 'Frosty Winter',
+    rainy: 'Thundering Rain',
+} as Record<SeasonType, string>;
+
+/**
+ * 季节图标映射
+ */
+export const SEASON_ICONS: Record<SeasonType, string> = {
+    spring: 'fas fa-seedling',
+    summer: 'fas fa-sun',
+    autumn: 'fa-brands fa-canadian-maple-leaf',
+    winter: 'fas fa-snowflake',
+    rainy: 'fas fa-cloud-rain',
+} as Record<SeasonType, string>;
+
+/**
+ * 时间段类型
+ */
+export type TimeOfDayType = 'day' | 'night';
+
+/**
+ * 时间段显示名称映射
+ */
+export const TIME_OF_DAY_DISPLAY_NAMES: Record<TimeOfDayType, string> = {
+    day: 'Daytime',
+    night: 'Nighttime',
+};
+
+/**
+ * 时间段图标映射
+ */
+export const TIME_OF_DAY_ICONS: Record<TimeOfDayType, string> = {
+    day: 'fas fa-sun',
+    night: 'fas fa-moon',
+};
+
+
 /**
  * 季节变化事件数据
  */

@@ -11,14 +11,15 @@ import {
     type UpdateParams
 } from "common-three";
 import ResourcesManager from "/@/resources/manager.ts";
-import SeasonManager from "/@/manager/SeasonManager.ts";
+import SeasonConfigManager from "/@/resources/loader";
+import {datetimeManager} from "common-three";
 
 
 class FallingLeavesSystem {
     private count: number;
     private scene: SceneWrapper;
     private bounds: any;
-    private seasonManager: SeasonManager;
+    private seasonConfigManager: SeasonConfigManager;
     private material: Three.MeshStandardMaterial;
     private mesh: Three.InstancedMesh;
     private dummy: Three.Object3D;
@@ -29,12 +30,12 @@ class FallingLeavesSystem {
         rotSpeed: Three.Vector3;
         scale: number;
     }>;
-    
+
     constructor(scene: SceneWrapper, geometry: Three.BufferGeometry, bounds: any) {
         this.count = 35;
         this.scene = scene;
         this.bounds = bounds;
-        this.seasonManager = SeasonManager.getInstance();
+        this.seasonConfigManager = SeasonConfigManager.getInstance();
 
         const leafColor = this.getFallingLeavesColor();
 
@@ -62,15 +63,15 @@ class FallingLeavesSystem {
                 Math.random() * (bounds.yMax - bounds.yMin) + bounds.yMin;
         }
 
-        this.seasonManager.onSeasonChange((data) => {
+        datetimeManager.onSeasonChanged((data) => {
             this.onSeasonChanged(data.season, data.previousSeason);
         });
     }
 
     private getFallingLeavesColor(): Three.Color {
-        const currentSeason = this.seasonManager.season;
-        const seasonConfig = this.seasonManager.getSeasonConfig(currentSeason);
-        
+        const currentSeason = datetimeManager.getCurrentSeason();
+        const seasonConfig = this.seasonConfigManager.getSeasonConfig(currentSeason);
+
         if (seasonConfig?.fallingLeaves) {
             const fallingLeavesConfig = seasonConfig.fallingLeaves as any;
 
@@ -84,7 +85,7 @@ class FallingLeavesSystem {
                 }
             }
         }
-        
+
         return new Three.Color(1.0, 0.388, 0.278);
     }
 
@@ -164,15 +165,15 @@ class FallingLeavesSystem {
 
 
 export default class FallingLeaves extends Object3DComponent {
-    
+
     private resourcesManager: ResourcesManager;
     private fallingLeavesSystemOne: FallingLeavesSystem | null = null;
     private fallingLeavesSystemTwo: FallingLeavesSystem | null = null;
     private leafGroup: Three.Group | null = null;
-    
+
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'FallingLeaves', options.isDebugMode);
-        
+
         this.resourcesManager = ResourcesManager.getInstance();
     }
 
@@ -187,9 +188,9 @@ export default class FallingLeaves extends Object3DComponent {
             this.logger.error('[FallingLeaves] leafModel not found in ResourcesManager');
             return;
         }
-        
+
         const leafGeometry = leafModelData.scene.children[0].geometry;
-        
+
         // 创建组作为根节点
         this.leafGroup = new Three.Group();
         this.leafGroup.name = 'FallingLeavesGroup';
@@ -257,7 +258,7 @@ export default class FallingLeaves extends Object3DComponent {
      */
     protected onDispose(): void {
         this.logger.info('[FallingLeaves] Disposing...');
-        
+
         // 清理落叶系统
         if (this.fallingLeavesSystemOne) {
             this.fallingLeavesSystemOne.dispose();
@@ -267,7 +268,7 @@ export default class FallingLeaves extends Object3DComponent {
             this.fallingLeavesSystemTwo.dispose();
             this.fallingLeavesSystemTwo = null;
         }
-        
+
         this.leafGroup = null;
     }
 
@@ -304,7 +305,7 @@ export default class FallingLeaves extends Object3DComponent {
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-        
+
         // 可以添加更多落叶相关的调试选项
         // 例如：粒子数量、风速等
     }

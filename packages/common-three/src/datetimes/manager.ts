@@ -1,6 +1,7 @@
-import {eventBus, LoggerFactory} from "common-tools";
+import {eventBus, LoggerFactory, isDebugMode} from "common-tools";
 import type {DateChangedData, FestivalConfig, SeasonChangedData, SeasonType, TimeChangedData} from "./types";
 import {Solar} from 'lunar-javascript';
+import {SEASON_DISPLAY_NAMES} from "./types";
 
 /**
  * 时间管理器（单例）
@@ -20,6 +21,9 @@ export class DateTimeManager {
     private dateListeners: Set<(data: DateChangedData) => void> = new Set();
     private seasonListeners: Set<(data: SeasonChangedData) => void> = new Set();
 
+    // ✅ 手动覆盖的季节（仅 Debug 模式可用）
+    private manualSeasonOverride: SeasonType | null = null;
+
     // 节日配置列表
     private festivals: Map<string, FestivalConfig> = new Map();
 
@@ -37,8 +41,13 @@ export class DateTimeManager {
     private constructor() {
         this.currentTime = new Date();
         this.previousDate = this.getDateKey(this.currentTime);
-        this.previousSeason = this.getCurrentSeason();
+        this.previousSeason = this.getCurrentSeason(); // ✅ 使用 getCurrentSeason
+
         this.loadDefaultFestivals();
+
+        // ✅ 记录 Debug 模式状态
+        const debugMode = isDebugMode();
+        this.logger.info(`DateTimeManager initialized (Debug mode: ${debugMode})`);
     }
 
     /**
@@ -88,6 +97,52 @@ export class DateTimeManager {
 
         this.isRunning = false;
         this.logger.info('Time manager stopped');
+    }
+
+    /**
+     * ✅ 手动设置季节（仅在 Debug 模式下可用）
+     *
+     * @param season 要设置的季节
+     */
+    setManualSeason(season: SeasonType): void {
+        // ✅ 非 Debug 模式下禁止手动设置
+        if (!isDebugMode()) {
+            this.logger.warn('Manual season override is only available in Debug mode');
+            return;
+        }
+
+        const previousSeason = this.manualSeasonOverride || this.previousSeason;
+        this.manualSeasonOverride = season;
+
+        this.logger.info(`Manual season set: ${season} (Debug mode)`);
+
+        // ✅ 触发季节变化事件
+        this.emitSeasonChangeEvent(previousSeason || 'spring', season);
+    }
+
+    /**
+     * ✅ 清除手动季节覆盖，恢复自动计算
+     */
+    clearManualSeason(): void {
+        if (this.manualSeasonOverride) {
+            const overriddenSeason = this.manualSeasonOverride;
+            this.manualSeasonOverride = null;
+
+            // ✅ 恢复到自动计算的季节
+            const autoSeason = this.getAutoSeason();
+
+            this.logger.info(`Manual season override cleared: ${overriddenSeason} → ${autoSeason}`);
+
+            // ✅ 触发季节变化事件
+            this.emitSeasonChangeEvent(overriddenSeason, autoSeason);
+        }
+    }
+
+    /**
+     * ✅ 检查是否有手动季节覆盖
+     */
+    hasManualSeason(): boolean {
+        return this.manualSeasonOverride !== null;
     }
 
     /**
@@ -185,7 +240,7 @@ export class DateTimeManager {
             const solar = Solar.fromDate(this.currentTime);
             const lunar = solar.getLunar();
             const jieQi = lunar.getJieQi();
-            
+
             // 如果当天是节气日，返回节气名称
             if (jieQi) {
                 return jieQi;
@@ -204,7 +259,6 @@ export class DateTimeManager {
      */
     private getNearestSolarTerm(): string {
         try {
-            // 获取当年的所有节气
             const year = this.getYear();
             const terms = [
                 '立春', '雨水', '惊蛰', '春分', '清明', '谷雨',
@@ -213,21 +267,32 @@ export class DateTimeManager {
                 '立冬', '小雪', '大雪', '冬至', '小寒', '大寒'
             ];
 
-            // 查找已经过去的最近一个节气
-            for (let i = terms.length - 1; i >= 0; i--) {
-                const term = terms[i];
+            let nearestTerm = '';
+            let nearestDate: Date | null = null;
+
+            for (const term of terms) {
                 const termSolar = this.getSolarTermDate(year, term);
+                
                 if (termSolar && this.currentTime >= termSolar) {
-                    return term;
+                    if (!nearestDate || termSolar > nearestDate) {
+                        nearestTerm = term;
+                        nearestDate = termSolar;
+                    }
                 }
             }
 
-            // 如果还没到今年的第一个节气，返回去年的最后一个
+            if (nearestTerm) {
+                this.logger.debug(`[getNearestSolarTerm] Found nearest term: ${nearestTerm} (${nearestDate?.toLocaleDateString()})`);
+                return nearestTerm;
+            }
+
             const lastYearTerms = this.getSolarTermDate(year - 1, '大寒');
             if (lastYearTerms && this.currentTime >= lastYearTerms) {
+                this.logger.debug(`[getNearestSolarTerm] Using last year's 大寒`);
                 return '大寒';
             }
 
+            this.logger.warn('[getNearestSolarTerm] No solar term found, returning empty string');
             return '';
         } catch (error) {
             this.logger.error('Failed to get nearest solar term:', error);
@@ -243,7 +308,7 @@ export class DateTimeManager {
             // 遍历该年的每一天，找到节气日
             const startDate = new Date(year, 0, 1);
             const endDate = new Date(year, 11, 31);
-            
+
             for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
                 const solar = Solar.fromDate(d);
                 const lunar = solar.getLunar();
@@ -251,7 +316,7 @@ export class DateTimeManager {
                     return new Date(d);
                 }
             }
-            
+
             return null;
         } catch (error) {
             this.logger.error(`Failed to get date for solar term ${term}:`, error);
@@ -260,11 +325,12 @@ export class DateTimeManager {
     }
 
     /**
-     * ✅ 获取当前季节（根据节气判断）
+     * ✅ 获取自动计算的季节（私有方法，不考虑手动覆盖）- 始终使用真实节气
      */
-    getCurrentSeason(): SeasonType {
+    private getAutoSeason(): SeasonType {
+        // ✅ 始终使用 Solar 库获取真实节气
         const solarTerm = this.getCurrentSolarTerm();
-        
+
         // 根据节气判断季节（更符合中国传统）
         if (['立春', '雨水', '惊蛰', '春分', '清明', '谷雨'].includes(solarTerm)) {
             return 'spring';
@@ -276,7 +342,7 @@ export class DateTimeManager {
             return 'winter';
         }
 
-        //  fallback: 使用天文季节
+        // fallback: 使用天文季节（理论上不会走到这里）
         const month = this.getMonth();
         if (month >= 3 && month <= 5) {
             return 'spring';
@@ -287,6 +353,19 @@ export class DateTimeManager {
         } else {
             return 'winter';
         }
+    }
+
+    /**
+     * ✅ 获取当前季节（唯一公开的季节获取方法，包含 Debug 模式判断）
+     */
+    getCurrentSeason(): SeasonType {
+        // ✅ 如果 Debug 模式且有手动覆盖，返回手动设置的季節
+        if (isDebugMode() && this.manualSeasonOverride) {
+            return this.manualSeasonOverride;
+        }
+
+        // 否则根据真实节气自动计算
+        return this.getAutoSeason();
     }
 
     /**
@@ -431,6 +510,51 @@ export class DateTimeManager {
     }
 
     /**
+     * ✅ 创建季节变化数据对象（公共方法）
+     */
+    private createSeasonChangeData(
+        previousSeason: SeasonType,
+        currentSeason: SeasonType
+    ): SeasonChangedData {
+        const solarTerm = this.getCurrentSolarTerm();
+
+        return {
+            currentSeason,
+            previousSeason,
+            solarTerm,
+            date: this.formatDateTime(this.currentTime, 'YYYY-MM-DD'),
+            timestamp: Date.now(),
+        };
+    }
+
+    /**
+     * ✅ 发送季节变化事件（公共方法）
+     */
+    private emitSeasonChangeEvent(
+        previousSeason: SeasonType,
+        currentSeason: SeasonType
+    ): void {
+        const seasonData = this.createSeasonChangeData(previousSeason, currentSeason);
+
+        // 触发全局事件
+        eventBus.emit(DateTimeManager.SEASON_CHANGED, seasonData);
+
+        // 触发本地监听器
+        this.seasonListeners.forEach(callback => {
+            try {
+                callback(seasonData);
+            } catch (error) {
+                this.logger.error('Error in season changed listener:', error);
+            }
+        });
+
+        // 日志输出
+        this.logger.info(
+            `🍂 Season changed: ${SEASON_DISPLAY_NAMES[previousSeason]} → ${SEASON_DISPLAY_NAMES[currentSeason]} (${seasonData.solarTerm})`
+        );
+    }
+
+    /**
      * 时间滴答（内部方法）
      */
     private tick(): void {
@@ -472,7 +596,7 @@ export class DateTimeManager {
     private handleDateChange(previousTime: Date): void {
         const festival = this.getTodayFestival();
         const solarTerm = this.getCurrentSolarTerm();
-        const currentSeason = this.getCurrentSeason();
+        const currentSeason = this.getCurrentSeason(); // ✅ 使用 getCurrentSeason
 
         const dateData: DateChangedData = {
             currentDate: this.formatDateTime(this.currentTime, 'YYYY-MM-DD'),
@@ -502,9 +626,9 @@ export class DateTimeManager {
             this.logger.info(`🎉 Festival detected: ${festival.name}`);
         }
 
-        // ✅ 检查季节是否变化
-        if (this.previousSeason !== currentSeason) {
-            this.handleSeasonChange(this.previousSeason, currentSeason, solarTerm);
+        // ✅ 检查季节是否变化（只在没有手动覆盖时）
+        if (!this.manualSeasonOverride && this.previousSeason !== currentSeason) {
+            this.emitSeasonChangeEvent(this.previousSeason || currentSeason, currentSeason);
             this.previousSeason = currentSeason;
         }
 
@@ -518,51 +642,6 @@ export class DateTimeManager {
         });
 
         this.logger.info(`Date changed: ${dateData.currentDate} (${dateData.weekdayName}) [${solarTerm}]`);
-    }
-
-    /**
-     * ✅ 处理季节变化
-     */
-    private handleSeasonChange(
-        previousSeason: SeasonType | null,
-        currentSeason: SeasonType,
-        solarTerm: string
-    ): void {
-        if (!previousSeason) {
-            this.logger.info(`Initial season: ${currentSeason} (${solarTerm})`);
-            return;
-        }
-
-        const seasonData: SeasonChangedData = {
-            currentSeason,
-            previousSeason,
-            solarTerm,
-            date: this.formatDateTime(this.currentTime, 'YYYY-MM-DD'),
-            timestamp: this.currentTime.getTime(),
-        };
-
-        // 触发全局事件
-        eventBus.emit(DateTimeManager.SEASON_CHANGED, seasonData);
-
-        // 触发本地监听器
-        this.seasonListeners.forEach(callback => {
-            try {
-                callback(seasonData);
-            } catch (error) {
-                this.logger.error('Error in season changed listener:', error);
-            }
-        });
-
-        const seasonNames: Record<SeasonType, string> = {
-            spring: '春季',
-            summer: '夏季',
-            autumn: '秋季',
-            winter: '冬季',
-        };
-
-        this.logger.info(
-            `🍂 Season changed: ${seasonNames[previousSeason]} → ${seasonNames[currentSeason]} (${solarTerm})`
-        );
     }
 
     /**

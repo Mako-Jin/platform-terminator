@@ -1,7 +1,6 @@
 import * as Three from 'three';
 import {LoggerFactory} from "common-tools";
 import AudioManager from "./AudioManager";
-import SeasonManager from "/@/manager/SeasonManager";
 import {BaseCamera, datetimeManager} from "common-three";
 
 
@@ -26,7 +25,6 @@ export default class AmbientSoundManager {
     private static instance: AmbientSoundManager | null = null;
 
     private audioManager!: AudioManager;
-    private seasonManager!: SeasonManager;
 
     // 配置
     private config: AmbientSoundConfig = {
@@ -53,14 +51,13 @@ export default class AmbientSoundManager {
     // 相机引用（用于距离计算）
     private camera: BaseCamera | null = null;
 
-    constructor(audioManager: AudioManager, seasonManager: SeasonManager) {
+    constructor(audioManager: AudioManager) {
         if (AmbientSoundManager.instance) {
             return AmbientSoundManager.instance;
         }
         AmbientSoundManager.instance = this;
 
         this.audioManager = audioManager;
-        this.seasonManager = seasonManager;
 
         this.init();
 
@@ -88,7 +85,7 @@ export default class AmbientSoundManager {
      */
     private bindEvents(): void {
         // 监听季节变化
-        this.seasonManager.onSeasonChange(() => {
+        datetimeManager.onSeasonChanged(() => {
             this.updateAmbientSounds();
         });
 
@@ -122,7 +119,7 @@ export default class AmbientSoundManager {
             return;
         }
 
-        const season = this.seasonManager.season;
+        const season = datetimeManager.getCurrentSeason();
         const hour = datetimeManager.getHour();
         const timeOfDay = hour >= 6 && hour < 18 ? 'day' : 'night';
 
@@ -401,7 +398,7 @@ export default class AmbientSoundManager {
      * 检查声音是否应该继续播放
      */
     private shouldSoundBePlaying(soundKey: string): boolean {
-        const season = this.seasonManager.season;
+        const season = datetimeManager.getCurrentSeason();
         const hour = datetimeManager.getHour();
         const timeOfDay = hour >= 6 && hour < 18 ? 'day' : 'night';
 
@@ -452,7 +449,7 @@ export default class AmbientSoundManager {
      */
     stopAllAmbientSounds(): void {
         this.logger.info("Stopping all ambient sounds");
-        
+
         // 清除所有定时器
         this.scheduledTimers.forEach((timerId) => {
             clearTimeout(timerId);
@@ -487,7 +484,7 @@ export default class AmbientSoundManager {
         this.logger.info("Pausing ambient sounds");
         this.isAmbientSoundsPaused = true;
         this.stopAllAmbientSounds();
-        
+
         // 清除所有待处理的定时器引用
         this.scheduledTimers.clear();
     }

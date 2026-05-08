@@ -6,29 +6,30 @@ import {
     type IObject3DComponent,
     Object3DComponent,
     SceneWrapper,
+    datetimeManager,
     type SeasonChangedData,
     type TimeChangedData,
     type UpdateParams
 } from "common-three";
-import SeasonManager from "/@/manager/SeasonManager.ts";
 import ColorManager from "/@/manager/ColorManager.ts";
 import type {ConfigObject} from "/@/utils/color.ts";
 
 import skydomeVertexShader from '/@/shaders/Materials/skydome/vertex.glsl';
 import skydomeFragmentShader from '/@/shaders/Materials/skydome/fragment.glsl';
+import SeasonConfigManager from "/@/resources/loader";
 
 
 export default class Skydome extends Object3DComponent {
 
-    private seasonManager: SeasonManager;
+    private seasonConfigManager: SeasonConfigManager;
     private colorManager: ColorManager;
 
     private skydomeMaterial: Three.ShaderMaterial | null = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'weather-skydome', options.isDebugMode);
-        
-        this.seasonManager = SeasonManager.getInstance();
+
+        this.seasonConfigManager = SeasonConfigManager.getInstance();
         this.colorManager = ColorManager.getInstance();
     }
 
@@ -37,7 +38,7 @@ export default class Skydome extends Object3DComponent {
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Skydome] Initializing...');
-        
+
         // 等待依赖初始化
         await this.waitForDependencies();
 
@@ -52,7 +53,7 @@ export default class Skydome extends Object3DComponent {
      */
     protected onActivate(): void {
         this.logger.info('[Skydome] Activating...');
-        
+
         // 立即更新天空颜色
         this.updateSkyColors();
     }
@@ -79,7 +80,7 @@ export default class Skydome extends Object3DComponent {
      */
     protected onDispose(): void {
         this.logger.info('[Skydome] Disposing...');
-        
+
         // 清理材质引用
         if (this.skydomeMaterial) {
             this.skydomeMaterial.dispose();
@@ -121,7 +122,7 @@ export default class Skydome extends Object3DComponent {
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-        
+
         // 可以添加更多天空相关的调试选项
         // 例如：太阳位置、月亮位置、星星密度等
     }
@@ -131,9 +132,9 @@ export default class Skydome extends Object3DComponent {
      */
     private async waitForDependencies(): Promise<void> {
         try {
-            await this.seasonManager.waitForInitialization();
+            await this.seasonConfigManager.waitForInitialization();
         } catch (error) {
-            this.logger.error('[Skydome] Failed to wait for SeasonManager initialization:', error);
+            this.logger.error('[Skydome] Failed to wait for Season Config initialization:', error);
         }
     }
 
@@ -180,7 +181,7 @@ export default class Skydome extends Object3DComponent {
 
         const skydome = new Three.Mesh(geometry, this.skydomeMaterial);
         skydome.name = 'Skydome';
-        
+
         // 设置为根节点
         this.setRoot(skydome);
     }
@@ -234,7 +235,7 @@ export default class Skydome extends Object3DComponent {
         // ✅ 使用 datetimeManager 获取当前小时
         const currentHour = new Date().getHours();
         const isNight = currentHour < 6 || currentHour >= 18 ? 1.0 : 0.0;
-        
+
         if (this.skydomeMaterial.uniforms.uIsNight) {
             this.skydomeMaterial.uniforms.uIsNight.value = isNight;
         }
@@ -272,16 +273,16 @@ export default class Skydome extends Object3DComponent {
     private updateSeasonUniform(): void {
         if (!this.skydomeMaterial) return;
 
-        const seasonMap: Record<string, number> = { 
-            spring: 0, 
-            summer: 1, 
-            autumn: 2, 
-            winter: 3 
+        const seasonMap: Record<string, number> = {
+            spring: 0,
+            summer: 1,
+            autumn: 2,
+            winter: 3
         };
-        
-        const currentSeason = this.seasonManager.season;
+
+        const currentSeason = datetimeManager.getCurrentSeason();
         const seasonValue = seasonMap[currentSeason] ?? 0;
-        
+
         if (this.skydomeMaterial.uniforms.uSeason) {
             this.skydomeMaterial.uniforms.uSeason.value = seasonValue;
         }

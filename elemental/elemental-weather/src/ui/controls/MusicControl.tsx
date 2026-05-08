@@ -1,57 +1,69 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
+import { LoggerFactory } from 'common-tools';
 
 export interface MusicControlProps {
   musicManager?: any;
 }
 
-const MusicControl: React.FC<MusicControlProps> = ({ musicManager }) => {
+const MusicControl: ({musicManager}: { musicManager: any }) => JSX.Element = ({ musicManager }) => {
+  const logger = LoggerFactory.create('MusicControl');
   const [isMuted, setIsMuted] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
 
   useEffect(() => {
     if (!musicManager) return;
 
-    // 监听音乐状态变化
     const handleMusicChange = () => {
-      setIsMuted(musicManager.isMuted || !musicManager.isPlaying);
+      const muted = musicManager.isMuted || !musicManager.isPlaying;
+      setIsMuted(muted);
+      logger.debug(`Music state changed: ${muted ? 'muted' : 'playing'}`);
     };
 
-    // 初始状态
     handleMusicChange();
 
-    // 如果有事件系统，可以监听
-    // musicManager.on('stateChange', handleMusicChange);
+    // ✅ 延迟显示按钮，等待动画就绪
+    const timer = setTimeout(() => {
+      setIsVisible(true);
+      logger.info('Music control button shown');
+    }, 1000);
 
     return () => {
-      // musicManager.off('stateChange', handleMusicChange);
+      clearTimeout(timer);
     };
-  }, [musicManager]);
+  }, [musicManager, logger]);
 
-  const handleToggle = () => {
+  const handleToggle = useCallback(() => {
     if (!musicManager) return;
 
     // 触觉反馈
-    if (navigator.vibrate) {
+    if ('haptic' in navigator) {
+      (navigator as any).haptic([{ intensity: 0.7, sharpness: 0.1 }]);
+    } else if (navigator.vibrate) {
       navigator.vibrate(10);
     }
 
     // 切换音乐状态
     if (isMuted) {
-      musicManager.resume();
+      musicManager.resumeMusic?.() || musicManager.resume?.();
+      logger.info('Music enabled');
     } else {
-      musicManager.pause();
+      musicManager.pauseMusic?.() || musicManager.pause?.();
+      logger.info('Music disabled');
     }
 
     setIsMuted(!isMuted);
-  };
+  }, [musicManager, isMuted, logger]);
+
+  if (!musicManager) return null;
 
   return (
     <button
       id="music-control"
-      className={isMuted ? 'muted' : ''}
+      className={`control-btn ${isMuted ? 'muted' : ''} ${isVisible ? 'show' : ''}`}
       title={isMuted ? 'Enable Music' : 'Disable Music'}
       onClick={handleToggle}
     >
-      <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-music'}`}></i>
+      <i className={`fas ${isMuted ? 'fa-volume-mute' : 'fa-music'}`} />
     </button>
   );
 };

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { datetimeManager } from 'common-three';
 import type { SeasonType, SeasonChangedData } from 'common-three';
+import {Haptics} from "../../utils/haptics";
 
 export interface SeasonToggleProps {
   onSeasonChange?: (season: string) => void;
@@ -39,10 +40,7 @@ const SeasonToggle: ({onSeasonChange}: { onSeasonChange: any }) => JSX.Element =
       return;
     }
 
-    // 触觉反馈（移动端）
-    if (navigator.vibrate) {
-      navigator.vibrate(10);
-    }
+    Haptics.buttonTap();
 
     // 触发自定义事件
     window.dispatchEvent(
