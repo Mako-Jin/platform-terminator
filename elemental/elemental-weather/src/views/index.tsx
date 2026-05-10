@@ -1,24 +1,41 @@
 import {LoggerFactory, isDebugMode} from "common-tools";
-import {useEffect, useRef, useState} from "react";
+import {useCallback, useEffect, useRef, useState} from "react";
 import {ResourceLoader} from "common-three";
 import {ASSETS} from "/@/settings/resources";
 import LoadingScreen from "./loading";
 import {Haptics} from "/@/utils/haptics";
 import Weather from "/@/weather";
 import SettingsManager from "/@/settings/manager.ts";
+import ControlPanel from "/@/views/controls";
+import ShaderReveal from "/@/views/shader";
+import {MusicManager} from "/@/manager";
+
+
+declare global {
+    interface Window {
+        weatherInstance?: Weather;
+    }
+}
 
 
 const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => {
     const logger = LoggerFactory.create("elemental-weather-container");
 
     const [isLoading, setIsLoading] = useState(true);
+
+    const [showControls, setShowControls] = useState(false);
+
+    const [showShader, setShowShader] = useState(false);
+
     const weatherContainerRef = useRef<HTMLDivElement>(null);
 
     const [resourceLoader, setResourceLoader] = useState<ResourceLoader | null>(null);
 
+    const [musicManager, setMusicManager] = useState<MusicManager | undefined>(undefined);
+
     const debugMode = isDebugMode();
 
-    const getContainer = () => {
+    const getContainer = useCallback((): HTMLElement | null => {
         // 优先使用传入的container，否则使用ref
         let targetContainer: HTMLElement | null;
 
@@ -30,17 +47,8 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
             targetContainer = weatherContainerRef.current;
         }
         return targetContainer;
-    }
+    }, [container])
 
-    const handleLoadingComplete = (withMusic: boolean) => {
-        logger.info(`Loading complete, starting with music: ${withMusic}`);
-        setIsLoading(false);
-
-        Haptics.buttonTap();
-
-        // ✅ 在这里初始化 Weather 实例
-        initializeWeather(withMusic);
-    };
 
     const initializeWeather = (withMusic: boolean) => {
         const targetContainer = getContainer();
@@ -52,13 +60,51 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         logger.info('[Weather] Initializing weather application...');
         const weather = Weather.getInstance();
         weather.init(targetContainer, withMusic, debugMode).then(() => {
-            (window as any).weatherInstance = weather;
+            window.weatherInstance = weather;
             logger.info('[Weather] Weather application started successfully');
+
+            // ✅ 获取并设置 musicManager 以便传递给 UI
+            setMusicManager(weather.getMusicManager());
         });
+    };
+
+    const handleLoadingComplete = (withMusic: boolean) => {
+        logger.info(`Loading complete, starting with music: ${withMusic}`);
+        setIsLoading(false);
+        setShowShader(true);
+
+        Haptics.buttonTap();
+
+        // ✅ 在这里初始化 Weather 实例
+        initializeWeather(withMusic);
+    };
+
+    const handleShaderComplete = () => {
+        logger.info('Shader reveal complete');
+        setShowShader(false);
+        setTimeout(() => {
+            setShowControls(true);
+        }, 500);
+    };
+
+    const handleSeasonChange = (season: string) => {
+        logger.info(`Season changed to: ${season}`);
+        showSeasonToast(season);
+    };
+
+    const handleTimeChange = (time: string) => {
+        logger.info(`Time changed to: ${time}`);
+        showDayNightToast(time);
+    };
+
+    const handleLightningStrike = () => {
+        logger.info('Lightning strike triggered');
+        // 这里可以添加闪电触发的具体逻辑
     };
 
     useEffect(() => {
         logger.info("weather world view loading...")
+
         const container = getContainer();
         if (!container) {
             logger.error("weather world container not found")
@@ -95,6 +141,19 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
                     onComplete={handleLoadingComplete}
                 />
             )}
+
+            {/* Shader转场动画 */}
+            {showShader && (
+                <ShaderReveal onComplete={handleShaderComplete} />
+            )}
+
+            <ControlPanel
+                visible={showControls}
+                musicManager={musicManager}
+                onSeasonChange={handleSeasonChange}
+                onTimeChange={handleTimeChange}
+                onLightningStrike={handleLightningStrike}
+            />
         </div>
     );
 }

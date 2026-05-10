@@ -227,6 +227,10 @@ class Weather {
         this.logger.info('Weather app disposed');
     }
 
+    getMusicManager(): MusicManager {
+        return this.musicManager;
+    }
+
 }
 
 export default Weather;
