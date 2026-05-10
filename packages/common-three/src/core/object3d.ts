@@ -22,6 +22,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
     private _isInitialized: boolean = false;
     private _isActive: boolean = false;
     private _isVisible: boolean = true;
+    private _receiveShadow: boolean = false;
     protected _root: Three.Object3D | null = null;
 
     protected constructor(scene: SceneWrapper, name: string, isDebugMode: boolean = false) {
@@ -29,6 +30,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
         this._name = name;
         this.isDebugMode = isDebugMode;
         this.logger = LoggerFactory.create(`component-${name.toLowerCase()}`);
+        // this.initialize();
     }
 
     // ==================== Getter ====================
@@ -51,6 +53,10 @@ export abstract class Object3DComponent implements IObject3DComponent {
 
     get isVisible(): boolean {
         return this._isVisible;
+    }
+
+    get receiveShadow(): boolean {
+        return this._receiveShadow;
     }
 
     // ==================== 模板方法：生命周期 ====================
@@ -139,6 +145,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
 
             // 2. 将根对象添加到场景
             if (this._root) {
+                this.applyShadowSettings(this._root);
                 this.scene.addObject(this._root);
             }
 
@@ -429,7 +436,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
 
         // 默认实现：检查必需资源是否存在
         // 具体实现由子类根据资源管理器来完成
-        this.logger.debug(`[${this._name}] Validating resources...`, deps);
+        this.logger.info(`[${this._name}] Validating resources...`, deps);
     }
 
     /**
@@ -473,6 +480,34 @@ export abstract class Object3DComponent implements IObject3DComponent {
      */
     protected onHide(): void {
         // 默认空实现
+    }
+
+    // ==================== 阴影设置 ====================
+
+    /**
+     * 应用阴影设置到对象及其子对象
+     * @param object 要应用阴影设置的对象
+     */
+    protected applyShadowSettings(object: Three.Object3D): void {
+        // 遍历对象及其所有子对象
+        object.traverse((child) => {
+            if (child instanceof Three.Mesh) {
+                child.receiveShadow = this._receiveShadow;
+            }
+        });
+    }
+
+    /**
+     * 设置是否接收投影
+     * @param receive 是否接收投影
+     */
+    protected setReceiveShadow(receive: boolean): void {
+        this._receiveShadow = receive;
+        
+        // 如果已经激活，立即应用到根对象
+        if (this._isActive && this._root) {
+            this.applyShadowSettings(this._root);
+        }
     }
 
     // ==================== 工具方法 ====================

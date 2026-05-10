@@ -8,7 +8,7 @@ import type {SizeChangedData} from "./types";
 export class SizeManager {
 
     private static instance: SizeManager | null = null;
-    private logger = LoggerFactory.create('size-manager');
+    private logger = LoggerFactory.create('common-three-size-manager');
 
     private width: number = typeof window !== 'undefined' ? window.innerWidth : 0;
     private height: number = typeof window !== 'undefined' ? window.innerHeight : 0;
@@ -73,7 +73,7 @@ export class SizeManager {
      * 判断是否是平板
      */
     isTablet(): boolean {
-        return this.width >= SizeManager.BREAKPOINTS.MOBILE && 
+        return this.width >= SizeManager.BREAKPOINTS.MOBILE &&
                this.width < SizeManager.BREAKPOINTS.TABLET;
     }
 

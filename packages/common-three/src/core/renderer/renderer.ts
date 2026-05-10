@@ -19,7 +19,7 @@ export class RendererWrapper {
     private isEnabled: boolean = false;
 
     constructor(container: HTMLElement, config: RendererConfig = {}) {
-        this.logger = LoggerFactory.create('renderer');
+        this.logger = LoggerFactory.create('common-three-core-renderer');
         this.container = container;
         this.config = {
             antialias: true,

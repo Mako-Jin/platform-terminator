@@ -1,5 +1,5 @@
 import './App.scss'
-import WeatherView from "/@/weather";
+import WeatherView from "/@/views";
 
 function App() {
 

@@ -44,6 +44,19 @@ export { DebugPanelManager, debugPanel } from './debugger';
 
 export { SizeManager, sizeManager } from './size';
 
+export * from './audio';
+
+export type {
+    Asset,
+    LoaderMap,
+    AssetType,
+    ResourceProgressData,
+    ResourceLoadedData,
+    ResourceErrorData,
+} from './resources';
+
+export { ResourceLoader, resourcesManager } from './resources';
+
 // 相机导出
 export { CameraType } from './core';
 export { CameraManager, cameraManager } from './core';

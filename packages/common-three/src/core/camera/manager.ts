@@ -15,7 +15,7 @@ import * as Three from 'three';
 export class CameraManager {
 
     private static instance: CameraManager | null = null;
-    private logger = LoggerFactory.create('camera-manager');
+    private logger = LoggerFactory.create('common-three-camera-manager');
 
     private cameras: Map<CameraType, BaseCamera> = new Map();
     private activeCamera: BaseCamera | null = null;

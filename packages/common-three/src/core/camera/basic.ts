@@ -13,7 +13,7 @@ export abstract class BaseCamera {
     protected isEnabled: boolean = false;
     
     protected constructor(name: string) {
-        this.logger = LoggerFactory.create(`camera-${name.toLowerCase()}`);
+        this.logger = LoggerFactory.create(`common-three-camera-${name.toLowerCase()}`);
     }
 
     /**

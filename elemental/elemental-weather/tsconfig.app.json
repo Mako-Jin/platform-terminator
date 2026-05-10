@@ -6,6 +6,8 @@
     "module": "esnext",
     "types": ["vite/client"],
     "skipLibCheck": true,
+    "noEmitOnError": false,
+    "incremental": true,
 
     /* Bundler mode */
     "moduleResolution": "bundler",
@@ -26,7 +28,16 @@
     "paths": {
       "/@/*": ["src/*"],
       "/@components/*": ["src/components/*"]
-    }
+    },
+    "exclude": [
+      "node_modules",
+      "dist",
+      "**/*.test.ts",
+      "**/*.mock.ts"
+    ],
+    "include": [
+      "src/**/*.ts"
+    ]
   },
   "include": ["src"]
 }

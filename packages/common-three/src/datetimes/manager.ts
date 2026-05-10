@@ -10,7 +10,7 @@ import {SEASON_DISPLAY_NAMES} from "./types";
 export class DateTimeManager {
 
     private static instance: DateTimeManager | null = null;
-    private logger = LoggerFactory.create('time-manager');
+    private logger = LoggerFactory.create('common-three-time-manager');
 
     private currentTime: Date;
     private previousDate: string | null = null;
@@ -272,7 +272,7 @@ export class DateTimeManager {
 
             for (const term of terms) {
                 const termSolar = this.getSolarTermDate(year, term);
-                
+
                 if (termSolar && this.currentTime >= termSolar) {
                     if (!nearestDate || termSolar > nearestDate) {
                         nearestTerm = term;

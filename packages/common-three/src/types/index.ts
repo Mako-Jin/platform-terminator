@@ -70,6 +70,11 @@ export interface IObject3DComponent {
     readonly isVisible: boolean;
 
     /**
+     * 是否接收投影
+     */
+    readonly receiveShadow?: boolean;
+
+    /**
      * 【生命周期 1】初始化阶段
      * 执行一次性初始化操作（异步）
      * - 加载资源

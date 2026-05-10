@@ -16,7 +16,7 @@ export class SceneWrapper {
     private ambientLight: Three.AmbientLight | null = null;
 
     constructor(config: SceneConfig = {}) {
-        this.logger = LoggerFactory.create('scene');
+        this.logger = LoggerFactory.create('common-three-core-scene');
         this.config = {
             backgroundColor: '#000000',
             backgroundAlpha: 1,
@@ -138,10 +138,9 @@ export class SceneWrapper {
         try {
             await component.initialize();
             component.activate();
-            
+
             // 将组件的根对象添加到场景
             if (component.root) {
-                this.scene.add(component.root);
                 this.logger.debug(`Component ${name} added to scene with root object`);
             } else {
                 this.logger.warn(`Component ${name} has no root object`);
