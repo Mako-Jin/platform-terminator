@@ -1,5 +1,6 @@
 import {MusicManager} from "/@/manager";
 import MusicControl from "/@/views/controls/music.tsx";
+import "./index.scss";
 
 
 interface ControlPanelProps {

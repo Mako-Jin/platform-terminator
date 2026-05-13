@@ -3,7 +3,7 @@ import {useCallback, useEffect, useRef, useState} from "react";
 import {ResourceLoader} from "common-three";
 import {ASSETS} from "/@/settings/resources";
 import LoadingScreen from "./loading";
-import {Haptics} from "/@/utils/haptics";
+import {Haptics} from "/@/utils";
 import Weather from "/@/weather";
 import SettingsManager from "/@/settings/manager.ts";
 import ControlPanel from "/@/views/controls";

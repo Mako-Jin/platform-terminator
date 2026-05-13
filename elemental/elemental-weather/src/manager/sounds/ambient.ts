@@ -1,6 +1,7 @@
-import {LoggerFactory} from "common-tools";
+import {eventBus, LoggerFactory} from "common-tools";
 import {datetimeManager, type IAudioPlayer} from "common-three";
 import * as Three from 'three';
+import MusicManager from "./music";
 
 
 export interface AmbientSoundConfig {
@@ -25,6 +26,7 @@ export default class AmbientSoundManager {
     private static instance: AmbientSoundManager | null = null;
 
     private audioPlayer: IAudioPlayer;
+    private musicManager: MusicManager;
 
     // 状态管理
     private activeContinuousSounds: Set<string> = new Set();
@@ -54,6 +56,7 @@ export default class AmbientSoundManager {
         AmbientSoundManager.instance = this;
 
         this.audioPlayer = audioPlayer;
+        this.musicManager = MusicManager.getInstance();
 
         this.init();
 
@@ -69,13 +72,11 @@ export default class AmbientSoundManager {
 
     init() {
         this.bindEvents();
-        // this.setupVisibilityHandlers();
         this.updateAmbientSounds();
     }
 
     bindEvents() {
 
-        // 监听季节变化
         datetimeManager.onTimeChanged(() => {
             this.updateAmbientSounds();
         });
@@ -84,24 +85,14 @@ export default class AmbientSoundManager {
             this.updateAmbientSounds();
         });
 
-        if (this.musicControlUI) {
-            const originalEnableMusic = this.musicControlUI.enableMusic.bind(
-                this.musicControlUI
-            );
-            const originalDisableMusic = this.musicControlUI.disableMusic.bind(
-                this.musicControlUI
-            );
-
-            this.musicControlUI.enableMusic = () => {
-                originalEnableMusic();
-                this.updateAmbientSounds();
-            };
-
-            this.musicControlUI.disableMusic = () => {
-                originalDisableMusic();
+        eventBus.on(MusicManager.ELEMENTAL_WEATHER_MUSIC_ENABLED_CHANGED, (data: { enabled: boolean }) => {
+            this.logger.info(`Received music enabled change event: ${data.enabled}`);
+            if (!data.enabled) {
                 this.stopAllAmbientSounds();
-            };
-        }
+            } else {
+                this.updateAmbientSounds();
+            }
+        });
 
         this.setupAmbientVisibilityHandlers();
     }
@@ -123,14 +114,10 @@ export default class AmbientSoundManager {
         window.addEventListener('unload', this.handleAmbientBeforeUnload);
     }
 
-    /**
-     * 可见性变化处理
-     */
     handleAmbientVisibilityChange() {
         if (document.hidden) {
             if (
-                this.musicControlUI &&
-                this.musicControlUI.isMusicEnabled &&
+                this.musicManager.getIsMusicEnabled() &&
                 this.hasActiveAmbientSounds()
             ) {
                 this.wasAmbientPlayingBeforeHide = true;
@@ -138,8 +125,7 @@ export default class AmbientSoundManager {
             }
         } else {
             if (
-                this.musicControlUI &&
-                this.musicControlUI.isMusicEnabled &&
+                this.musicManager.getIsMusicEnabled() &&
                 this.wasAmbientPlayingBeforeHide
             ) {
                 this.wasAmbientPlayingBeforeHide = false;
@@ -151,13 +137,9 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 窗口失焦处理
-     */
     handleAmbientWindowBlur() {
         if (
-            this.musicControlUI &&
-            this.musicControlUI.isMusicEnabled &&
+            this.musicManager.getIsMusicEnabled() &&
             this.hasActiveAmbientSounds()
         ) {
             this.wasAmbientPlayingBeforeHide = true;
@@ -165,13 +147,9 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 窗口聚焦处理
-     */
     handleAmbientWindowFocus() {
         if (
-            this.musicControlUI &&
-            this.musicControlUI.isMusicEnabled &&
+            this.musicManager.getIsMusicEnabled() &&
             this.wasAmbientPlayingBeforeHide
         ) {
             this.wasAmbientPlayingBeforeHide = false;
@@ -181,39 +159,29 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 页面卸载处理
-     */
     handleAmbientBeforeUnload() {
         this.stopAllAmbientSounds();
     }
 
-    /**
-     * 更新环境音效
-     */
     updateAmbientSounds(): void {
 
-        if (this.musicControlUI && !this.musicControlUI.isMusicEnabled) {
+        if (!this.musicManager.getIsMusicEnabled()) {
             this.stopAllAmbientSounds();
             return;
         }
 
-        // 如果已暂停，不执行更新
         if (this.isAmbientSoundsPaused) {
             this.logger.debug("Ambient sounds paused, skipping update");
             return;
         }
 
         const season = datetimeManager.getCurrentSeason();
-        const hour = datetimeManager.getHour();
-        const timeOfDay = hour >= 6 && hour < 18 ? 'day' : 'night';
+        const timeOfDay = datetimeManager.isDaytime() ? 'day' : 'night';
 
         this.logger.info(`Updating ambient sounds: season=${season}, time=${timeOfDay}`);
 
-        // 停止所有当前音效
         this.stopAllAmbientSounds();
 
-        // 根据季节和时间播放相应音效
         this.handleBirds(season, timeOfDay);
         this.handleCrickets(season, timeOfDay);
         this.handleOwl(season, timeOfDay);
@@ -224,9 +192,6 @@ export default class AmbientSoundManager {
         this.handleLakeWaves();
     }
 
-    /**
-     * 处理鸟叫声
-     */
     private handleBirds(season: string, timeOfDay: string): void {
         const shouldPlay = (season === 'autumn' || season === 'spring' || season === 'winter') && timeOfDay === 'day';
 
@@ -235,9 +200,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 处理蟋蟀声
-     */
     private handleCrickets(season: string, timeOfDay: string): void {
         const shouldPlay = (season === 'autumn' || season === 'spring' || season === 'winter') && timeOfDay === 'night';
 
@@ -246,9 +208,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 处理猫头鹰声
-     */
     private handleOwl(season: string, timeOfDay: string): void {
         if (timeOfDay !== 'night') {
             return;
@@ -261,9 +220,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 处理雨声
-     */
     private handleRain(season: string): void {
         const shouldPlay = season === 'rainy';
 
@@ -272,9 +228,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 处理雷声
-     */
     private handleThunder(season: string): void {
         const shouldPlay = season === 'rainy';
 
@@ -283,9 +236,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 处理狼嚎声
-     */
     private handleWolf(timeOfDay: string): void {
         const shouldPlay = timeOfDay === 'night';
 
@@ -294,9 +244,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 播放狼嚎
-     */
     private playWolf(): void {
         if (this.isAmbientSoundsPaused) {
             return;
@@ -307,9 +254,6 @@ export default class AmbientSoundManager {
         });
     }
 
-    /**
-     * 处理火焰声
-     */
     private handleFire(season: string): void {
         const shouldPlay = season !== 'rainy';
 
@@ -318,17 +262,10 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 处理波浪声
-     */
     private handleLakeWaves(): void {
-        // 始终播放
         this.playContinuousSoundWithDistance('lakeWavesSound', this.config.lakePosition);
     }
 
-    /**
-     * 清除定时器
-     */
     private clearTimer(soundKey: string): void {
         if (this.scheduledTimers.has(soundKey)) {
             clearTimeout(this.scheduledTimers.get(soundKey)!);
@@ -336,9 +273,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 获取随机延迟
-     */
     private getRandomDelay(gapType: string): number {
         switch (gapType) {
             case 'short':
@@ -352,11 +286,7 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 调度随机声音
-     */
     private scheduleRandomSound(soundKey: string, playFunction: () => void, gapType: string): void {
-        // 如果已暂停，不调度
         if (this.isAmbientSoundsPaused) {
             return;
         }
@@ -365,7 +295,6 @@ export default class AmbientSoundManager {
 
         const delay = this.getRandomDelay(gapType);
         const timerId = window.setTimeout(() => {
-            // 执行前检查暂停状态
             if (!this.isAmbientSoundsPaused) {
                 playFunction();
                 this.rescheduleRandomSound(soundKey, playFunction, gapType);
@@ -375,18 +304,13 @@ export default class AmbientSoundManager {
         this.scheduledTimers.set(soundKey, timerId);
     }
 
-    /**
-     * 重新调度随机声音
-     */
     private rescheduleRandomSound(soundKey: string, playFunction: () => void, gapType: string): void {
-        // 如果已暂停或不应播放，则不再调度
         if (this.isAmbientSoundsPaused || !this.shouldSoundBePlaying(soundKey)) {
             return;
         }
 
         const delay = this.getRandomDelay(gapType);
         const timerId = window.setTimeout(() => {
-            // 执行前再次检查暂停状态
             if (!this.isAmbientSoundsPaused) {
                 playFunction();
                 this.rescheduleRandomSound(soundKey, playFunction, gapType);
@@ -396,13 +320,10 @@ export default class AmbientSoundManager {
         this.scheduledTimers.set(soundKey, timerId);
     }
 
-    /**
-     * 检查声音是否应该继续播放
-     */
     private shouldSoundBePlaying(soundKey: string): boolean {
         const season = datetimeManager.getCurrentSeason();
         const hour = datetimeManager.getHour();
-        const timeOfDay = hour >= 6 && hour < 18 ? 'day' : 'night';
+        const timeOfDay = datetimeManager.isDaytime() ? 'day' : 'night';
 
         switch (soundKey) {
             case 'birds':
@@ -420,11 +341,7 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 播放基于距离的连续音效
-     */
     private playContinuousSoundWithDistance(soundId: string, soundPosition: Three.Vector3): void {
-        // 如果已暂停，不播放
         if (this.isAmbientSoundsPaused) {
             return;
         }
@@ -441,9 +358,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 计算基于距离的音量
-     */
     private calculateDistanceBasedVolume(soundPosition: Three.Vector3): number {
         if (!this.audioPlayer.getListener()) {
             return this.config.baseVolume * 0.7;
@@ -456,19 +370,14 @@ export default class AmbientSoundManager {
         return Math.max(volume, 0);
     }
 
-    /**
-     * 停止所有环境音效
-     */
     stopAllAmbientSounds(): void {
         this.logger.info("Stopping all ambient sounds");
 
-        // 清除所有定时器
         this.scheduledTimers.forEach((timerId) => {
             clearTimeout(timerId);
         });
         this.scheduledTimers.clear();
 
-        // 停止所有连续音效
         this.activeContinuousSounds.forEach((soundId) => {
             this.stopContinuousSound(soundId);
         });
@@ -482,9 +391,6 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 更新音效音量
-     */
     private updateSoundVolume(soundId: string, soundPosition: Three.Vector3): void {
         const sound = this.audioPlayer.getAudio(soundId);
         if (sound && !sound.paused) {
@@ -493,11 +399,7 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 更新（每帧调用）
-     */
     update(): void {
-        // 更新基于距离的音效音量
         if (this.activeContinuousSounds.has('fireBurningSound')) {
             this.updateSoundVolume('fireBurningSound', this.config.firePosition);
         }
@@ -506,16 +408,33 @@ export default class AmbientSoundManager {
         }
     }
 
-    /**
-     * 清理事件监听器
-     */
+    hasActiveAmbientSounds(): boolean {
+        return this.activeContinuousSounds.size > 0 || this.scheduledTimers.size > 0;
+    }
+
+    pauseAmbientSounds(): void {
+        this.isAmbientSoundsPaused = true;
+
+        this.stopAllAmbientSounds();
+
+        this.logger.info("Ambient sounds paused");
+    }
+
+    resumeAmbientSounds(): void {
+        this.isAmbientSoundsPaused = false;
+
+        this.updateAmbientSounds();
+
+        this.logger.info("Ambient sounds resumed");
+    }
+
     dispose(): void {
         this.stopAllAmbientSounds();
 
-        document.removeEventListener('visibilitychange', this.handleVisibilityChange);
-        window.removeEventListener('blur', this.handleWindowBlur);
-        window.removeEventListener('focus', this.handleWindowFocus);
-        window.removeEventListener('beforeunload', this.handleBeforeUnload);
+        document.removeEventListener('visibilitychange', this.handleAmbientVisibilityChange);
+        window.removeEventListener('blur', this.handleAmbientWindowBlur);
+        window.removeEventListener('focus', this.handleAmbientWindowFocus);
+        window.removeEventListener('beforeunload', this.handleAmbientBeforeUnload);
         window.removeEventListener('pagehide', this.handleAmbientBeforeUnload);
         window.removeEventListener('unload', this.handleAmbientBeforeUnload);
 

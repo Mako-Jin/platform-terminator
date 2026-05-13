@@ -6,7 +6,9 @@ import {
     CameraType,
     datetimeManager,
     BaseCamera,
-    sizeManager, type SizeChangedData, clockManager
+    sizeManager,
+    type SizeChangedData,
+    clockManager
 } from "common-three";
 import * as Three from 'three';
 import {AmbientSoundManager, AudioManager, MusicManager} from "/@/manager";
@@ -152,6 +154,8 @@ class Weather {
             if (this.withMusic) {
                 // 6. 开始播放随机音乐
                 this.musicManager.startRandomMusic();
+            } else {
+                this.musicManager.setIsMusicEnabled(false);
             }
 
             this.logger.info('Audio system initialized successfully');

@@ -6,12 +6,11 @@ import {
     type SeasonChangedData, type TimeChangedData,
     type UpdateParams
 } from "common-three";
-import {type ConfigObject, SettingsManager} from "/@/settings";
+import {type ConfigObject, type EasingType, SettingsManager} from "/@/settings";
 import * as Three from 'three';
 
 import skydomeVertexShader from '/@/shaders/Materials/skydome/vertex.glsl';
 import skydomeFragmentShader from '/@/shaders/Materials/skydome/fragment.glsl';
-import type {EasingType} from "/@/settings/manager.ts";
 import type GUI from "lil-gui";
 
 

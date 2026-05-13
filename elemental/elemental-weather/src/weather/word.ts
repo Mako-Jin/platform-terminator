@@ -2,7 +2,7 @@ import {LoggerFactory} from "common-tools";
 import {RendererWrapper, SceneWrapper} from "common-three";
 import {
     Ground,
-    Lighting, Skydome
+    Lighting, Skydome, Tent, Bridge, WindLines, Rocks, Bush
 } from "/@/weather/components";
 
 
@@ -18,6 +18,12 @@ export default class World {
     private skydome: Skydome;
 
     private ground: Ground;
+
+    private tent: Tent;
+    private bridge: Bridge;
+    private windLines: WindLines;
+    private rocks: Rocks;
+    private bush: Bush;
 
     constructor(
         scene: SceneWrapper,
@@ -35,6 +41,12 @@ export default class World {
 
         this.skydome = new Skydome(this.scene, {isDebugMode: this.isDebugMode});
         this.ground = new Ground(this.scene, {isDebugMode: this.isDebugMode});
+        this.tent = new Tent(this.scene, {isDebugMode: this.isDebugMode});
+        this.bridge = new Bridge(this.scene, {isDebugMode: this.isDebugMode});
+        this.windLines = new WindLines(this.scene, {isDebugMode: this.isDebugMode});
+        this.rocks = new Rocks(this.scene, {isDebugMode: this.isDebugMode});
+        this.bush = new Bush(this.scene, {isDebugMode: this.isDebugMode});
+
 
     }
 
@@ -51,16 +63,16 @@ export default class World {
         // ✅ 第2组：重型组件，并行初始化
         const heavyComponents = [
             this.ground,
-        //     this.bush,
+            this.tent,
+            this.bridge,
+            this.windLines,
+            this.rocks,
+            this.bush,
         //     this.treeTrunks,
         //     this.fallingLeaves,
         //     this.rain,
         //     this.snow,
         //     this.fog,
-        //     this.tent,
-        //     this.bridge,
-        //     this.windLines,
-        //     this.rocks,
         //     this.camp,
         //     this.fire,
         //     this.fireFlies,
@@ -94,6 +106,11 @@ export default class World {
         this.lighting.update(updateParams);
         // this.skydome.update(updateParams);
         this.ground.update(updateParams);
+        this.tent.update(updateParams);
+        this.bridge.update(updateParams);
+        this.windLines.update(updateParams);
+        this.rocks.update(updateParams);
+        this.bush.update(updateParams);
     }
 
     /**

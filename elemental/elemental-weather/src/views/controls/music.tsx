@@ -1,5 +1,5 @@
 import {MusicManager} from "/@/manager";
-import {LoggerFactory} from "common-tools";
+import {eventBus, LoggerFactory} from "common-tools";
 import {useCallback, useEffect, useState} from "react";
 
 
@@ -35,30 +35,31 @@ const MusicControl: ({musicManager}: MusicControlProps) => JSX.Element = ({ musi
             navigator.vibrate(10);
         }
 
-        // 切换音乐状态
-        if (isMusicEnabled) {
-            musicManager.resumeMusic?.() || musicManager.resume?.();
-            logger.info('Music enabled');
+        const currentState = musicManager.getIsMusicEnabled();
+
+        if (currentState) {
+            musicManager.pauseMusic();
+            logger.info('Music paused by user');
         } else {
-            musicManager.pauseMusic?.() || musicManager.pause?.();
-            logger.info('Music disabled');
+            musicManager.resumeMusic();
+            logger.info('Music resumed by user');
         }
 
-        setIsMusicEnabled(!isMusicEnabled);
-    }, [musicManager, isMusicEnabled, logger]);
+    }, [musicManager, logger]);
 
     useEffect(() => {
         if (!musicManager) {
             return;
         }
 
-        const handleMusicChange = () => {
-            const muted = musicManager.isMuted || !musicManager.isPlaying;
-            setIsMusicEnabled(muted);
-            logger.debug(`Music state changed: ${muted ? 'muted' : 'playing'}`);
+        setIsMusicEnabled(musicManager.getIsMusicEnabled());
+
+        const handleMusicEnabledChange = (data: { enabled: boolean }) => {
+            setIsMusicEnabled(data.enabled);
+            logger.debug(`Music enabled state changed: ${data.enabled}`);
         };
 
-        handleMusicChange();
+        eventBus.on(MusicManager.ELEMENTAL_WEATHER_MUSIC_ENABLED_CHANGED, handleMusicEnabledChange);
 
         // ✅ 延迟显示按钮，等待动画就绪
         const timer = setTimeout(() => {
@@ -68,17 +69,18 @@ const MusicControl: ({musicManager}: MusicControlProps) => JSX.Element = ({ musi
 
         return () => {
             clearTimeout(timer);
+            eventBus.off(MusicManager.ELEMENTAL_WEATHER_MUSIC_ENABLED_CHANGED, handleMusicEnabledChange);
         };
     }, [musicManager, logger]);
 
     return (
         <button
             id="music-control"
-            className={`control-btn ${isMusicEnabled ? 'muted' : ''} ${isVisible ? 'show' : ''}`}
-            title={isMusicEnabled ? 'Enable Music' : 'Disable Music'}
+            className={`control-btn ${!isMusicEnabled ? 'muted' : ''} ${isVisible ? 'show' : ''}`}
+            title={isMusicEnabled ? 'Disable Music' : 'Enable Music'}
             onClick={handleToggle}
         >
-            <i className={`fas ${isMusicEnabled ? 'fa-volume-mute' : 'fa-music'}`} />
+            <i className={`fas ${isMusicEnabled ? 'fa-music' : 'fa-volume-mute'}`} />
         </button>
     );
 

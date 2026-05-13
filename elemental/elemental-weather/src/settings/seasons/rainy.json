@@ -173,7 +173,12 @@
     "color": {"type": "color", "value": [0.941, 0.957, 1.0]}
   },
   "tent": {
-    "lampColor": {"type": "color", "value": [1.0, 0.886, 0.525]}
+    "day": {
+      "lampColor": {"type": "color", "value": [1.0, 0.886, 0.525]}
+    },
+    "night": {
+      "lampColor": {"type": "color", "value": [1.0, 0.95, 0.75]}
+    }
   },
   "rocks": {
     "day": {
