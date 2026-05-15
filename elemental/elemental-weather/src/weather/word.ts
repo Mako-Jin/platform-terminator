@@ -2,7 +2,9 @@ import {LoggerFactory} from "common-tools";
 import {RendererWrapper, SceneWrapper} from "common-three";
 import {
     Ground,
-    Lighting, Skydome, Tent, Bridge, WindLines, Rocks, Bush
+    Lighting, Skydome, Tent, Bridge, WindLines, Rocks, Bush,
+    TreesTrunks, FallingLeaves,
+    Camp, Fire, Fireflies, Rain
 } from "/@/weather/components";
 
 
@@ -24,6 +26,13 @@ export default class World {
     private windLines: WindLines;
     private rocks: Rocks;
     private bush: Bush;
+    private treeTrunks: TreesTrunks;
+    private fallingLeaves: FallingLeaves;
+    private camp: Camp;
+    private fire: Fire;
+    private fireflies: Fireflies;
+
+    private rain: Rain;
 
     constructor(
         scene: SceneWrapper,
@@ -46,7 +55,12 @@ export default class World {
         this.windLines = new WindLines(this.scene, {isDebugMode: this.isDebugMode});
         this.rocks = new Rocks(this.scene, {isDebugMode: this.isDebugMode});
         this.bush = new Bush(this.scene, {isDebugMode: this.isDebugMode});
-
+        this.treeTrunks = new TreesTrunks(this.scene, {isDebugMode: this.isDebugMode});
+        this.fallingLeaves = new FallingLeaves(this.scene, {isDebugMode: this.isDebugMode});
+        this.camp = new Camp(this.scene, {isDebugMode: this.isDebugMode});
+        this.fire = new Fire(this.scene, {isDebugMode: this.isDebugMode});
+        this.fireflies = new Fireflies(this.scene, {isDebugMode: this.isDebugMode});
+        this.rain = new Rain(this.scene, {isDebugMode: this.isDebugMode});
 
     }
 
@@ -68,14 +82,14 @@ export default class World {
             this.windLines,
             this.rocks,
             this.bush,
-        //     this.treeTrunks,
-        //     this.fallingLeaves,
-        //     this.rain,
+            this.treeTrunks,
+            this.fallingLeaves,
+            this.camp,
+            this.fire,
+            this.fireflies,
+            this.rain,
         //     this.snow,
         //     this.fog,
-        //     this.camp,
-        //     this.fire,
-        //     this.fireFlies,
         //     this.lightning,
         ];
 
@@ -104,13 +118,19 @@ export default class World {
     public update(delta: number, elapsedTime: number): void {
         const updateParams = {delta, elapsedTime}
         this.lighting.update(updateParams);
-        // this.skydome.update(updateParams);
+        this.skydome.update(updateParams);
         this.ground.update(updateParams);
         this.tent.update(updateParams);
         this.bridge.update(updateParams);
         this.windLines.update(updateParams);
         this.rocks.update(updateParams);
         this.bush.update(updateParams);
+        this.treeTrunks.update(updateParams);
+        this.fallingLeaves.update(updateParams);
+        this.camp.update(updateParams);
+        this.fire.update(updateParams);
+        this.fireflies.update(updateParams);
+        this.rain.update(updateParams);
     }
 
     /**

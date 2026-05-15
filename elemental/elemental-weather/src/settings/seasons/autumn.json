@@ -167,7 +167,12 @@
     }
   },
   "fallingLeaves": {
-    "color": {"type": "color", "value": [1.0, 0.388, 0.278]}
+    "day": {
+      "color": {"type": "color", "value": [1.0, 0.388, 0.278]}
+    },
+    "night": {
+      "color": {"type": "color", "value": [1.0, 0.388, 0.278]}
+    }
   },
   "windLines": {
     "day": {
