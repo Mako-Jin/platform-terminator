@@ -1,12 +1,12 @@
-import type {ComponentConfig, IObject3DComponent, ResourceDependencies, UpdateParams} from "../types";
-import {LoggerFactory} from "common-tools";
+import type { IObject3DComponent, ResourceDependencies, UpdateParams, ComponentConfig, LifecyclePhase } from "../types";
+import { LoggerFactory } from "common-tools";
 import * as Three from 'three';
 import type GUI from "lil-gui";
-import {debugPanel} from "../debugger";
-import type {DateChangedData, SeasonChangedData, TimeChangedData} from "../datetimes";
-import {datetimeManager} from '../datetimes';
-import {type SizeChangedData, sizeManager} from "../size";
-import {SceneWrapper} from "./scene";
+import { debugPanel } from "../debugger";
+import type { DateChangedData, SeasonChangedData, TimeChangedData } from "../datetimes";
+import { datetimeManager } from '../datetimes';
+import { type SizeChangedData, sizeManager } from "../size";
+import { SceneWrapper } from "./scene";
 
 /**
  * Object3D 组件抽象基类
@@ -22,6 +22,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
     private _isInitialized: boolean = false;
     private _isActive: boolean = false;
     private _isVisible: boolean = true;
+    private _isPaused: boolean = false;
     private _receiveShadow: boolean = false;
     protected _root: Three.Object3D | null = null;
 
@@ -30,244 +31,127 @@ export abstract class Object3DComponent implements IObject3DComponent {
         this._name = name;
         this.isDebugMode = isDebugMode;
         this.logger = LoggerFactory.create(`component-${name.toLowerCase()}`);
-        // this.initialize();
     }
 
-    // ==================== Getter ====================
+    // ==================== Getters ====================
+    get name(): string { return this._name; }
+    get root(): Three.Object3D | null { return this._root; }
+    get isInitialized(): boolean { return this._isInitialized; }
+    get isActive(): boolean { return this._isActive; }
+    get isVisible(): boolean { return this._isVisible; }
+    get isPaused(): boolean { return this._isPaused; }
+    get receiveShadow(): boolean { return this._receiveShadow; }
 
-    get name(): string {
-        return this._name;
-    }
+    // ==================== 核心生命周期 ====================
 
-    get root(): Three.Object3D | null {
-        return this._root;
-    }
-
-    get isInitialized(): boolean {
-        return this._isInitialized;
-    }
-
-    get isActive(): boolean {
-        return this._isActive;
-    }
-
-    get isVisible(): boolean {
-        return this._isVisible;
-    }
-
-    get receiveShadow(): boolean {
-        return this._receiveShadow;
-    }
-
-    // ==================== 模板方法：生命周期 ====================
-
-    /**
-     * 【生命周期 1】初始化（模板方法）
-     * 定义了初始化的标准流程
-     */
     async initialize(config?: ComponentConfig): Promise<void> {
         if (this._isInitialized) {
             this.logger.warn(`[${this._name}] Already initialized, skipping...`);
             return;
         }
-
-        try {
-            this.logger.info(`[${this._name}] Initializing...`);
-
+        await this.executeLifecycle('init', async () => {
             // 1. 应用配置
             this.applyConfig(config);
-
             // 2. 验证资源依赖
             await this.validateResources();
-
             // 3. 执行子类特定的初始化逻辑
             await this.onInitialize(config);
-
-            // 4. 注册时间变化监听器（如果子类实现了 onTimeChanged）
-            if (this.onTimeChanged) {
-                datetimeManager.onTimeChanged(this.handleTimeChanged.bind(this));
-                this.logger.debug(`[${this._name}] Registered time changed listener`);
-            }
-
-            // 5. 注册日期变化监听器（如果子类实现了 onDateChanged）
-            if (this.onDateChanged) {
-                datetimeManager.onDateChanged(this.handleDateChanged.bind(this));
-                this.logger.debug(`[${this._name}] Registered date changed listener`);
-            }
-
-            // ✅ 6. 注册季节变化监听器（如果子类实现了 onSeasonChanged）
-            if (this.onSeasonChanged) {
-                datetimeManager.onSeasonChanged(this.handleSeasonChanged.bind(this));
-                this.logger.debug(`[${this._name}] Registered season changed listener`);
-            }
-
-            // 7. 注册尺寸变化监听器（如果子类实现了 onSizeChanged）
-            if (this.onSizeChanged) {
-                sizeManager.onSizeChanged(this.handleSizeChanged.bind(this));
-                this.logger.debug(`[${this._name}] Registered size changed listener`);
-            }
-
-            // 8. 标记为已初始化
+            // 4. 注册事件监听器
+            this.registerEventListeners();
+            // 5. 标记为已初始化
             this._isInitialized = true;
-
-            // 9. 如果启用调试模式，自动添加到调试面板
+            // 6. 添加调试面板
             if (this.isDebugMode) {
                 this.addToDebugPanel();
             }
-
-            this.logger.info(`[${this._name}] Initialized successfully`);
-        } catch (error) {
-            this.logger.error(`[${this._name}] Initialization failed:`, error);
-            throw error;
-        }
+        });
     }
 
-    /**
-     * 【生命周期 2】激活（模板方法）
-     * 将组件添加到场景中
-     */
     activate(): void {
-        if (this._isActive) {
-            this.logger.warn(`[${this._name}] Already active`);
-            return;
-        }
-
         if (!this._isInitialized) {
             this.logger.error(`[${this._name}] Cannot activate before initialization`);
             return;
         }
-
-        try {
-            this.logger.info(`[${this._name}] Activating...`);
-
-            // 1. 执行子类特定的激活逻辑
+        if (this._isActive) {
+            this.logger.warn(`[${this._name}] Already active`);
+            return;
+        }
+        this.executeLifecycleSync('active', () => {
             this.onActivate();
+            this._isActive = true;
+            this._isVisible = true;
+        });
+    }
 
-            // 2. 将根对象添加到场景
+    public addToScene(): void {
+        if (!this._isActive) this.activate();
+        this.executeLifecycleSync('addToScene', () => {
             if (this._root) {
                 this.applyShadowSettings(this._root);
                 this.scene.addObject(this._root);
+            } else {
+                this.logger.warn(`[${this._name}] Cannot add to scene: root is null`);
             }
-
-            // 3. 标记为激活状态
-            this._isActive = true;
-            this._isVisible = true;
-
-            this.logger.info(`[${this._name}] Activated`);
-        } catch (error) {
-            this.logger.error(`[${this._name}] Activation failed:`, error);
-            throw error;
-        }
+        });
     }
 
-    /**
-     * 【生命周期 3】更新（模板方法）
-     * 每帧调用的更新逻辑
-     */
     update(params: UpdateParams): void {
-        if (!this._isActive || !this._isVisible) {
+        if (!this._isActive || !this._isVisible || this._isPaused) {
             return;
         }
-
         try {
-            // 执行子类特定的更新逻辑
             this.onUpdate(params);
         } catch (error) {
-            this.logger.error(`[${this._name}] Update failed:`, error);
+            this.handleError('update', error);
         }
     }
 
-    /**
-     * 【生命周期 4】失活（模板方法）
-     * 从场景中移除组件
-     */
-    deactivate(): void {
+    deActivate(): void {
         if (!this._isActive) {
-            this.logger.warn(`[${this._name}] Not active`);
             return;
         }
-
-        try {
-            this.logger.info(`[${this._name}] Deactivating...`);
-
-            // 1. 执行子类特定的失活逻辑
+        this.executeLifecycleSync('deActivate', () => {
             this.onDeactivate();
-
-            // 2. 从场景中移除根对象
             if (this._root) {
                 this.scene.removeObject(this._root);
             }
-
-            // 3. 标记为失活状态
             this._isActive = false;
-
-            this.logger.info(`[${this._name}] Deactivated`);
-        } catch (error) {
-            this.logger.error(`[${this._name}] Deactivation failed:`, error);
-            throw error;
-        }
+        });
     }
 
-    /**
-     * 【生命周期 5】销毁（模板方法）
-     * 清理所有资源
-     */
     dispose(): void {
-        try {
-            this.logger.info(`[${this._name}] Disposing...`);
-
-            // 1. 如果处于激活状态，先失活
+        this.executeLifecycleSync('dispose', () => {
             if (this._isActive) {
-                this.deactivate();
+                this.deActivate();
             }
-
-            // 2. 移除时间变化监听器
-            if (this.onTimeChanged) {
-                datetimeManager.offTimeChanged(this.handleTimeChanged.bind(this));
-                this.logger.debug(`[${this._name}] Removed time changed listener`);
-            }
-
-            // 3. 移除日期变化监听器
-            if (this.onDateChanged) {
-                datetimeManager.offDateChanged(this.handleDateChanged.bind(this));
-                this.logger.debug(`[${this._name}] Removed date changed listener`);
-            }
-
-            // ✅ 4. 移除季节变化监听器
-            if (this.onSeasonChanged) {
-                datetimeManager.offSeasonChanged(this.handleSeasonChanged.bind(this));
-                this.logger.debug(`[${this._name}] Removed season changed listener`);
-            }
-
-            // 5. 移除尺寸变化监听器
-            if (this.onSizeChanged) {
-                sizeManager.offSizeChanged(this.handleSizeChanged.bind(this));
-                this.logger.debug(`[${this._name}] Removed size changed listener`);
-            }
-
-            // 6. 从调试面板移除
+            this.unregisterEventListeners();
             this.removeFromDebugPanel();
-
-            // 7. 执行子类特定的销毁逻辑
             this.onDispose();
-
-            // 8. 清理根对象
             if (this._root) {
                 this.disposeObject3D(this._root);
                 this._root = null;
             }
-
-            // 9. 重置状态
             this._isInitialized = false;
-
-            this.logger.info(`[${this._name}] Disposed`);
-        } catch (error) {
-            this.logger.error(`[${this._name}] Disposal failed:`, error);
-            throw error;
-        }
+        });
     }
 
-    // ==================== 可见性控制 ====================
+    // ==================== 扩展生命周期 ====================
+
+    pause(): void {
+        if (this._isPaused) {
+            return;
+        }
+        this._isPaused = true;
+        this.onPause?.();
+    }
+
+    resume(): void {
+        if (!this._isPaused) {
+            return;
+        }
+        this._isPaused = false;
+        this.onResume?.();
+    }
 
     show(): void {
         if (this._root) {
@@ -285,7 +169,38 @@ export abstract class Object3DComponent implements IObject3DComponent {
         this.onHide();
     }
 
-    // ==================== 时间变化处理 ====================
+    // ==================== 错误处理与工具 ====================
+
+    private async executeLifecycle(phase: LifecyclePhase, fn: () => Promise<void>): Promise<void> {
+        try {
+            // ✅ 优化：日志带上具体的阶段名称
+            this.logger.debug(`[${this._name}] async '${phase}' starting...`);
+            await fn();
+            this.logger.debug(`[${this._name}] async '${phase}' completed.`);
+        } catch (error) {
+            this.logger.error(`[${this._name}] async '${phase}' failed:`, error);
+            this.handleError(phase, error);
+            throw error;
+        }
+    }
+
+    private executeLifecycleSync(phase: LifecyclePhase, fn: () => void): void {
+        try {
+            this.logger.error(`[${this._name}] sync '${phase}' starting...`);
+            fn();
+            this.logger.error(`[${this._name}] sync '${phase}' completed.`);
+        } catch (error) {
+            this.logger.error(`[${this._name}] sync '${phase}' failed:`, error);
+            this.handleError(phase, error);
+            throw error;
+        }
+    }
+
+    private handleError(phase: LifecyclePhase, error: unknown): void {
+        const err = error instanceof Error ? error : new Error(String(error));
+        this.logger.error(`[${this._name}] Error in phase '${phase}':`, err);
+        this.onError?.(phase, err);
+    }
 
     /**
      * 时间变化回调（可选）
@@ -296,44 +211,12 @@ export abstract class Object3DComponent implements IObject3DComponent {
     public onTimeChanged?(data: TimeChangedData): void;
 
     /**
-     * 处理时间变化事件
-     * 调用子类的 onTimeChanged 方法
-     */
-    private handleTimeChanged(data: TimeChangedData): void {
-        if (this.onTimeChanged && this._isActive) {
-            try {
-                this.onTimeChanged(data);
-            } catch (error) {
-                this.logger.error(`[${this._name}] Error in onTimeChanged:`, error);
-            }
-        }
-    }
-
-    // ==================== 日期变化处理 ====================
-
-    /**
      * 日期变化回调（可选）
      * 子类可以重写此方法来响应日期/节日变化
      *
      * @param data 日期变化数据
      */
     public onDateChanged?(data: DateChangedData): void;
-
-    /**
-     * 处理日期变化事件
-     * 调用子类的 onDateChanged 方法
-     */
-    private handleDateChanged(data: DateChangedData): void {
-        if (this.onDateChanged && this._isActive) {
-            try {
-                this.onDateChanged(data);
-            } catch (error) {
-                this.logger.error(`[${this._name}] Error in onDateChanged:`, error);
-            }
-        }
-    }
-
-    // ==================== ✅ 季节变化处理 ====================
 
     /**
      * 季节变化回调（可选）
@@ -344,22 +227,6 @@ export abstract class Object3DComponent implements IObject3DComponent {
     public onSeasonChanged?(data: SeasonChangedData): void;
 
     /**
-     * 处理季节变化事件
-     * 调用子类的 onSeasonChanged 方法
-     */
-    private handleSeasonChanged(data: SeasonChangedData): void {
-        if (this.onSeasonChanged && this._isActive) {
-            try {
-                this.onSeasonChanged(data);
-            } catch (error) {
-                this.logger.error(`[${this._name}] Error in onSeasonChanged:`, error);
-            }
-        }
-    }
-
-    // ==================== 尺寸变化处理 ====================
-
-    /**
      * 尺寸变化回调（可选）
      * 子类可以重写此方法来响应窗口/容器尺寸变化
      *
@@ -367,129 +234,118 @@ export abstract class Object3DComponent implements IObject3DComponent {
      */
     public onSizeChanged?(data: SizeChangedData): void;
 
-    /**
-     * 处理尺寸变化事件
-     * 调用子类的 onSizeChanged 方法
-     */
-    private handleSizeChanged(data: SizeChangedData): void {
-        if (this.onSizeChanged && this._isActive) {
-            try {
-                this.onSizeChanged(data);
-            } catch (error) {
-                this.logger.error(`[${this._name}] Error in onSizeChanged:`, error);
+    // ==================== 受保护的钩子 (Hooks) ====================
+
+    protected abstract onInitialize(config?: ComponentConfig): Promise<void>;
+    protected onActivate(): void {}
+    protected abstract onUpdate(params: UpdateParams): void;
+    protected onDeactivate(): void {}
+    protected abstract onDispose(): void;
+    
+    protected onPause?(): void;
+    protected onResume?(): void;
+    protected onShow(): void {}
+    protected onHide(): void {}
+    public onError?(phase: LifecyclePhase, error: Error): void;
+
+    // ==================== 事件监听管理 ====================
+
+    private registerEventListeners(): void {
+        // 1. 注册时间变化监听器（如果子类实现了 onTimeChanged）
+        if (this.onTimeChanged) {
+            datetimeManager.onTimeChanged(this.handleTimeChanged.bind(this));
+            this.logger.debug(`[${this._name}] Registered time changed listener`);
+        }
+
+        // 2. 注册日期变化监听器（如果子类实现了 onDateChanged）
+        if (this.onDateChanged) {
+            datetimeManager.onDateChanged(this.handleDateChanged.bind(this));
+            this.logger.debug(`[${this._name}] Registered date changed listener`);
+        }
+
+        // 3. 注册季节变化监听器（如果子类实现了 onSeasonChanged）
+        if (this.onSeasonChanged) {
+            datetimeManager.onSeasonChanged(this.handleSeasonChanged.bind(this));
+            this.logger.debug(`[${this._name}] Registered season changed listener`);
+        }
+
+        // 4. 注册尺寸变化监听器（如果子类实现了 onSizeChanged）
+        if (this.onSizeChanged) {
+            sizeManager.onSizeChanged(this.handleSizeChanged.bind(this));
+            this.logger.debug(`[${this._name}] Registered size changed listener`);
+        }
+    }
+
+    private unregisterEventListeners(): void {
+        if (this.onTimeChanged) datetimeManager.offTimeChanged(this.handleTimeChanged.bind(this));
+        if (this.onDateChanged) datetimeManager.offDateChanged(this.handleDateChanged.bind(this));
+        if (this.onSeasonChanged) datetimeManager.offSeasonChanged(this.handleSeasonChanged.bind(this));
+        if (this.onSizeChanged) sizeManager.offSizeChanged(this.handleSizeChanged.bind(this));
+    }
+
+    private handleTimeChanged(data: TimeChangedData): void {
+        if (this.onTimeChanged && this._isActive) {
+            try { 
+                this.onTimeChanged(data); 
+            } catch (error) { 
+                // ✅ 优化：使用更精确的阶段标识
+                this.handleError('timeChange', error); 
             }
         }
     }
 
-    // ==================== 调试面板集成 ====================
-
-    /**
-     * 添加到调试面板
-     * 子类可以重写此方法来自定义调试配置
-     */
-    protected addToDebugPanel(): void {
-        debugPanel.add({
-            component: this,
-            configure: (gui, component) => this.configureDebugPanel(gui, component),
-        });
+    private handleDateChanged(data: DateChangedData): void {
+        if (this.onDateChanged && this._isActive) {
+            try { 
+                this.onDateChanged(data); 
+            } catch (error) { 
+                this.handleError('dateChange', error); 
+            }
+        }
     }
 
-    /**
-     * 从调试面板移除
-     */
-    protected removeFromDebugPanel(): void {
-        debugPanel.remove(this._name);
+    private handleSeasonChanged(data: SeasonChangedData): void {
+        if (this.onSeasonChanged && this._isActive) {
+            try { 
+                this.onSeasonChanged(data); 
+            } catch (error) { 
+                this.handleError('seasonChange', error); 
+            }
+        }
     }
 
-    /**
-     * 配置调试面板
-     * 子类可以重写此方法来添加自定义调试项
-     *
-     * @param gui lil-gui 实例
-     * @param component 组件实例
-     */
-    protected abstract configureDebugPanel(gui: GUI, component: IObject3DComponent): void;
+    private handleSizeChanged(data: SizeChangedData): void {
+        if (this.onSizeChanged && this._isActive) {
+            try { 
+                this.onSizeChanged(data); 
+            } catch (error) { 
+                this.handleError('sizeChange', error); 
+            }
+        }
+    }
 
-    // ==================== 可选生命周期钩子 ====================
+    // ==================== 辅助方法 ====================
 
-    onResize?(width: number, height: number): void;
-
-    getResourceDependencies?(): ResourceDependencies;
-
-    // ==================== 受保护的钩子方法（子类重写）====================
-
-    /**
-     * 应用配置（子类可重写）
-     */
     protected applyConfig(config?: ComponentConfig): void {
         if (config?.isDebugMode !== undefined) {
             this.isDebugMode = config.isDebugMode;
         }
     }
 
-    /**
-     * 验证资源依赖（子类可重写）
-     */
+    getResourceDependencies?(): ResourceDependencies;
+
     protected async validateResources(): Promise<void> {
         const deps = this.getResourceDependencies?.();
-        if (!deps) return;
+        if (!deps) {
+            return;
+        }
 
         // 默认实现：检查必需资源是否存在
         // 具体实现由子类根据资源管理器来完成
         this.logger.info(`[${this._name}] Validating resources...`, deps);
     }
 
-    /**
-     * 初始化钩子（子类必须实现特定逻辑）
-     */
-    protected abstract onInitialize(config?: ComponentConfig): Promise<void>;
-
-    /**
-     * 激活钩子（子类可重写）
-     */
-    protected onActivate(): void {
-        // 默认空实现
-    }
-
-    /**
-     * 更新钩子（子类必须实现特定逻辑）
-     */
-    protected abstract onUpdate(params: UpdateParams): void;
-
-    /**
-     * 失活钩子（子类可重写）
-     */
-    protected onDeactivate(): void {
-        // 默认空实现
-    }
-
-    /**
-     * 销毁钩子（子类必须实现清理逻辑）
-     */
-    protected abstract onDispose(): void;
-
-    /**
-     * 显示钩子（子类可重写）
-     */
-    protected onShow(): void {
-        // 默认空实现
-    }
-
-    /**
-     * 隐藏钩子（子类可重写）
-     */
-    protected onHide(): void {
-        // 默认空实现
-    }
-
-    // ==================== 阴影设置 ====================
-
-    /**
-     * 应用阴影设置到对象及其子对象
-     * @param object 要应用阴影设置的对象
-     */
     protected applyShadowSettings(object: Three.Object3D): void {
-        // 遍历对象及其所有子对象
         object.traverse((child) => {
             if (child instanceof Three.Mesh) {
                 child.receiveShadow = this._receiveShadow;
@@ -497,24 +353,13 @@ export abstract class Object3DComponent implements IObject3DComponent {
         });
     }
 
-    /**
-     * 设置是否接收投影
-     * @param receive 是否接收投影
-     */
     protected setReceiveShadow(receive: boolean): void {
         this._receiveShadow = receive;
-        
-        // 如果已经激活，立即应用到根对象
         if (this._isActive && this._root) {
             this.applyShadowSettings(this._root);
         }
     }
 
-    // ==================== 工具方法 ====================
-
-    /**
-     * 递归清理 Object3D
-     */
     protected disposeObject3D(object: Three.Object3D): void {
         // 清理几何体
         if (object instanceof Three.Mesh) {
@@ -539,9 +384,6 @@ export abstract class Object3DComponent implements IObject3DComponent {
         }
     }
 
-    /**
-     * 清理材质
-     */
     protected disposeMaterial(material: Three.Material): void {
         // 清理纹理
         Object.values(material).forEach(value => {
@@ -554,9 +396,6 @@ export abstract class Object3DComponent implements IObject3DComponent {
         material.dispose();
     }
 
-    /**
-     * 设置根对象
-     */
     protected setRoot(root: Three.Object3D): void {
         this._root = root;
         if (this._name && !root.name) {
@@ -564,14 +403,24 @@ export abstract class Object3DComponent implements IObject3DComponent {
         }
     }
 
-    /**
-     * 创建组作为根对象
-     */
     protected createRootGroup(): Three.Group {
         const group = new Three.Group();
         this.setRoot(group);
         return group;
     }
+
+    protected addToDebugPanel(): void {
+        debugPanel.add({
+            component: this,
+            configure: (gui, component) => this.configureDebugPanel(gui, component),
+        });
+    }
+
+    protected removeFromDebugPanel(): void {
+        debugPanel.remove(this._name);
+    }
+
+    protected abstract configureDebugPanel(gui: GUI, component: IObject3DComponent): void;
 }
 
 export default Object3DComponent;

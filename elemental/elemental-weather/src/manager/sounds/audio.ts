@@ -179,9 +179,19 @@ export default class AudioManager implements IAudioPlayer {
             const targetVolume = options.volume ?? (this.musicSounds.has(id) ? this.musicVolume : this.soundVolume) * this.masterVolume;
             audio.setVolume(0);
             audio.play();
-            this.fadeInVolume(audio, targetVolume, options.fadeInDuration || 2000);
+            this.fadeVolume(audio, targetVolume, options.fadeInDuration || 2000).then();
         } else {
-            if (!audio.isPlaying) {
+            if (audio.isPlaying) {
+                // 使用淡出效果停止当前播放（200ms 淡出时间）
+                this.stop(id, {
+                    fadeOut: true,
+                    fadeOutDuration: 100
+                });
+                // 短暂延迟后重新播放，让淡出效果自然过渡
+                setTimeout(() => {
+                    audio.play();
+                }, 150);
+            } else {
                 audio.play();
             }
         }
@@ -208,7 +218,7 @@ export default class AudioManager implements IAudioPlayer {
 
         // 淡出效果
         if (options?.fadeOut && audio.isPlaying) {
-            this.fadeOutVolume(audio, options.fadeOutDuration || 1000).then(() => {
+            this.fadeVolume(audio, 0, options.fadeOutDuration || 1000).then(() => {
                 audio.stop();
                 this.emitEvent('stop', { id, type: 'stop', timestamp: Date.now() });
 

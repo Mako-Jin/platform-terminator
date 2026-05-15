@@ -236,6 +236,18 @@ export default class AmbientSoundManager {
         }
     }
 
+    /**
+     * 播放雷击声（闪电时调用）
+     */
+    playThunderStrike(): void {
+        if (!document.hidden && !this.isAmbientSoundsPaused) {
+            this.audioPlayer.play('thunderStrikeSound', {
+                loop: false,
+                volume: this.config.baseVolume * 0.9
+            });
+        }
+    }
+
     private handleWolf(timeOfDay: string): void {
         const shouldPlay = timeOfDay === 'night';
 

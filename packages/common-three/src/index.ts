@@ -5,6 +5,8 @@
 
 // 类型导出
 export type {
+    LifecyclePhase,
+    ILifecycle,
     IObject3DComponent,
     ComponentConfig,
     UpdateParams,

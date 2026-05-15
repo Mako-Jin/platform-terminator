@@ -28,7 +28,7 @@ export default class Fireflies extends Object3DComponent {
     private maxRadius: number = 16;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'FireFlies', options.isDebugMode);
+        super(scene, 'weather-fireflies', options.isDebugMode);
     }
 
     /**

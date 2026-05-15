@@ -1,6 +1,6 @@
-import {LoggerFactory, isDebugMode} from "common-tools";
+import {LoggerFactory, isDebugMode, eventBus} from "common-tools";
 import {useCallback, useEffect, useRef, useState} from "react";
-import {ResourceLoader} from "common-three";
+import {datetimeManager, ResourceLoader, type SeasonType} from "common-three";
 import {ASSETS} from "/@/settings/resources";
 import LoadingScreen from "./loading";
 import {Haptics} from "/@/utils";
@@ -9,6 +9,8 @@ import SettingsManager from "/@/settings/manager.ts";
 import ControlPanel from "/@/views/controls";
 import ShaderReveal from "/@/views/shader";
 import {MusicManager} from "/@/manager";
+import {Lightning} from "/@/weather/components";
+import useToast from "/@/hooks/useToast.ts";
 
 
 declare global {
@@ -32,6 +34,8 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
     const [resourceLoader, setResourceLoader] = useState<ResourceLoader | null>(null);
 
     const [musicManager, setMusicManager] = useState<MusicManager | undefined>(undefined);
+
+    const { toasts, removeToast, showSeasonToast, showDayNightToast, showMusicToast, showToast } = useToast();
 
     const debugMode = isDebugMode();
 
@@ -87,19 +91,26 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         }, 500);
     };
 
-    const handleSeasonChange = (season: string) => {
+    const handleSeasonChange = (season: SeasonType) => {
         logger.info(`Season changed to: ${season}`);
         showSeasonToast(season);
+        datetimeManager.setManualSeason(season);
     };
 
     const handleTimeChange = (time: string) => {
         logger.info(`Time changed to: ${time}`);
         showDayNightToast(time);
+        if ('day' === time) {
+            datetimeManager.setToDaytime();
+        } else {
+            datetimeManager.setToNighttime();
+        }
     };
 
     const handleLightningStrike = () => {
         logger.info('Lightning strike triggered');
-        // 这里可以添加闪电触发的具体逻辑
+        // ✅ 通过事件总线触发闪电
+        eventBus.emit(Lightning.LIGHTNING_STRIKE_TRIGGERED);
     };
 
     useEffect(() => {
@@ -134,6 +145,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
     return (
         <div className="weather-container">
             <div ref={weatherContainerRef}/>
+
             {/* 加载界面 */}
             {isLoading && resourceLoader && (
                 <LoadingScreen

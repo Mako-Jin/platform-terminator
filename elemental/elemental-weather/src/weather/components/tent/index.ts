@@ -32,7 +32,7 @@ export default class Tent extends Object3DComponent {
     private settingsManager: SettingsManager;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'Tent', options.isDebugMode);
+        super(scene, 'weather-tent', options.isDebugMode);
 
         this.settingsManager = SettingsManager.getInstance();
 

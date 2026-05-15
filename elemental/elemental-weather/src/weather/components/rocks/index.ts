@@ -26,7 +26,7 @@ export default class Rocks extends Object3DComponent {
     private customRockUniforms: any = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'Rocks', options.isDebugMode);
+        super(scene, 'weather-rocks', options.isDebugMode);
 
         this.settingsManager = SettingsManager.getInstance();
     }

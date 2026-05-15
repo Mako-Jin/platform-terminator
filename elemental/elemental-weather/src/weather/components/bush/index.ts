@@ -34,7 +34,7 @@ export default class Bush extends Object3DComponent {
     private settingsManager: SettingsManager;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'Bush', options.isDebugMode);
+        super(scene, 'weather-bush', options.isDebugMode);
 
         this.settingsManager = SettingsManager.getInstance();
     }

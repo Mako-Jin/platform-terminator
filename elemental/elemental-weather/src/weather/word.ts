@@ -4,7 +4,7 @@ import {
     Ground,
     Lighting, Skydome, Tent, Bridge, WindLines, Rocks, Bush,
     TreesTrunks, FallingLeaves,
-    Camp, Fire, Fireflies, Rain
+    Camp, Fire, Fireflies, Rain, Snow, Lightning, Fog
 } from "/@/weather/components";
 
 
@@ -33,6 +33,11 @@ export default class World {
     private fireflies: Fireflies;
 
     private rain: Rain;
+    private snow: Snow;
+
+    private lightning: Lightning;
+
+    private fog: Fog;
 
     constructor(
         scene: SceneWrapper,
@@ -61,7 +66,9 @@ export default class World {
         this.fire = new Fire(this.scene, {isDebugMode: this.isDebugMode});
         this.fireflies = new Fireflies(this.scene, {isDebugMode: this.isDebugMode});
         this.rain = new Rain(this.scene, {isDebugMode: this.isDebugMode});
-
+        this.snow = new Snow(this.scene, {isDebugMode: this.isDebugMode});
+        this.lightning = new Lightning(this.scene, {isDebugMode: this.isDebugMode});
+        this.fog = new Fog(this.scene, {isDebugMode: this.isDebugMode});
     }
 
     /**
@@ -88,27 +95,17 @@ export default class World {
             this.fire,
             this.fireflies,
             this.rain,
-        //     this.snow,
-        //     this.fog,
-        //     this.lightning,
+            this.snow,
+            this.lightning,
+            this.fog,
         ];
 
         this.logger.info('[World] Starting parallel initialization of heavy components...');
-        const parallelStart = performance.now();
 
         // ✅ 并行初始化所有重型组件
         await Promise.all(
             heavyComponents.map(component => this.scene.addComponent(component))
         );
-
-        const parallelEnd = performance.now();
-        const parallelDuration = ((parallelEnd - parallelStart) / 1000).toFixed(2);
-
-        const endTime = performance.now();
-        const totalDuration = ((endTime - startTime) / 1000).toFixed(2);
-
-        this.logger.info(`[World] Parallel initialization took ${parallelDuration}s`);
-        this.logger.info(`[World] Total initialization took ${totalDuration}s`);
     }
 
     /**
@@ -131,6 +128,9 @@ export default class World {
         this.fire.update(updateParams);
         this.fireflies.update(updateParams);
         this.rain.update(updateParams);
+        this.snow.update(updateParams);
+        this.lightning.update(updateParams);
+        this.fog.update(updateParams);
     }
 
     /**
@@ -139,6 +139,22 @@ export default class World {
      */
     public dispose(): void {
         // 空实现 - 生命周期由基类自动管理
+        this.lighting.dispose();
+        this.skydome.dispose();
+        this.ground.dispose();
+        this.tent.dispose();
+        this.bridge.dispose();
+        this.windLines.dispose();
+        this.rocks.dispose();
+        this.bush.dispose();
+        this.treeTrunks.dispose();
+        this.fallingLeaves.dispose();
+        this.camp.dispose();
+        this.fire.dispose();
+        this.fireflies.dispose();
+        this.rain.dispose();
+        this.snow.dispose();
+        this.fog.dispose();
     }
 
 

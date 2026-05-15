@@ -1,6 +1,7 @@
-import {MusicManager} from "/@/manager";
+import {MusicManager} from "/src/manager";
 import {eventBus, LoggerFactory} from "common-tools";
 import {useCallback, useEffect, useState} from "react";
+import "./index.scss";
 
 
 declare global {

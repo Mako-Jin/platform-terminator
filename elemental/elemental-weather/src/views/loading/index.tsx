@@ -1,7 +1,7 @@
 import {ResourceLoader} from "common-three";
 import {eventBus} from "common-tools";
 import type {ResourceProgressData, ResourceErrorData} from "common-three";
-import {useEffect, useRef, useState} from "react";
+import {type JSX, useEffect, useRef, useState} from "react";
 import "./index.scss";
 
 

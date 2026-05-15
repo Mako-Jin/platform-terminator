@@ -17,6 +17,8 @@ import groundVertexBeginChunk from '/@/shaders/Chunks/ground/ground.vertex_begin
 import groundFragmentCommonChunk from '/@/shaders/Chunks/ground/ground.fragment_common_chunk.glsl';
 import groundFragmentColorChunk from '/@/shaders/Chunks/ground/ground.fragment_color_chunk.glsl';
 import {type ConfigObject, SettingsManager} from "/@/settings";
+import BiomeManager from "/@/weather/components/grass/biome.ts";
+import GrassManager from "/@/weather/components/grass";
 
 
 export default class Ground extends Object3DComponent {
@@ -33,6 +35,8 @@ export default class Ground extends Object3DComponent {
     private customGroundUniforms: any = null;
 
     private settingsManager: SettingsManager;
+    private biomeManager: BiomeManager;
+    private grassManager: GrassManager;
 
     constructor(
         scene: SceneWrapper,
@@ -53,6 +57,23 @@ export default class Ground extends Object3DComponent {
         this.gridSpacing = options.gridSpacing ?? this.groundSize;
         this.gridY = options.gridY ?? 0.0;
         this.worldSize = this.gridCols * this.groundSize;
+
+        this.biomeManager = new BiomeManager(this.scene, {
+            'isDebugMode': options.isDebugMode,
+            "worldSize": this.worldSize
+        });
+
+        this.grassManager = new GrassManager(this.scene, {
+            'isDebugMode': options.isDebugMode,
+            "biomeManager": this.biomeManager,
+            "config": {
+                "worldSize": this.worldSize,
+                "tileSize": this.groundSize,
+                "gridCols": this.gridCols,
+                "gridRows": this.gridRows,
+                "gridSpacing": this.gridSpacing
+            }
+        });
 
         this.settingsManager = SettingsManager.getInstance();
     }
@@ -87,7 +108,9 @@ export default class Ground extends Object3DComponent {
      * 更新阶段 - 每帧调用（目前不需要）
      */
     protected onUpdate(params: UpdateParams): void {
-        // Ground 不需要每帧更新
+        if (this.grassManager) {
+            this.grassManager.update();
+        }
     }
 
     /**
@@ -113,6 +136,10 @@ export default class Ground extends Object3DComponent {
         if (this.groundMaterial) {
             this.groundMaterial.dispose();
             this.groundMaterial = null;
+        }
+
+        if (this.grassManager) {
+            this.grassManager.dispose();
         }
 
         // 清理 uniforms

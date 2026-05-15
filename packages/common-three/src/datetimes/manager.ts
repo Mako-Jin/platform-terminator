@@ -121,6 +121,84 @@ export class DateTimeManager {
     }
 
     /**
+     * ✅ 手动设置时间（仅在 Debug 模式下可用）
+     *
+     * @param hours 小时 (0-23)
+     * @param minutes 分钟 (0-59)，可选
+     * @param seconds 秒数 (0-59)，可选
+     */
+    setManualTime(hours: number, minutes?: number, seconds?: number): void {
+        // ✅ 非 Debug 模式下禁止手动设置
+        if (!isDebugMode()) {
+            this.logger.warn('Manual time override is only available in Debug mode');
+            return;
+        }
+
+        // 参数验证
+        if (hours < 0 || hours > 23) {
+            this.logger.error('Invalid hours: must be between 0 and 23');
+            return;
+        }
+        if (minutes !== undefined && (minutes < 0 || minutes > 59)) {
+            this.logger.error('Invalid minutes: must be between 0 and 59');
+            return;
+        }
+        if (seconds !== undefined && (seconds < 0 || seconds > 59)) {
+            this.logger.error('Invalid seconds: must be between 0 and 59');
+            return;
+        }
+
+        const previousTime = new Date(this.currentTime);
+        const newTime = new Date(this.currentTime);
+        newTime.setHours(hours, minutes ?? 0, seconds ?? 0, 0);
+
+        this.currentTime = newTime;
+
+        this.logger.info(`Manual time set: ${this.formatDateTime(newTime, 'HH:mm:ss')} (Debug mode)`);
+
+        // ✅ 触发时间变化事件
+        const timeData: TimeChangedData = {
+            currentTime: this.formatDateTime(this.currentTime, 'YYYY-MM-DD HH:mm:ss'),
+            previousTime: this.formatDateTime(previousTime, 'YYYY-MM-DD HH:mm:ss'),
+            hour: this.currentTime.getHours(),
+            minute: this.currentTime.getMinutes(),
+            second: this.currentTime.getSeconds(),
+            timestamp: this.currentTime.getTime(),
+        };
+
+        eventBus.emit(DateTimeManager.TIME_CHANGED, timeData);
+        this.timeListeners.forEach(callback => {
+            try {
+                callback(timeData);
+            } catch (error) {
+                this.logger.error('Error in time changed listener:', error);
+            }
+        });
+
+        // ✅ 检查是否需要切换昼夜
+        const wasDaytime = previousTime.getHours() >= 6 && previousTime.getHours() < 18;
+        const isDaytime = hours >= 6 && hours < 18;
+
+        if (wasDaytime !== isDaytime) {
+            this.logger.info(`Day/Night switched: ${wasDaytime ? 'day' : 'night'} → ${isDaytime ? 'day' : 'night'}`);
+        }
+    }
+
+    /**
+     * ✅ 切换到白天（6:00 AM）
+     */
+    setToDaytime(): void {
+        this.setManualTime(12, 0, 0); // 中午 12 点
+    }
+
+    /**
+     * ✅ 切换到夜晚（8:00 PM）
+     */
+    setToNighttime(): void {
+        this.setManualTime(20, 0, 0); // 晚上 8 点
+    }
+
+    /**
      * ✅ 清除手动季节覆盖，恢复自动计算
      */
     clearManualSeason(): void {
@@ -557,21 +635,30 @@ export class DateTimeManager {
     /**
      * 时间滴答（内部方法）
      */
-    private tick(): void {
-        const previousTime = new Date(this.currentTime);
-        this.currentTime = new Date();
-
-        // 1. 触发时间变化事件（每分钟）
-        const timeData: TimeChangedData = {
-            currentTime: this.formatDateTime(this.currentTime, 'YYYY-MM-DD HH:mm:ss'),
+    private createTimeChangeData(
+        currentTime: Date,
+        previousTime: Date
+    ): TimeChangedData {
+        return {
+            currentTime: this.formatDateTime(currentTime, 'YYYY-MM-DD HH:mm:ss'),
             previousTime: this.formatDateTime(previousTime, 'YYYY-MM-DD HH:mm:ss'),
-            hour: this.currentTime.getHours(),
-            minute: this.currentTime.getMinutes(),
-            second: this.currentTime.getSeconds(),
-            timestamp: this.currentTime.getTime(),
+            hour: currentTime.getHours(),
+            minute: currentTime.getMinutes(),
+            second: currentTime.getSeconds(),
+            timestamp: currentTime.getTime(),
         };
+    }
 
+    /**
+     * ✅ 发送时间变化事件（私有方法）
+     */
+    private emitTimeChangeEvent(previousTime: Date): void {
+        const timeData = this.createTimeChangeData(this.currentTime, previousTime);
+
+        // 触发全局事件
         eventBus.emit(DateTimeManager.TIME_CHANGED, timeData);
+
+        // 触发本地监听器
         this.timeListeners.forEach(callback => {
             try {
                 callback(timeData);
@@ -579,6 +666,17 @@ export class DateTimeManager {
                 this.logger.error('Error in time changed listener:', error);
             }
         });
+    }
+
+    /**
+     * 时间滴答（内部方法）
+     */
+    private tick(): void {
+        const previousTime = new Date(this.currentTime);
+        this.currentTime = new Date();
+
+        // 1. 触发时间变化事件（每分钟）
+        this.emitTimeChangeEvent(previousTime);
 
         // 2. 检查日期是否变化（每天午夜）
         const currentDateKey = this.getDateKey(this.currentTime);
@@ -587,7 +685,7 @@ export class DateTimeManager {
             this.previousDate = currentDateKey;
         }
 
-        this.logger.debug(`Time updated: ${timeData.currentTime}`);
+        this.logger.debug(`Time updated: ${this.formatDateTime(this.currentTime, 'YYYY-MM-DD HH:mm:ss')}`);
     }
 
     /**
