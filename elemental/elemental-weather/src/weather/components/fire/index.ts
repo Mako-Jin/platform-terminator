@@ -40,8 +40,6 @@ interface FloatStop {
 
 export default class Fire extends Object3DComponent {
 
-    private logger = LoggerFactory.create("weather-fire");
-
     private settingsManager: SettingsManager;
 
     private particleSystem: any = null;
@@ -116,7 +114,7 @@ export default class Fire extends Object3DComponent {
     private amberRendererGroup: Three.Group;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'Fire', options.isDebugMode);
+        super(scene, 'weather-fire', options.isDebugMode);
 
         this.settingsManager = SettingsManager.getInstance();
 

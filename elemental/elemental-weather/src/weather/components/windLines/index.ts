@@ -258,7 +258,7 @@ export default class WindLines extends Object3DComponent {
         translation?: number;
         thickness?: number;
     } = {}) {
-        super(scene, 'WindLines', options.isDebugMode);
+        super(scene, 'weather-wind-lines', options.isDebugMode);
 
         this.intervalRange = {
             min: options.intervalMin ?? 300,

@@ -14,3 +14,6 @@ export { default as Camp } from './camp';
 export { default as Fire } from './fire';
 export { default as Fireflies } from './fireflies';
 export { default as Rain } from './rain';
+export { default as Snow } from './snow';
+export { default as Lightning } from './lightning';
+export { default as Fog } from './fog';

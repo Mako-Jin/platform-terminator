@@ -158,7 +158,7 @@ export default class FallingLeaves extends Object3DComponent {
     private leafGroup: Three.Group | null = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'FallingLeaves', options.isDebugMode);
+        super(scene, 'weather-fallingleaves', options.isDebugMode);
     }
 
     /**

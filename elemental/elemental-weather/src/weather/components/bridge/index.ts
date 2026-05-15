@@ -21,7 +21,7 @@ export default class Bridge extends Object3DComponent {
     private woodColorMultiplier: Three.Color;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'Bridge', options.isDebugMode);
+        super(scene, 'weather-bridge', options.isDebugMode);
 
         this.settingsManager = SettingsManager.getInstance();
         this.woodColorMultiplier = new Three.Color(0.55, 0.4, 0.18);

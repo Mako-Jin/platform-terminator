@@ -18,7 +18,7 @@ export default class Camp extends Object3DComponent {
     private campModel: Three.Group | null = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'Camp', options.isDebugMode);
+        super(scene, 'weather-camp', options.isDebugMode);
     }
 
     /**

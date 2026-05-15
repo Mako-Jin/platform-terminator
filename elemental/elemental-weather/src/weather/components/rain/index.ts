@@ -244,7 +244,7 @@ export default class Rain extends Object3DComponent {
     private isRainSystemInitialized = false;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'Rain', options.isDebugMode);
+        super(scene, 'weather-rain', options.isDebugMode);
 
         this.settingsManager = SettingsManager.getInstance();
     }

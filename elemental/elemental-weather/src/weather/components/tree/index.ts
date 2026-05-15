@@ -20,7 +20,7 @@ export default class TreesTrunks extends Object3DComponent {
     private treeModel: Three.Group | null = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
-        super(scene, 'TreesTrunks', options.isDebugMode);
+        super(scene, 'weather-trees-trunks', options.isDebugMode);
 
         this.settingsManager = SettingsManager.getInstance();
     }
