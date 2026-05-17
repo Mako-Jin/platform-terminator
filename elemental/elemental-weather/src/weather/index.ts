@@ -211,6 +211,8 @@ class Weather {
     }
 
     private update(delta: number, elapsedTime: number): void {
+        this.world.update(delta, elapsedTime);
+        
         this.camera?.update(delta, elapsedTime);
         if (this.ambientSoundManager) this.ambientSoundManager.update();
         this.renderer.render(this.scene, this.camera!);

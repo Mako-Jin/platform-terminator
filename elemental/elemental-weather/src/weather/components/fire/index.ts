@@ -15,7 +15,6 @@ import {
 import particleVertexShader from '/@/shaders/Materials/fire/vertex.glsl';
 import particleFragmentShader from '/@/shaders/Materials/fire/fragment.glsl';
 import * as MATH from '/@/utils/math';
-import {LoggerFactory} from "common-tools";
 import {SettingsManager, type EasingType, type ConfigObject} from "/@/settings";
 import {
     Emitter,
@@ -42,7 +41,7 @@ export default class Fire extends Object3DComponent {
 
     private settingsManager: SettingsManager;
 
-    private particleSystem: any = null;
+    private particleSystem: ParticleSystem | null = null;
     private fireMaterial: Three.ShaderMaterial | null = null;
     private smokeMaterial: Three.ShaderMaterial | null = null;
     private amberMaterial: Three.ShaderMaterial | null = null;
@@ -59,10 +58,20 @@ export default class Fire extends Object3DComponent {
     private noiseOffset1: number = 0;
     private noiseOffset2: number = 0;
 
+    // 发射器实例
+    private fireEmitter: Emitter | null = null;
+    private smokeEmitter: Emitter | null = null;
+    private amberEmitter: Emitter | null = null;
+
     // 发射器参数
-    private fireEmitterParams: any = null;
-    private smokeEmitterParams: any = null;
-    private amberEmitterParams: any = null;
+    private fireEmitterParams: EmitterParams | null = null;
+    private smokeEmitterParams: EmitterParams | null = null;
+    private amberEmitterParams: EmitterParams | null = null;
+
+    // 渲染器组
+    private fireRendererGroup: Three.Group | null = null;
+    private smokeRendererGroup: Three.Group | null = null;
+    private amberRendererGroup: Three.Group | null = null;
 
     // 灯光
     private fireLight: Three.PointLight | null = null;
@@ -72,18 +81,18 @@ export default class Fire extends Object3DComponent {
     private fireLightPresent: boolean = false;
 
     // 插值器
-    private fireSizeOverLife: MATH.FloatInterpolant = null;
-    private fireAlphaOverLife: any = null;
-    private fireColorOverLife: any = null;
-    private fireTwinkleOverLife: any = null;
-    private smokeSizeOverLife: any = null;
-    private smokeAlphaOverLife: any = null;
-    private smokeColorOverLife: any = null;
-    private smokeTwinkleOverLife: any = null;
-    private amberSizeOverLife: any = null;
-    private amberAlphaOverLife: any = null;
-    private amberColorOverLife: any = null;
-    private amberTwinkleOverLife: any = null;
+    private fireSizeOverLife: MATH.FloatInterpolant | null = null;
+    private fireAlphaOverLife: MATH.FloatInterpolant | null = null;
+    private fireColorOverLife: MATH.ColorInterpolant | null = null;
+    private fireTwinkleOverLife: MATH.FloatInterpolant | null = null;
+    private smokeSizeOverLife: MATH.FloatInterpolant | null = null;
+    private smokeAlphaOverLife: MATH.FloatInterpolant | null = null;
+    private smokeColorOverLife: MATH.ColorInterpolant | null = null;
+    private smokeTwinkleOverLife: MATH.FloatInterpolant | null = null;
+    private amberSizeOverLife: MATH.FloatInterpolant | null = null;
+    private amberAlphaOverLife: MATH.FloatInterpolant | null = null;
+    private amberColorOverLife: MATH.ColorInterpolant | null = null;
+    private amberTwinkleOverLife: MATH.FloatInterpolant | null = null;
 
     // 插值点
     private fireSizeStops: FloatStop[] = [];
@@ -110,8 +119,6 @@ export default class Fire extends Object3DComponent {
     private rainySmokeColorStops: ColorStop[] = [];
     private smokeAlphaConfig: any = {};
 
-    private fireRendererGroup: Three.Group;
-    private amberRendererGroup: Three.Group;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'weather-fire', options.isDebugMode);
@@ -140,12 +147,10 @@ export default class Fire extends Object3DComponent {
 
         this.smokeAlphaConfig = this.getFireColorConfig();
 
-        // 创建组作为根节点
         this.fireGroup = new Three.Group();
         this.fireGroup.name = 'FireGroup';
         this.setRoot(this.fireGroup);
 
-        // 创建烟雾和火星组
         this.smokeGroup = new Three.Group();
         this.smokeGroup.name = 'SmokeGroup';
         this.amberGroup = new Three.Group();
@@ -153,21 +158,13 @@ export default class Fire extends Object3DComponent {
         this.lightGroup = new Three.Group();
         this.lightGroup.name = 'FireLightGroup';
 
-        // 添加到根节点
         this.fireGroup.add(this.smokeGroup);
         this.fireGroup.add(this.amberGroup);
         this.fireGroup.add(this.lightGroup);
 
-        // 创建材质
         await this.createParticleMaterials();
-
-        // 创建粒子系统
         this.createParticleSystem();
-
-        // 添加火焰灯光
         this.addFireLighting();
-
-        // 更新季节效果
         this.updateFireEffectsForSeason();
 
         this.logger.info('[Fire] Initialization complete');
@@ -178,9 +175,7 @@ export default class Fire extends Object3DComponent {
      */
     protected onActivate(): void {
         this.logger.info('[Fire] Activating...');
-
-        // 更新烟雾透明度
-        // this.updateSmokeAlpha();
+        this.updateSmokeAlpha();
     }
 
     /**
@@ -573,8 +568,8 @@ export default class Fire extends Object3DComponent {
             fragmentShader: particleFragmentShader,
             uniforms: {
                 uTime: { value: 0 },
-                uParticleTexture: { value: fireTexture?.resource || null },
-                uSizeOverLife: { value: this.fireSizeOverLife.toTexture() },
+                uParticleTexture: { value: fireTexture || null },
+                uSizeOverLife: { value: this.fireSizeOverLife?.toTexture() || null },
                 uColorOverLife: {
                     value: this.fireColorOverLife.toTexture(this.fireAlphaOverLife),
                 },
@@ -610,8 +605,8 @@ export default class Fire extends Object3DComponent {
             fragmentShader: particleFragmentShader,
             uniforms: {
                 uTime: { value: 0 },
-                uParticleTexture: { value: smokeTexture?.resource || null },
-                uSizeOverLife: { value: this.smokeSizeOverLife.toTexture() },
+                uParticleTexture: { value: smokeTexture || null },
+                uSizeOverLife: { value: this.smokeSizeOverLife?.toTexture() || null },
                 uColorOverLife: {
                     value: this.smokeColorOverLife.toTexture(this.smokeAlphaOverLife),
                 },
@@ -647,7 +642,7 @@ export default class Fire extends Object3DComponent {
             fragmentShader: particleFragmentShader,
             uniforms: {
                 uTime: { value: 0 },
-                uParticleTexture: { value: amberTexture?.resource || null },
+                uParticleTexture: { value: amberTexture || null },
                 uSizeOverLife: { value: this.amberSizeOverLife.toTexture() },
                 uColorOverLife: {
                     value: this.amberColorOverLife.toTexture(this.amberAlphaOverLife),
@@ -705,6 +700,7 @@ export default class Fire extends Object3DComponent {
         const fireRendererParams = new ParticleRendererParams();
         fireRendererParams.maxParticles = fireEmitterParams.maxParticles;
         fireRendererParams.group = new Three.Group();
+        fireRendererParams.group.name = 'FireRendererGroup';
 
         fireEmitterParams.renderer = new ParticleRenderer();
         fireEmitterParams.renderer.initialize(
@@ -942,8 +938,7 @@ export default class Fire extends Object3DComponent {
      * 更新烟雾透明度
      */
     private updateSmokeAlpha(): void {
-        if (!this.smokeAlphaStops
-            || !this.smokeAlphaConfig) {
+        if (!this.smokeAlphaStops || !this.smokeAlphaConfig) {
             return;
         }
 
