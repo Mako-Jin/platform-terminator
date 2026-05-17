@@ -12,6 +12,13 @@ import * as Three from 'three';
 import skydomeVertexShader from '/@/shaders/Materials/skydome/vertex.glsl';
 import skydomeFragmentShader from '/@/shaders/Materials/skydome/fragment.glsl';
 import type GUI from "lil-gui";
+import { 
+    DEFAULT_SKY_COLORS, 
+    DEFAULT_UNIFORMS, 
+    SEASON_MAP, 
+    GEOMETRY_DEFAULTS,
+    type SkyColorConfig 
+} from './defaults';
 
 
 export default class Skydome extends Object3DComponent {
@@ -19,7 +26,7 @@ export default class Skydome extends Object3DComponent {
     private settingsManager: SettingsManager;
 
     private skydomeMaterial: Three.ShaderMaterial | null = null;
-    private skydome: Three.Mesh | undefined;
+    private skydomeMesh: Three.Mesh | null = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'weather-skydome', options.isDebugMode);
@@ -33,205 +40,79 @@ export default class Skydome extends Object3DComponent {
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Skydome] Initializing...');
 
-        // 等待依赖初始化
         await this.waitForDependencies();
 
-        // 创建天空穹顶作为根节点
         this.createSkydome();
 
         this.logger.info('[Skydome] Initialization complete');
     }
 
     /**
-     * 创建天空穹顶
+     * 激活阶段 - 应用初始颜色配置
+     */
+    protected onActivate(): void {
+        this.logger.info('[Skydome] Activating...');
+
+        this.updateSkyColors();
+    }
+
+    /**
+     * 创建天空穹顶并设置为根节点
      */
     private createSkydome(): void {
-        const geometry = new Three.SphereGeometry(150, 32, 16);
+        const geometry = new Three.SphereGeometry(
+            GEOMETRY_DEFAULTS.radius,
+            GEOMETRY_DEFAULTS.widthSegments,
+            GEOMETRY_DEFAULTS.heightSegments
+        );
 
         this.skydomeMaterial = new Three.ShaderMaterial({
             uniforms: {
-                uZenithColor: { value: new Three.Color(0.2, 0.5, 0.9) },
-                uHorizonColor: { value: new Three.Color(0.7, 0.85, 0.95) },
-                uGroundColor: { value: new Three.Color(0.95, 0.9, 0.85) },
+                uZenithColor: { value: DEFAULT_UNIFORMS.uZenithColor.clone() },
+                uHorizonColor: { value: DEFAULT_UNIFORMS.uHorizonColor.clone() },
+                uGroundColor: { value: DEFAULT_UNIFORMS.uGroundColor.clone() },
 
-                uSunPosition: { value: new Three.Vector3(-0.846, -0.085, -1.0) },
-                uSunColor: { value: new Three.Color(1.0, 0.95, 0.8) },
-                uSunGlowColor: { value: new Three.Color(1.0, 0.7, 0.3) },
-                uSunSize: { value: 0.005 },
-                uSunGlowSize: { value: 0.03386 },
-                uSunRayCount: { value: 12.0 },
-                uSunRayLength: { value: 0.0352 },
-                uSunRaySharpness: { value: 8.0 },
+                uSunPosition: { value: DEFAULT_UNIFORMS.uSunPosition.clone() },
+                uSunColor: { value: DEFAULT_UNIFORMS.uSunColor.clone() },
+                uSunGlowColor: { value: DEFAULT_UNIFORMS.uSunGlowColor.clone() },
+                uSunSize: { value: DEFAULT_UNIFORMS.uSunSize },
+                uSunGlowSize: { value: DEFAULT_UNIFORMS.uSunGlowSize },
+                uSunRayCount: { value: DEFAULT_UNIFORMS.uSunRayCount },
+                uSunRayLength: { value: DEFAULT_UNIFORMS.uSunRayLength },
+                uSunRaySharpness: { value: DEFAULT_UNIFORMS.uSunRaySharpness },
 
-                uMoonPosition: { value: new Three.Vector3(-0.5, -0.085, -1.0) },
-                uMoonColor: { value: new Three.Color(0.95, 0.95, 1.0) },
-                uMoonGlowColor: { value: new Three.Color(0.7, 0.8, 1.0) },
-                uMoonSize: { value: 0.0268665 },
-                uMoonGlowSize: { value: 0.0266345 },
+                uMoonPosition: { value: DEFAULT_UNIFORMS.uMoonPosition.clone() },
+                uMoonColor: { value: DEFAULT_UNIFORMS.uMoonColor.clone() },
+                uMoonGlowColor: { value: DEFAULT_UNIFORMS.uMoonGlowColor.clone() },
+                uMoonSize: { value: DEFAULT_UNIFORMS.uMoonSize },
+                uMoonGlowSize: { value: DEFAULT_UNIFORMS.uMoonGlowSize },
 
-                uStarColor: { value: new Three.Color(1.0, 1.0, 1.0) },
-                uStarDensity: { value: 10.0 },
-                uStarBrightness: { value: 2.5 },
+                uStarColor: { value: DEFAULT_UNIFORMS.uStarColor.clone() },
+                uStarDensity: { value: DEFAULT_UNIFORMS.uStarDensity },
+                uStarBrightness: { value: DEFAULT_UNIFORMS.uStarBrightness },
 
-                uTime: { value: 0 },
-                uIsNight: { value: 0.0 },
-                uSeason: { value: 0.0 },
-                uAtmosphereIntensity: { value: 0.0 },
+                uTime: { value: DEFAULT_UNIFORMS.uTime },
+                uIsNight: { value: DEFAULT_UNIFORMS.uIsNight },
+                uSeason: { value: DEFAULT_UNIFORMS.uSeason },
+                uAtmosphereIntensity: { value: DEFAULT_UNIFORMS.uAtmosphereIntensity },
             },
             vertexShader: skydomeVertexShader,
             fragmentShader: skydomeFragmentShader,
             side: Three.BackSide,
         });
 
-        this.skydome = new Three.Mesh(geometry, this.skydomeMaterial);
-        this.skydome.name = 'Skydome';
+        this.skydomeMesh = new Three.Mesh(geometry, this.skydomeMaterial);
+        this.skydomeMesh.name = 'Skydome';
 
-        // 设置为根节点
-        this.setRoot(this.skydome);
-    }
-
-    /**
-     * 激活阶段 - 应用配置
-     */
-    protected onActivate(): void {
-        this.logger.info('[Skydome] Activating...');
-
-        // 立即更新天空颜色
-        this.updateSkyColors();
-    }
-
-    /**
-     * 更新天空颜色
-     */
-    private updateSkyColors(): void {
-        const colors = this.getSkydomeColorConfig('smoothstep');
-
-        if (!colors) {
-            this.logger.warn('[Skydome] No skydome color config available');
-            return;
-        }
-
-        if (!this.skydomeMaterial || !this.skydomeMaterial.uniforms) {
-            this.logger.warn('[Skydome] Skydome material not initialized');
-            return;
-        }
-
-        this.updateColorUniform(colors);
-        this.updateDayNightUniform(colors);
-        this.updateSeasonUniform();
-    }
-
-    /**
-     * 更新季节 uniform
-     */
-    private updateSeasonUniform(): void {
-        if (!this.skydomeMaterial) {
-            return;
-        }
-
-        const seasonMap: Record<string, number> = {
-            spring: 0,
-            summer: 1,
-            autumn: 2,
-            winter: 3,
-            rainy: 4
-        };
-
-        const currentSeason = datetimeManager.getCurrentSeason();
-        const seasonValue = seasonMap[currentSeason] ?? 0;
-
-        if (this.skydomeMaterial.uniforms.uSeason) {
-            this.skydomeMaterial.uniforms.uSeason.value = seasonValue;
-        }
-    }
-
-    /**
-     * 更新昼夜 uniform
-     */
-    private updateDayNightUniform(colors: ConfigObject): void {
-        if (!this.skydomeMaterial) {
-            return;
-        }
-
-        // ✅ 使用 datetimeManager 获取当前小时
-        const currentHour = new Date().getHours();
-        const isNight = currentHour < 6 || currentHour >= 18 ? 1.0 : 0.0;
-
-        if (this.skydomeMaterial.uniforms.uIsNight) {
-            this.skydomeMaterial.uniforms.uIsNight.value = isNight;
-        }
-
-        if (!colors) {
-            return;
-        }
-
-        const uniforms = this.skydomeMaterial.uniforms;
-
-        if (isNight === 0.0) {
-            // 白天 - 更新太阳相关
-            if (colors.sunColor && uniforms.uSunColor) {
-                uniforms.uSunColor.value.copy(colors.sunColor as Three.Color);
-            }
-            if (colors.sunGlowColor && uniforms.uSunGlowColor) {
-                uniforms.uSunGlowColor.value.copy(colors.sunGlowColor as Three.Color);
-            }
-        } else {
-            // 夜晚 - 更新月亮和星星相关
-            if (colors.moonColor && uniforms.uMoonColor) {
-                uniforms.uMoonColor.value.copy(colors.moonColor as Three.Color);
-            }
-            if (colors.moonGlowColor && uniforms.uMoonGlowColor) {
-                uniforms.uMoonGlowColor.value.copy(colors.moonGlowColor as Three.Color);
-            }
-            if (colors.starColor && uniforms.uStarColor) {
-                uniforms.uStarColor.value.copy(colors.starColor as Three.Color);
-            }
-        }
-    }
-
-    /**
-     * 更新颜色 uniform
-     */
-    private updateColorUniform(colors: ConfigObject): void {
-        if (!this.skydomeMaterial) {
-            return;
-        }
-
-        const uniforms = this.skydomeMaterial.uniforms;
-
-        if (colors.zenithColor && uniforms.uZenithColor) {
-            uniforms.uZenithColor.value.copy(colors.zenithColor as Three.Color);
-        }
-        if (colors.horizonColor && uniforms.uHorizonColor) {
-            uniforms.uHorizonColor.value.copy(colors.horizonColor as Three.Color);
-        }
-        if (colors.groundColor && uniforms.uGroundColor) {
-            uniforms.uGroundColor.value.copy(colors.groundColor as Three.Color);
-        }
-    }
-
-    public getSkydomeColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
-        return this.settingsManager.getComponentConfig('skydome', easing);
+        this.setRoot(this.skydomeMesh);
     }
 
     /**
      * 更新阶段 - 每帧调用
      */
     protected onUpdate(params: UpdateParams): void {
-        // 更新时间 uniform
-        if (this.skydomeMaterial && this.skydomeMaterial.uniforms) {
+        if (this.skydomeMaterial) {
             this.skydomeMaterial.uniforms.uTime.value = params.elapsedTime;
-        }
-    }
-
-    /**
-     * 等待依赖初始化
-     */
-    private async waitForDependencies(): Promise<void> {
-        try {
-            await this.settingsManager.waitForInitialization();
-        } catch (error) {
-            this.logger.error('[Skydome] Failed to wait for Season Config initialization:', error);
         }
     }
 
@@ -261,14 +142,86 @@ export default class Skydome extends Object3DComponent {
     }
 
     /**
-     * ✅ 配置调试面板（必须实现的抽象方法）
+     * 更新天空颜色配置
+     */
+    private updateSkyColors(): void {
+        if (!this.skydomeMaterial || !this.skydomeMaterial.uniforms) {
+            this.logger.warn('[Skydome] Material not ready');
+            return;
+        }
+
+        const currentSeason = datetimeManager.getCurrentSeason();
+        const isNight = datetimeManager.isNighttime();
+
+        const colors = this.getSkyColors(currentSeason, isNight);
+
+        this.applyColorConfiguration(colors, isNight, currentSeason);
+    }
+
+    /**
+     * 获取颜色配置（优先使用 SettingsManager，回退到内置预设）
+     */
+    private getSkyColors(season: string, isNight: boolean): SkyColorConfig | undefined {
+        const configKey = isNight ? 'night' : 'day';
+        
+        const config = this.settingsManager.getComponentConfig('skydome', 'smoothstep');
+        
+        if (config && config[season] && config[season][configKey]) {
+            return config[season][configKey];
+        }
+
+        return DEFAULT_SKY_COLORS[season]?.[configKey];
+    }
+
+    /**
+     * 应用颜色配置到 uniform
+     */
+    private applyColorConfiguration(colors: SkyColorConfig | undefined, isNight: boolean, season: string): void {
+        if (!colors || !this.skydomeMaterial) {
+            return;
+        }
+
+        const uniforms = this.skydomeMaterial.uniforms;
+
+        uniforms.uZenithColor.value.copy(colors.zenithColor);
+        uniforms.uHorizonColor.value.copy(colors.horizonColor);
+        uniforms.uGroundColor.value.copy(colors.groundColor);
+
+        uniforms.uIsNight.value = isNight ? 1.0 : 0.0;
+
+        uniforms.uSeason.value = SEASON_MAP[season] ?? 0;
+
+        if (!isNight) {
+            if (colors.sunColor) uniforms.uSunColor.value.copy(colors.sunColor);
+            if (colors.sunGlowColor) uniforms.uSunGlowColor.value.copy(colors.sunGlowColor);
+        } else {
+            if (colors.moonColor) uniforms.uMoonColor.value.copy(colors.moonColor);
+            if (colors.moonGlowColor) uniforms.uMoonGlowColor.value.copy(colors.moonGlowColor);
+            if (colors.starColor) uniforms.uStarColor.value.copy(colors.starColor);
+        }
+    }
+
+    /**
+     * 等待依赖初始化
+     */
+    private async waitForDependencies(): Promise<void> {
+        try {
+            await this.settingsManager.waitForInitialization();
+        } catch (error) {
+            this.logger.error('[Skydome] Failed to wait for SettingsManager initialization:', error);
+        }
+    }
+
+    /**
+     * ✅ 配置调试面板
      */
     protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
-        // 添加基本信息
         gui.add({ name: component.name }, 'name').name('Component').disable();
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
+
+        if (!this.skydomeMaterial) return;
 
         const skyFolder = gui.addFolder('Skydome');
 
@@ -373,18 +326,12 @@ export default class Skydome extends Object3DComponent {
     protected onDispose(): void {
         this.logger.info('[Skydome] Disposing...');
 
-        datetimeManager.offTimeChanged(() => {});
-        datetimeManager.offDateChanged(() => {});
-        datetimeManager.offSeasonChanged(() => {});
-
-        if (this.skydome) {
-            this.scene.removeObject(this.skydome);
-            this.skydome.geometry.dispose();
+        if (this.skydomeMesh) {
+            this.skydomeMesh.geometry.dispose();
+            this.skydomeMesh = null;
         }
 
-        // 清理材质引用
         if (this.skydomeMaterial) {
-            this.scene.removeObject(this.skydome);
             this.skydomeMaterial.dispose();
             this.skydomeMaterial = null;
         }

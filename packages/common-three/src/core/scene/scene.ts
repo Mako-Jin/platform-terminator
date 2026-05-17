@@ -136,8 +136,12 @@ export class SceneWrapper {
         
         // ✅ 自动初始化并激活组件
         try {
-            await component.initialize();
+            if (!component.isInitialized) {
+                await component.initialize();
+            }
+
             component.activate();
+            component.addToScene();
 
             // 将组件的根对象添加到场景
             if (component.root) {
@@ -167,7 +171,7 @@ export class SceneWrapper {
 
         // 失活并清理组件
         if (component.isActive) {
-            component.deactivate();
+            component.deActivate();
         }
         
         // 从场景中移除

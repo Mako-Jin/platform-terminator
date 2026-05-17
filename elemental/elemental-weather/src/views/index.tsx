@@ -35,7 +35,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
 
     const [musicManager, setMusicManager] = useState<MusicManager | undefined>(undefined);
 
-    const { toasts, removeToast, showSeasonToast, showDayNightToast, showMusicToast, showToast } = useToast();
+    const {showSeasonToast, showDayNightToast} = useToast();
 
     const debugMode = isDebugMode();
 
@@ -54,7 +54,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
     }, [container])
 
 
-    const initializeWeather = (withMusic: boolean) => {
+    const initializeWeather = () => {
         const targetContainer = getContainer();
         if (!targetContainer) {
             logger.error('weather world container not found');
@@ -63,10 +63,12 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
 
         logger.info('[Weather] Initializing weather application...');
         const weather = Weather.getInstance();
-        weather.init(targetContainer, withMusic, debugMode).then(() => {
+        weather.init({container: targetContainer, isDebugMode: debugMode, onInitProgress: (progress: number) => {
+                logger.info(`Loading progress: ${progress * 100}%`);
+            }}).then(() => {
             window.weatherInstance = weather;
             logger.info('[Weather] Weather application started successfully');
-
+            weather.start();
             // ✅ 获取并设置 musicManager 以便传递给 UI
             setMusicManager(weather.getMusicManager());
         });
@@ -80,7 +82,8 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         Haptics.buttonTap();
 
         // ✅ 在这里初始化 Weather 实例
-        initializeWeather(withMusic);
+        initializeWeather();
+        // window.weatherInstance?.start();
     };
 
     const handleShaderComplete = () => {

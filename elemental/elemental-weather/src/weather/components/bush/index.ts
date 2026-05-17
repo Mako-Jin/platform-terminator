@@ -116,14 +116,17 @@ export default class Bush extends Object3DComponent {
 
         // 准备采样器网格
         this.samplerMesh = this.prepareSamplerMesh();
-        // 创建 BushManager（包含 warming up）
+        
+        // ✅ 创建 BushManager
         this.bushManager = new BushManager(this.scene, {
             material: this.material,
             samplerMesh: this.samplerMesh,
             maxLeaves: 1755,
+            parent: bushGroup, // ✅ 关键修复：传递父对象
         });
-        // 生成灌木
-        this.spawnFromDefinitions();
+
+        await this.spawnFromDefinitionsAsync();
+        
         this.logger.info(`[Bush] Initialization complete`);
     }
 
@@ -394,6 +397,18 @@ export default class Bush extends Object3DComponent {
         }
 
         const preset = this.getBushColorConfig();
+        
+        // ✅ 添加默认颜色值，防止 undefined
+        const defaultColors = {
+            shadowColor: [0.01, 0.12, 0.01],
+            midColor: [0.0, 0.25, 0.015],
+            highlightColor: [0.25, 0.5, 0.007],
+        };
+        
+        const shadowColor = preset?.shadowColor || defaultColors.shadowColor;
+        const midColor = preset?.midColor || defaultColors.midColor;
+        const highlightColor = preset?.highlightColor || defaultColors.highlightColor;
+        
         const fogUniforms = Three.UniformsUtils.merge([Three.UniformsLib['fog']]);
 
         this.material = new Three.ShaderMaterial({
@@ -406,9 +421,9 @@ export default class Bush extends Object3DComponent {
                     value: this.keyLight ? this.keyLight.position : new Three.Vector3(),
                 },
                 uAlphaMap: { value: leavesAlphaMap },
-                uShadowColor: { value: this.col(preset.shadowColor) },
-                uMidColor: { value: this.col(preset.midColor) },
-                uHighlightColor: { value: this.col(preset.highlightColor) },
+                uShadowColor: { value: this.col(shadowColor) },
+                uMidColor: { value: this.col(midColor) },
+                uHighlightColor: { value: this.col(highlightColor) },
 
                 uBreezeSpeed: { value: 16.25 },
                 uBreezeScale: { value: 6.2 },
@@ -451,30 +466,75 @@ export default class Bush extends Object3DComponent {
     }
 
     /**
-     * 从定义生成灌木
+     * 从定义生成灌木（最终优化版本 - 缓存配置 + 批量处理）
      */
-    private spawnFromDefinitions(): void {
-        const d = this.getDefaults();
-        // ✅ 移除所有循环内的日志输出，避免阻塞
-        this.bushDefinitions.forEach((def: BushDefinition) => {
-            const bushType = def.bushType || 'default';
-            const colors = this.getColorsForBushType(bushType);
-            const colorMultiplier = this.getColorMultiplierForType(bushType);
+    private async spawnFromDefinitionsAsync(): Promise<void> {
+        const preset = this.getBushColorConfig();
+        if (!preset) {
+            this.logger.error('[Bush] No bush color config available!');
+            return;
+        }
+        
+        const d = {
+            leafCount: 45,
+            scale: 1.0,
+        };
+        
+        const totalBushes = this.bushDefinitions.length;
+        let totalLeaves = 0;
+        for (const def of this.bushDefinitions) {
+            totalLeaves += def.leafCount ?? d.leafCount;
+        }
 
-            const cfg = {
+        const bushConfigs: any[] = [];
+        for (let i = 0; i < this.bushDefinitions.length; i++) {
+            const def = this.bushDefinitions[i];
+            const bushType = def.bushType || 'default';
+            
+            let shadowColor, midColor, highlightColor, colorMultiplier;
+            
+            if (bushType === 'tree') {
+                shadowColor = preset.treeShadowColor || [0.01, 0.12, 0.01];
+                midColor = preset.treeMidColor || [0.0, 0.25, 0.015];
+                highlightColor = preset.treeHighlightColor || [0.25, 0.5, 0.007];
+                colorMultiplier = preset.treeColorMultiplier || [0.73, 0.89, 0.62];
+            } else if (bushType === 'birch') {
+                shadowColor = preset.birchShadowColor || [0.01, 0.12, 0.01];
+                midColor = preset.birchMidColor || [0.0, 0.25, 0.015];
+                highlightColor = preset.birchHighlightColor || [0.25, 0.5, 0.007];
+                colorMultiplier = preset.birchColorMultiplier || [0.73, 0.89, 0.62];
+            } else {
+                shadowColor = preset.shadowColor || [0.01, 0.12, 0.01];
+                midColor = preset.midColor || [0.0, 0.25, 0.015];
+                highlightColor = preset.highlightColor || [0.25, 0.5, 0.007];
+                colorMultiplier = preset.colorMultiplier || [0.73, 0.89, 0.62];
+            }
+
+            bushConfigs.push({
                 position: this.v3(def.position),
                 leafCount: def.leafCount ?? d.leafCount,
                 scale: def.scale ?? d.scale,
                 colorMultiplier: this.col(colorMultiplier),
-                shadowColor: colors.shadowColor,
-                midColor: colors.midColor || this.col(d.midColor),
-                highlightColor: colors.highlightColor || this.col(d.highlightColor),
-            };
+                shadowColor: this.col(shadowColor),
+                midColor: this.col(midColor),
+                highlightColor: this.col(highlightColor),
+            });
+        }
 
-            this.bushManager!.addBush(cfg);
-        });
-
-        this.logger.info(`[Bush] Successfully created bushes total leaves`);
+        // ✅ 分批处理，每批处理 5 个灌木后让出主线程
+        const BATCH_SIZE = 5;
+        for (let i = 0; i < bushConfigs.length; i += BATCH_SIZE) {
+            const batch = bushConfigs.slice(i, i + BATCH_SIZE);
+            
+            // 批量添加当前批次
+            this.bushManager!.addBushBatch(batch);
+            
+            // ✅ 每批处理后让出主线程，避免阻塞
+            if (i + BATCH_SIZE < bushConfigs.length) {
+                await new Promise(resolve => setTimeout(resolve, 0));
+            }
+        }
+        this.logger.info(`[Bush] Successfully created ${totalBushes} bushes with ${totalLeaves} total leaves`);
     }
 
     /**
@@ -484,26 +544,44 @@ export default class Bush extends Object3DComponent {
         const preset = this.getBushColorConfig();
 
         if (!preset || !this.material) {
+            this.logger.warn('[Bush] Cannot update colors: preset or material not available');
             return;
         }
 
-        this.material.uniforms.uShadowColor.value.setRGB(
-            preset.shadowColor[0],
-            preset.shadowColor[1],
-            preset.shadowColor[2]
-        );
-        this.material.uniforms.uMidColor.value.setRGB(
-            preset.midColor[0],
-            preset.midColor[1],
-            preset.midColor[2]
-        );
-        this.material.uniforms.uHighlightColor.value.setRGB(
-            preset.highlightColor[0],
-            preset.highlightColor[1],
-            preset.highlightColor[2]
-        );
+        console.log('🎨 [Bush] Updating colors with preset:', preset);
+        
+        // ✅ 支持 Color 对象和数组两种格式
+        const setColor = (uniform: string, value: any) => {
+            if (!value) {
+                console.warn(`  ⚠️ ${uniform} is null/undefined`);
+                return;
+            }
+            
+            const uniformObj = this.material!.uniforms[uniform];
+            if (!uniformObj) {
+                console.warn(`  ⚠️ ${uniform} not found in material`);
+                return;
+            }
+            
+            if (value.isColor) {
+                // Color 对象
+                uniformObj.value.copy(value);
+                console.log(`  ✅ ${uniform} set from Color: r=${value.r.toFixed(3)}, g=${value.g.toFixed(3)}, b=${value.b.toFixed(3)}`);
+            } else if (Array.isArray(value)) {
+                // 数组
+                uniformObj.value.setRGB(value[0], value[1], value[2]);
+                console.log(`  ✅ ${uniform} set from Array: [${value[0]}, ${value[1]}, ${value[2]}]`);
+            } else {
+                console.warn(`  ⚠️ ${uniform} has unknown type:`, typeof value);
+            }
+        };
+        
+        setColor('uShadowColor', preset.shadowColor);
+        setColor('uMidColor', preset.midColor);
+        setColor('uHighlightColor', preset.highlightColor);
 
-        this.rebuildBushes();
+        this.material.needsUpdate = true;
+        console.log('✅ [Bush] Colors updated successfully');
     }
 
     /**
@@ -543,6 +621,7 @@ export default class Bush extends Object3DComponent {
             maxLeaves: 1755,
         });
 
-        this.spawnFromDefinitions();
+        // ✅ 重建时使用异步版本，避免卡顿
+        this.spawnFromDefinitionsAsync();
     }
 }

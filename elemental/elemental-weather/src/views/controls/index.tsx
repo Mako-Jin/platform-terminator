@@ -6,12 +6,13 @@ import {LoggerFactory} from "common-tools";
 import SeasonToggle from "/@/views/controls/seasons";
 import type {JSX} from "react";
 import DayNightToggle from "/@/views/controls/daynight";
+import type {SeasonType} from "common-three";
 
 
 interface ControlPanelProps {
     visible?: boolean;
     musicManager?: MusicManager;
-    onSeasonChange?: (season: string) => void;
+    onSeasonChange?: (season: SeasonType) => void;
     onTimeChange?: (time: string) => void;
     onLightningStrike?: () => void;
 }

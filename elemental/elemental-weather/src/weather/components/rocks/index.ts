@@ -46,7 +46,6 @@ export default class Rocks extends Object3DComponent {
         this.rocksModel = rocksResource.scene;
         this.rocksModel!.name = 'RocksModel';
 
-        // ✅ 设置为根节点
         this.setRoot(this.rocksModel!);
 
         // 创建材质
@@ -223,15 +222,24 @@ export default class Rocks extends Object3DComponent {
         // 获取初始颜色配置
         const colors = this.getRocksColorConfig();
 
+        const defaultColors = {
+            uRockColor1: new Three.Color(0.6, 0.5, 0.4),
+            uRockColor2: new Three.Color(0.4, 0.35, 0.3),
+            uRockColor3: new Three.Color(0.2, 0.18, 0.15),
+            uMossColor1: new Three.Color(0.3, 0.5, 0.2),
+            uMossColor2: new Three.Color(0.25, 0.45, 0.15),
+            uMossColor3: new Three.Color(0.2, 0.4, 0.1),
+        };
+
         this.customRockUniforms = {
             uDisplacementMap: { value: displacementTexture?.resource || null },
             uPerlinNoise: { value: perlinNoise?.resource || null },
-            uRockColor1: { value: colors.uRockColor1.clone() },
-            uRockColor2: { value: colors.uRockColor2.clone() },
-            uRockColor3: { value: colors.uRockColor3.clone() },
-            uMossColor1: { value: colors.uMossColor1.clone() },
-            uMossColor2: { value: colors.uMossColor2.clone() },
-            uMossColor3: { value: colors.uMossColor3.clone() },
+            uRockColor1: { value: (colors?.uRockColor1 ?? defaultColors.uRockColor1).clone() },
+            uRockColor2: { value: (colors?.uRockColor2 ?? defaultColors.uRockColor2).clone() },
+            uRockColor3: { value: (colors?.uRockColor3 ?? defaultColors.uRockColor3).clone() },
+            uMossColor1: { value: (colors?.uMossColor1 ?? defaultColors.uMossColor1).clone() },
+            uMossColor2: { value: (colors?.uMossColor2 ?? defaultColors.uMossColor2).clone() },
+            uMossColor3: { value: (colors?.uMossColor3 ?? defaultColors.uMossColor3).clone() },
             uMossNoiseFactor: { value: 1.2 },
             uMossVisibility: { value: 3.0 },
         };

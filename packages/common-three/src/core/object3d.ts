@@ -186,9 +186,9 @@ export abstract class Object3DComponent implements IObject3DComponent {
 
     private executeLifecycleSync(phase: LifecyclePhase, fn: () => void): void {
         try {
-            this.logger.error(`[${this._name}] sync '${phase}' starting...`);
+            this.logger.debug(`[${this._name}] sync '${phase}' starting...`);
             fn();
-            this.logger.error(`[${this._name}] sync '${phase}' completed.`);
+            this.logger.debug(`[${this._name}] sync '${phase}' completed.`);
         } catch (error) {
             this.logger.error(`[${this._name}] sync '${phase}' failed:`, error);
             this.handleError(phase, error);

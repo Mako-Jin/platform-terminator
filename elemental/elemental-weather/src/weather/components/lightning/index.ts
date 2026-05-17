@@ -11,8 +11,7 @@ import {
     resourcesManager,
     clockManager,
     cameraManager,
-    datetimeManager,
-    eventBus
+    datetimeManager
 } from "common-three";
 import {
     Emitter,
@@ -29,6 +28,7 @@ import lightningArcVertexShader from '/@/shaders/Materials/lightning/vertex.glsl
 import lightningArcFragmentShader from '/@/shaders/Materials/lightning/fragment.glsl';
 // ✅ 导入环境音效管理器
 import {AmbientSoundManager} from "/@/manager";
+import {eventBus} from 'common-tools';
 
 
 interface ColorStop {

@@ -487,7 +487,7 @@ export class DateTimeManager {
     addFestival(config: FestivalConfig): void {
         const key = `${config.month}-${config.day}`;
         this.festivals.set(key, config);
-        this.logger.info(`Added festival: ${config.name}`);
+        this.logger.debug(`Added festival: ${config.name}`);
     }
 
     /**
@@ -497,7 +497,7 @@ export class DateTimeManager {
      */
     addFestivals(configs: FestivalConfig[]): void {
         configs.forEach(config => this.addFestival(config));
-        this.logger.info(`Added ${configs.length} festivals`);
+        this.logger.debug(`Added ${configs.length} festivals`);
     }
 
     /**
@@ -507,7 +507,7 @@ export class DateTimeManager {
      */
     removeFestival(key: string): void {
         this.festivals.delete(key);
-        this.logger.info(`Removed festival: ${key}`);
+        this.logger.debug(`Removed festival: ${key}`);
     }
 
     /**

@@ -35,8 +35,8 @@ export default class Ground extends Object3DComponent {
     private customGroundUniforms: any = null;
 
     private settingsManager: SettingsManager;
-    private biomeManager: BiomeManager;
-    private grassManager: GrassManager;
+    private biomeManager: BiomeManager | null = null;
+    private grassManager: GrassManager | null = null;
 
     constructor(
         scene: SceneWrapper,
@@ -58,24 +58,28 @@ export default class Ground extends Object3DComponent {
         this.gridY = options.gridY ?? 0.0;
         this.worldSize = this.gridCols * this.groundSize;
 
-        this.biomeManager = new BiomeManager(this.scene, {
-            'isDebugMode': options.isDebugMode,
-            "worldSize": this.worldSize
-        });
-
-        this.grassManager = new GrassManager(this.scene, {
-            'isDebugMode': options.isDebugMode,
-            "biomeManager": this.biomeManager,
-            "config": {
-                "worldSize": this.worldSize,
-                "tileSize": this.groundSize,
-                "gridCols": this.gridCols,
-                "gridRows": this.gridRows,
-                "gridSpacing": this.gridSpacing
-            }
-        });
-
         this.settingsManager = SettingsManager.getInstance();
+
+        if (!this.biomeManager) {
+            this.biomeManager = new BiomeManager(this.scene, {
+                isDebugMode: this.isDebugMode,
+                worldSize: this.worldSize
+            });
+        }
+
+        if (!this.grassManager) {
+            this.grassManager = new GrassManager(this.scene, {
+                isDebugMode: this.isDebugMode,
+                biomeManager: this.biomeManager!,
+                config: {
+                    worldSize: this.worldSize,
+                    tileSize: this.groundSize,
+                    gridCols: this.gridCols,
+                    gridRows: this.gridRows,
+                    gridSpacing: this.gridSpacing
+                }
+            });
+        }
     }
 
     /**
@@ -83,33 +87,46 @@ export default class Ground extends Object3DComponent {
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Ground] Initializing...');
-
-        // 等待依赖初始化
         await this.waitForDependencies();
 
-        // 创建地面网格作为根节点
         this.createGroundGroup();
         this.addGrid();
-
+        this.initializeBiomeAndGrass();
         this.logger.info('[Ground] Initialization complete');
     }
 
     /**
-     * 激活阶段 - 应用配置
+     * ✅ 激活阶段 - 延迟初始化 Biome 和 Grass
      */
     protected onActivate(): void {
         this.logger.info('[Ground] Activating...');
 
-        // 立即更新地面颜色
         this.refreshGroundColors();
     }
 
     /**
-     * 更新阶段 - 每帧调用（目前不需要）
+     * ✅ 添加到场景 - 确保 Biome 和 Grass 也被添加
+     */
+    public addToScene(): void {
+        super.addToScene();
+
+        if (this.biomeManager && !this.biomeManager.isActive) {
+            this.biomeManager.addToScene();
+            this.logger.info('[Ground] BiomeManager added to scene');
+        }
+
+        if (this.grassManager && !this.grassManager.isActive) {
+            this.grassManager.addToScene();
+            this.logger.info('[Ground] GrassManager added to scene');
+        }
+    }
+
+    /**
+     * 更新阶段 - 每帧调用
      */
     protected onUpdate(params: UpdateParams): void {
-        if (this.grassManager) {
-            this.grassManager.update();
+        if (this.grassManager && this.grassManager.isActive) {
+            this.grassManager.update(params);
         }
     }
 
@@ -118,6 +135,14 @@ export default class Ground extends Object3DComponent {
      */
     protected onDeactivate(): void {
         this.logger.info('[Ground] Deactivated');
+
+        if (this.grassManager && this.grassManager.isActive) {
+            this.grassManager.deActivate();
+        }
+
+        if (this.biomeManager && this.biomeManager.isActive) {
+            this.biomeManager.deActivate();
+        }
     }
 
     /**
@@ -126,23 +151,26 @@ export default class Ground extends Object3DComponent {
     protected onDispose(): void {
         this.logger.info('[Ground] Disposing...');
 
-        // 清理几何体
+        if (this.grassManager) {
+            this.grassManager.dispose();
+            this.grassManager = null;
+        }
+
+        if (this.biomeManager) {
+            this.biomeManager.dispose();
+            this.biomeManager = null;
+        }
+
         if (this.gridGeometry) {
             this.gridGeometry.dispose();
             this.gridGeometry = null;
         }
 
-        // 清理材质
         if (this.groundMaterial) {
             this.groundMaterial.dispose();
             this.groundMaterial = null;
         }
 
-        if (this.grassManager) {
-            this.grassManager.dispose();
-        }
-
-        // 清理 uniforms
         this.customGroundUniforms = null;
     }
 
@@ -175,14 +203,10 @@ export default class Ground extends Object3DComponent {
      * ✅ 配置调试面板（必须实现的抽象方法）
      */
     protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
-        // 添加基本信息
         gui.add({ name: component.name }, 'name').name('Component').disable();
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-
-        // 可以添加更多地形的调试选项
-        // 例如：网格大小、世界尺寸等
     }
 
     /**
@@ -193,6 +217,44 @@ export default class Ground extends Object3DComponent {
             await this.settingsManager.waitForInitialization();
         } catch (error) {
             this.logger.error('[Ground] Failed to wait for Season config initialization:', error);
+        }
+    }
+
+    /**
+     * ✅ 延迟初始化 Biome 和 Grass 管理器
+     */
+    private initializeBiomeAndGrass(): void {
+        if (!this.biomeManager) {
+            this.biomeManager = new BiomeManager(this.scene, {
+                isDebugMode: this.isDebugMode,
+                worldSize: this.worldSize
+            });
+
+            this.biomeManager.initialize().then(() => {
+                this.logger.info('[Ground] BiomeManager initialized');
+            }).catch((error) => {
+                this.logger.error('[Ground] Failed to initialize BiomeManager:', error);
+            });
+        }
+
+        if (!this.grassManager) {
+            this.grassManager = new GrassManager(this.scene, {
+                isDebugMode: this.isDebugMode,
+                biomeManager: this.biomeManager!,
+                config: {
+                    worldSize: this.worldSize,
+                    tileSize: this.groundSize,
+                    gridCols: this.gridCols,
+                    gridRows: this.gridRows,
+                    gridSpacing: this.gridSpacing
+                }
+            });
+
+            this.grassManager.initialize().then(() => {
+                this.logger.info('[Ground] GrassManager initialized');
+            }).catch((error) => {
+                this.logger.error('[Ground] Failed to initialize GrassManager:', error);
+            });
         }
     }
 
@@ -255,41 +317,49 @@ export default class Ground extends Object3DComponent {
             roughness: 1.0,
             metalness: 0.0,
             color: 0x8B7355,
+            emissiveIntensity: 0.3,
         });
 
-        const biomeTexture = resourcesManager.getItemById("grassPathDensityDataTexture");
-        if (!biomeTexture) {
-            this.logger.error('[Ground] grassPathDensityDataTexture not found in ResourcesManager');
+        // ✅ 检查所有必需的资源
+        const requiredResources = [
+            "grassPathDensityDataTexture",
+            "displacementMap",
+            "perlinNoise",
+            "groundRockMap",
+            "groundRockAOMap"
+        ];
+
+        const missingResources: string[] = [];
+        for (const resourceId of requiredResources) {
+            const resource = resourcesManager.getItemById(resourceId);
+            if (!resource) {
+                missingResources.push(resourceId);
+                this.logger.error(`[Ground] ${resourceId} not found in ResourcesManager`);
+            }
+        }
+
+        if (missingResources.length > 0) {
             return;
         }
+
+        const biomeTexture = resourcesManager.getItemById("grassPathDensityDataTexture");
+        if (!biomeTexture) return;
         biomeTexture.wrapS = biomeTexture.wrapT = Three.ClampToEdgeWrapping;
 
         const displacementTexture = resourcesManager.getItemById("displacementMap");
-        if (!displacementTexture) {
-            this.logger.error('[Ground] displacementMap not found in ResourcesManager');
-            return;
-        }
+        if (!displacementTexture) return;
         displacementTexture.wrapS = displacementTexture.wrapT = Three.RepeatWrapping;
 
         const perlinNoise = resourcesManager.getItemById("perlinNoise");
-        if (!perlinNoise) {
-            this.logger.error('[Ground] perlinNoise not found in ResourcesManager');
-            return;
-        }
+        if (!perlinNoise) return;
         perlinNoise.wrapS = perlinNoise.wrapT = Three.RepeatWrapping;
 
         const groundRockMap = resourcesManager.getItemById("groundRockMap");
-        if (!groundRockMap) {
-            this.logger.error('[Ground] groundRockMap not found in ResourcesManager');
-            return;
-        }
+        if (!groundRockMap) return;
         groundRockMap.wrapS = groundRockMap.wrapT = Three.RepeatWrapping;
 
         const groundRockAO = resourcesManager.getItemById("groundRockAOMap");
-        if (!groundRockAO) {
-            this.logger.error('[Ground] groundRockAOMap not found in ResourcesManager');
-            return;
-        }
+        if (!groundRockAO) return;
         groundRockAO.wrapS = groundRockAO.wrapT = Three.RepeatWrapping;
 
         const colors = this.getGroundColorConfig();
@@ -352,7 +422,6 @@ export default class Ground extends Object3DComponent {
                 '#include <color_fragment>',
                 groundFragmentColorChunk
             );
-
             this.logger.info('[Ground] Shader compiled successfully');
         };
 
@@ -381,7 +450,6 @@ export default class Ground extends Object3DComponent {
         groundMesh.receiveShadow = true;
         groundMesh.name = 'GroundMesh';
 
-        // 添加到根节点
         root.add(groundMesh);
     }
 
@@ -410,5 +478,19 @@ export default class Ground extends Object3DComponent {
      */
     public getWorldSize(): number {
         return this.worldSize;
+    }
+
+    /**
+     * ✅ 获取 BiomeManager 实例
+     */
+    public getBiomeManager(): BiomeManager | null {
+        return this.biomeManager;
+    }
+
+    /**
+     * ✅ 获取 GrassManager 实例
+     */
+    public getGrassManager(): GrassManager | null {
+        return this.grassManager;
     }
 }

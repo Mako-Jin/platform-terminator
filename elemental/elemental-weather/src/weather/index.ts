@@ -14,25 +14,33 @@ import * as Three from 'three';
 import {AmbientSoundManager, AudioManager, MusicManager} from "/@/manager";
 import World from "/@/weather/word.ts";
 
+interface WeatherConfig {
+    container: HTMLElement;
+    isDebugMode?: boolean;
+    onInitProgress?: (progress: number) => void;
+}
 
 class Weather {
-
+    
     private logger = LoggerFactory.create("elemental-weather-instance");
-
+    
     private static instance: Weather;
 
-    private isDebugMode: boolean = false;
+    private isInitialized: boolean = false;
+    private isRunning: boolean = false;
+    
     private container!: HTMLElement;
     private scene!: SceneWrapper;
     private renderer!: RendererWrapper;
     private camera!: BaseCamera | null;
     private world!: World;
 
-    // ✅ 音频管理器实例
     private audioManager!: AudioManager;
     public musicManager!: MusicManager;
     public ambientSoundManager!: AmbientSoundManager;
-    private withMusic: boolean;
+    private withMusic: boolean = false;
+    private isDebugMode: boolean = false;
+    private onInitProgress?: (progress: number) => void;
 
     private unsubscribeClock: (() => void) | null = null;
 
@@ -50,191 +58,165 @@ class Weather {
         return Weather.instance;
     }
 
-    public async init(
-        container: HTMLElement,
-        withMusic: boolean = false,
-        isDebugMode: boolean = false
-    ) {
-        this.isDebugMode = isDebugMode;
-        this.container = container;
-        this.withMusic = withMusic;
+    public async init(config: WeatherConfig): Promise<void> {
+        if (this.isInitialized) {
+            this.logger.warn('[Weather] Already initialized');
+            return;
+        }
 
-        // ✅ 使用 SceneWrapper
+        this.container = config.container;
+        this.isDebugMode = config.isDebugMode ?? false;
+        this.onInitProgress = config.onInitProgress;
+
+        try {
+            this.logger.info('[Weather] Initializing...');
+
+            this.reportProgress(0);
+
+            this.initializeSceneAndRenderer();
+            this.reportProgress(10);
+
+            this.initializeGlobalManagers();
+            this.reportProgress(15);
+
+            await this.initializeAudioSystem();
+            this.reportProgress(30);
+
+            this.world = new World(this.scene, this.isDebugMode);
+            await this.world.initialize((progress) => {
+                this.reportProgress(30 + (progress * 0.5));
+            });
+            this.reportProgress(80);
+
+            this.registerEventListeners();
+            this.reportProgress(90);
+
+            this.isInitialized = true;
+            this.reportProgress(100);
+            this.logger.info('[Weather] Initialization complete');
+        } catch (error) {
+            this.logger.error('[Weather] Initialization failed', error);
+            throw error;
+        }
+    }
+
+    private reportProgress(progress: number): void {
+        if (this.onInitProgress) {
+            this.onInitProgress(Math.round(progress));
+        }
+    }
+
+    public start(withMusic?: boolean): void {
+        if (!this.isInitialized) {
+            this.logger.error('[Weather] Cannot start before initialization');
+            return;
+        }
+        this.withMusic = withMusic ?? false;
+        if (this.isRunning) return;
+
+        this.logger.info('[Weather] Starting render loop...');
+        this.isRunning = true;
+        if (this.withMusic) {
+            this.musicManager.startRandomMusic();
+        } else {
+            this.musicManager.setIsMusicEnabled(false);
+        }
+        this.world.activate();
+        clockManager.start();
+    }
+
+    public stop(): void {
+        if (!this.isRunning) return;
+        
+        this.logger.info('[Weather] Stopping render loop...');
+        this.isRunning = false;
+        this.world.stop();
+        clockManager.stop();
+    }
+
+    public dispose(): void {
+        this.logger.info('[Weather] Disposing...');
+        
+        this.stop();
+
+        if (this.unsubscribeClock) this.unsubscribeClock();
+        sizeManager.offSizeChanged(this.handleResize.bind(this));
+
+        this.world.dispose();
+        this.renderer.dispose();
+        this.scene.dispose();
+        cameraManager.dispose();
+        datetimeManager.stop();
+
+        this.ambientSoundManager?.dispose();
+        this.musicManager?.stopMusic();
+        this.audioManager?.dispose();
+
+        this.isInitialized = false;
+        this.logger.info('[Weather] Disposed');
+    }
+
+    private initializeSceneAndRenderer(): void {
         this.scene = new SceneWrapper({
             backgroundColor: '#000000',
             backgroundAlpha: 1,
             fog: false,
-            autoAddLights: false, // 由 Lighting 组件管理灯光
+            autoAddLights: false,
         });
 
-        // ✅ 使用 cameraManager
         this.camera = cameraManager.createCamera(CameraType.PERSPECTIVE, {
-            fov: 25,
-            near: 0.1,
-            far: 200,
+            fov: 25, near: 0.1, far: 200,
             position: { x: 18.25, y: 10.69, z: 27.32 },
             target: { x: 0, y: 0, z: 0 },
         });
 
-        // ✅ 使用 RendererWrapper
         this.renderer = new RendererWrapper(this.container, {
-            antialias: false,
-            alpha: false,
-            shadows: true,
+            antialias: false, alpha: false, shadows: true,
             shadowType: Three.PCFShadowMap,
             toneMapping: Three.LinearToneMapping,
             toneMappingExposure: 1.75,
             backgroundColor: '#000000',
         });
         this.renderer.enable();
+    }
 
-        // ✅ 启动时间管理器
-        datetimeManager.start(60000); // 每分钟更新
+    private initializeGlobalManagers(): void {
+        datetimeManager.start(60000);
+    }
 
-        // ✅ 初始化音频系统
-        await this.initializeAudioSystem();
-
-        // 创建 World，传入包装类
-        this.world = new World(
-            this.scene,
-            this.renderer,
-            isDebugMode
-        );
-
-        // ✅ 异步初始化 World（会自动初始化所有组件）
-        await this.world.initialize();
-
-        // 监听尺寸变化
-        sizeManager.onSizeChanged((data: SizeChangedData) => {
-            this.resize();
-        });
-
-        // ✅ 使用 clockManager 替代自定义 Clock
+    private registerEventListeners(): void {
+        sizeManager.onSizeChanged(this.handleResize.bind(this));
         this.unsubscribeClock = clockManager.onUpdate((delta, elapsedTime) => {
-            this.update(delta, elapsedTime);
+            if (this.isRunning) this.update(delta, elapsedTime);
         });
-
-        // 启动时钟
-        clockManager.start();
-
-        this.logger.info('Weather app initialized with common-three');
     }
 
-    resize(): void {
-        const width = sizeManager.getWidth();
-        const height = sizeManager.getHeight();
-
-        // ✅ 使用包装类的 onResize
-        this.renderer.onResize(width, height);
-        cameraManager.onResize(width, height);
+    private handleResize(data: SizeChangedData): void {
+        this.renderer.onResize(data.width, data.height);
+        cameraManager.onResize(data.width, data.height);
     }
 
-    /**
-     * ✅ 初始化音频系统
-     */
     private async initializeAudioSystem(): Promise<void> {
         try {
             this.logger.info('Initializing audio system...');
-
-            // 1. 创建音频管理器
             this.audioManager = AudioManager.getInstance();
-
-            // 2. 加载所有音频资源
             await this.audioManager.loadAllSounds();
-            if (this.camera) {
-                this.audioManager.addListenerToCamera(this.camera);
-            }
-
-            // 3. 创建音乐管理器
+            if (this.camera) this.audioManager.addListenerToCamera(this.camera);
             this.musicManager = new MusicManager(this.audioManager);
-
-            // 4. 创建环境音效管理器
             this.ambientSoundManager = new AmbientSoundManager(this.audioManager);
-
-            if (this.withMusic) {
-                // 6. 开始播放随机音乐
-                this.musicManager.startRandomMusic();
-            } else {
-                this.musicManager.setIsMusicEnabled(false);
-            }
-
             this.logger.info('Audio system initialized successfully');
         } catch (error) {
             this.logger.error('Failed to initialize audio system', error);
         }
     }
 
-    update(delta: number, elapsedTime: number): void {
-        // ✅ 更新相机（OrbitControls）
+    private update(delta: number, elapsedTime: number): void {
         this.camera?.update(delta, elapsedTime);
-
-        // ✅ World 的 update 已不需要调用，SceneWrapper 会自动更新所有组件
-        this.world.update(delta, elapsedTime);
-
-        // ✅ 更新环境音效（每帧更新距离音量）
-        if (this.ambientSoundManager) {
-            this.ambientSoundManager.update();
-        }
-
+        if (this.ambientSoundManager) this.ambientSoundManager.update();
         this.renderer.render(this.scene, this.camera!);
-
-        // 调试日志
-        if (this.isDebugMode && Math.random() < 0.01) {
-            this.logger.debug(
-                `Rendering frame - Delta: ${delta.toFixed(4)}, ` +
-                `Elapsed: ${elapsedTime.toFixed(2)}, ` +
-                `FPS: ${clockManager.getFPS()}`
-            );
-        }
-
-        if (this.isDebugMode) {
-            const frameCount = clockManager.getFrameCount();
-            if (frameCount % 60 === 0) {
-                this.logger.debug(`[Weather] Rendering frame #${frameCount}, FPS: ${clockManager.getFPS()}`);
-            }
-        }
     }
 
-    dispose(): void {
-        // ✅ 取消时钟订阅
-        if (this.unsubscribeClock) {
-            this.unsubscribeClock();
-        }
-
-        sizeManager.offSizeChanged(() => {});
-        datetimeManager.offTimeChanged(() => {});
-        datetimeManager.offDateChanged(() => {});
-        datetimeManager.offSeasonChanged(() => {});
-
-        // ✅ 停止时钟
-        clockManager.stop();
-
-        // ✅ 清理音频系统
-        if (this.ambientSoundManager) {
-            this.ambientSoundManager.dispose();
-        }
-        if (this.musicManager) {
-            this.musicManager.stopMusic();
-        }
-        if (this.audioManager) {
-            this.audioManager.dispose();
-        }
-
-        // ✅ World 的 dispose 已不需要调用，SceneWrapper 会自动销毁所有组件
-        this.world.dispose();
-
-        this.renderer.dispose();
-        this.scene.dispose();
-        cameraManager.dispose();
-        datetimeManager.stop();
-
-        this.logger.info('Weather app disposed');
-    }
-
-    getMusicManager(): MusicManager {
-        return this.musicManager;
-    }
-
+    getMusicManager(): MusicManager { return this.musicManager; }
 }
 
 export default Weather;

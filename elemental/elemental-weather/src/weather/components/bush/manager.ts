@@ -67,6 +67,7 @@ export default class BushManager {
             material: Three.ShaderMaterial;
             samplerMesh: Three.Mesh;
             maxLeaves?: number;
+            parent?: Three.Object3D; // ✅ 添加父对象参数
         } = {
             material: undefined,
             samplerMesh: undefined,
@@ -122,7 +123,12 @@ export default class BushManager {
         this.instanceHighlightColors = new Float32Array(this.maxLeaves * 3);
         this.instanceColorMultiplier = new Float32Array(this.maxLeaves * 3);
 
-        this.scene.addObject(this.instancedMesh);
+        // ✅ 添加到指定的父对象，如果没有则添加到 scene
+        if (options.parent) {
+            options.parent.add(this.instancedMesh);
+        } else {
+            this.scene.addObject(this.instancedMesh);
+        }
     }
 
     addBush(config: BushConfig = {}): BushInfo | null {
@@ -206,6 +212,117 @@ export default class BushManager {
         return bush;
     }
 
+    /**
+     * 批量添加灌木（性能优化版本）
+     */
+    addBushBatch(configs: BushConfig[]): void {
+        const dummy = new Three.Object3D();
+        const positionLocal = new Three.Vector3();
+        const normal = new Three.Vector3();
+
+        let sampleTime = 0;
+        let matrixTime = 0;
+        let attributeTime = 0;
+
+        for (const config of configs) {
+            const {
+                position = new Three.Vector3(0, 0.0, 0),
+                leafCount = 25,
+                scale = 1.0,
+                randomSeed = null,
+                shadowColor = new Three.Color(0.01, 0.12, 0.01),
+                midColor = new Three.Color(0.0, 0.25, 0.015),
+                highlightColor = new Three.Color(0.25, 0.5, 0.007),
+                colorMultiplier = new Three.Color(0.73, 0.89, 0.62),
+            } = config;
+
+            if (this.currentLeafIndex + leafCount > this.maxLeaves) {
+                this.logger.warn('[BushManager] Maximum leaf count exceeded, stopping batch add');
+                break;
+            }
+
+            const startIndex = this.currentLeafIndex;
+            let sampler = this.sampler;
+            if (randomSeed !== null) {
+                sampler = new MeshSurfaceSampler(this.samplerMesh)
+                    // .setRandomGenerator(mulberry32(randomSeed))
+                    .build();
+            }
+
+            const shadowR = shadowColor.r;
+            const shadowG = shadowColor.g;
+            const shadowB = shadowColor.b;
+            const midR = midColor.r;
+            const midG = midColor.g;
+            const midB = midColor.b;
+            const highlightR = highlightColor.r;
+            const highlightG = highlightColor.g;
+            const highlightB = highlightColor.b;
+            const multR = colorMultiplier.r;
+            const multG = colorMultiplier.g;
+            const multB = colorMultiplier.b;
+
+            for (let i = 0; i < leafCount; i++) {
+                const instanceIndex = startIndex + i;
+                const baseIndex = instanceIndex * 3;
+
+                // ✅ 采样性能监控
+                const sampleStart = performance.now();
+                sampler.sample(positionLocal, normal);
+                sampleTime += performance.now() - sampleStart;
+
+                dummy.position.copy(positionLocal).add(position);
+
+                // ✅ 使用 Math.random() 替代 MersenneTwister
+                const s = Math.random() * 0.5 + scale;
+                dummy.scale.set(s, s, s);
+
+                // ✅ 矩阵计算性能监控
+                const matrixStart = performance.now();
+                dummy.updateMatrix();
+                this.instancedMesh.setMatrixAt(instanceIndex, dummy.matrix);
+                matrixTime += performance.now() - matrixStart;
+
+                // ✅ 属性设置性能监控
+                const attrStart = performance.now();
+                this.instanceNormals[baseIndex] = normal.x;
+                this.instanceNormals[baseIndex + 1] = normal.y;
+                this.instanceNormals[baseIndex + 2] = normal.z;
+
+                this.instanceShadowColors[baseIndex] = shadowR;
+                this.instanceShadowColors[baseIndex + 1] = shadowG;
+                this.instanceShadowColors[baseIndex + 2] = shadowB;
+
+                this.instanceMidColors[baseIndex] = midR;
+                this.instanceMidColors[baseIndex + 1] = midG;
+                this.instanceMidColors[baseIndex + 2] = midB;
+
+                this.instanceHighlightColors[baseIndex] = highlightR;
+                this.instanceHighlightColors[baseIndex + 1] = highlightG;
+                this.instanceHighlightColors[baseIndex + 2] = highlightB;
+
+                this.instanceColorMultiplier[baseIndex] = multR;
+                this.instanceColorMultiplier[baseIndex + 1] = multG;
+                this.instanceColorMultiplier[baseIndex + 2] = multB;
+                attributeTime += performance.now() - attrStart;
+            }
+
+            const bush: BushInfo = {
+                position: position.clone(),
+                startIndex,
+                leafCount,
+                scale,
+                shadowColor: shadowColor.clone(),
+                midColor: midColor.clone(),
+                highlightColor: highlightColor.clone(),
+            };
+            this.bushes.push(bush);
+            this.currentLeafIndex += leafCount;
+        }
+
+        this.updateMesh();
+    }
+
     updateMesh(): void {
         this.instancedMesh.geometry.setAttribute(
             'instanceNormal',
@@ -230,6 +347,11 @@ export default class BushManager {
 
         this.instancedMesh.count = this.currentLeafIndex;
         this.instancedMesh.instanceMatrix.needsUpdate = true;
+        
+        // ✅ 强制材质重新编译，确保实例属性被正确链接
+        if (this.material) {
+            this.material.needsUpdate = true;
+        }
     }
 
     updateBushPosition(bushIndex: number, newPosition: Three.Vector3): void {

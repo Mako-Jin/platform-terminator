@@ -73,7 +73,8 @@ class FallingLeavesSystem {
     }
 
     private getFallingLeavesColor(): Three.Color {
-        return this.getFallingLeavesColorConfig().color;
+        const config = this.getFallingLeavesColorConfig();
+        return config?.color ?? new Three.Color(0.6, 0.5, 0.2);
     }
 
     onSeasonChanged(newSeason: string, oldSeason: string): void {
@@ -199,12 +200,12 @@ export default class FallingLeaves extends Object3DComponent {
 
         this.fallingLeavesSystemOne = new FallingLeavesSystem(
             this.scene,
-            leafGeometry.clone(),
+            leafGeometry,
             treeOneBounds
         );
         this.fallingLeavesSystemTwo = new FallingLeavesSystem(
             this.scene,
-            leafGeometry.clone(),
+            leafGeometry,
             treeTwoBounds
         );
 
@@ -212,7 +213,7 @@ export default class FallingLeaves extends Object3DComponent {
     }
 
     /**
-     * 激活阶段 - 应用配置
+     * 激活阶段
      */
     protected onActivate(): void {
         this.logger.info('[FallingLeaves] Activating...');
@@ -274,7 +275,7 @@ export default class FallingLeaves extends Object3DComponent {
     }
 
     /**
-     * ✅ 季节变化监听器 - 季节切换时调用（可选）
+     * ✅ 季节变化监听器 - 季节切换时调用
      */
     public onSeasonChanged(data: SeasonChangedData): void {
         this.logger.info(`[FallingLeaves] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
@@ -289,8 +290,5 @@ export default class FallingLeaves extends Object3DComponent {
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
         gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-
-        // 可以添加更多落叶相关的调试选项
-        // 例如：粒子数量、风速等
     }
 }

@@ -451,4 +451,34 @@ export default class AudioManager implements IAudioPlayer {
         return this.masterVolume;
     }
 
+    /**
+     * ✅ 销毁音频管理器，释放所有资源
+     */
+    public dispose(): void {
+        this.logger.info('[AudioManager] Disposing...');
+
+        // 1. 停止所有正在播放的声音
+        this.stopAllSounds();
+
+        // 2. 清理 AudioListener
+        if (this.listener) {
+            this.listener = null;
+        }
+
+        // 3. 清理 Three.js AudioContext 相关资源
+        if (this.context) {
+            this.context.close().then(() => {
+                this.logger.debug('[AudioManager] AudioContext closed');
+            });
+            this.context = null;
+        }
+
+        // 4. 清空缓存
+        this.sounds.clear();
+        this.ambientSounds.clear();
+
+        this.isInitialized = false;
+        this.logger.info('[AudioManager] Disposed');
+    }
+
 }
