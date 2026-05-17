@@ -510,14 +510,24 @@ export default class Bush extends Object3DComponent {
                 colorMultiplier = preset.colorMultiplier || [0.73, 0.89, 0.62];
             }
 
+            const toColor = (value: any): Three.Color => {
+                if (value.isColor) {
+                    return value.clone();
+                } else if (Array.isArray(value)) {
+                    return new Three.Color(value[0], value[1], value[2]);
+                } else {
+                    return new Three.Color(1, 1, 1); // 默认白色
+                }
+            };
+
             bushConfigs.push({
                 position: this.v3(def.position),
                 leafCount: def.leafCount ?? d.leafCount,
                 scale: def.scale ?? d.scale,
-                colorMultiplier: this.col(colorMultiplier),
-                shadowColor: this.col(shadowColor),
-                midColor: this.col(midColor),
-                highlightColor: this.col(highlightColor),
+                colorMultiplier: toColor(colorMultiplier),
+                shadowColor: toColor(shadowColor),
+                midColor: toColor(midColor),
+                highlightColor: toColor(highlightColor),
             });
         }
 

@@ -64,7 +64,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         logger.info('[Weather] Initializing weather application...');
         const weather = Weather.getInstance();
         weather.init({container: targetContainer, isDebugMode: debugMode, onInitProgress: (progress: number) => {
-                logger.info(`Loading progress: ${progress * 100}%`);
+                logger.debug(`Loading progress: ${progress * 100}%`);
             }}).then(() => {
             window.weatherInstance = weather;
             logger.info('[Weather] Weather application started successfully');
