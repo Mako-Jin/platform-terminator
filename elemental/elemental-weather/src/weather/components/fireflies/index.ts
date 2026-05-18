@@ -5,6 +5,8 @@ import {
     type ComponentConfig,
     type UpdateParams,
     type TimeChangedData,
+    type DateChangedData,
+    type SeasonChangedData,
     type IObject3DComponent,
     SceneWrapper,
     SizeManager,
@@ -37,8 +39,13 @@ export default class Fireflies extends Object3DComponent {
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[FireFlies] Initializing...');
 
+        // ✅ 创建组作为根节点
+        const firefliesGroup = new Three.Group();
+        firefliesGroup.name = 'FirefliesGroup';
+        this.setRoot(firefliesGroup);
+
         // 创建萤火虫粒子
-        await this.createFireFlies();
+        await this.createFireFlies(firefliesGroup);
 
         // 根据时间设置可见性
         this.updateVisibility();
@@ -106,9 +113,26 @@ export default class Fireflies extends Object3DComponent {
     }
 
     /**
+     * ✅ 日期变化监听器 - 每天午夜调用（可选）
+     */
+    public onDateChanged(data: DateChangedData): void {
+        this.logger.info(`[FireFlies] Date changed: ${data.currentDate}`);
+        if (data.solarTerm) {
+            this.logger.info(`[FireFlies] Solar term: ${data.solarTerm}`);
+        }
+    }
+
+    /**
+     * ✅ 季节变化监听器 - 季节切换时调用（可选）
+     */
+    public onSeasonChanged(data: SeasonChangedData): void {
+        this.logger.info(`[FireFlies] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
+    }
+
+    /**
      * ✅ 配置调试面板（必须实现的抽象方法）
      */
-    public configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
+    protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
         // 添加基本信息
         gui.add({ name: component.name }, 'name').name('Component').disable();
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
@@ -141,7 +165,7 @@ export default class Fireflies extends Object3DComponent {
     /**
      * 创建萤火虫粒子
      */
-    public async createFireFlies(): Promise<void> {
+    private async createFireFlies(parent: Three.Group): Promise<void> {
         const particleTexture = resourcesManager.getItemById("particleTextureNoAlpha");
 
         this.fireFliesMaterial = new Three.ShaderMaterial({
@@ -207,8 +231,8 @@ export default class Fireflies extends Object3DComponent {
         );
         this.fireFlies.renderOrder = -1;
 
-        // ✅ 设置为根节点
-        this.setRoot(this.fireFlies);
+        // ✅ 添加到父节点
+        parent.add(this.fireFlies);
     }
 
     /**
@@ -226,11 +250,16 @@ export default class Fireflies extends Object3DComponent {
         // 从场景中移除旧的 Points
         if (this.fireFlies) {
             this.fireFlies.removeFromParent();
+            this.fireFlies = null;
         }
 
-        // 重新创建
-        this.createFireFlies();
-        this.updateVisibility();
+        // ✅ 获取根节点作为父对象
+        const root = this.getRoot();
+        if (root) {
+            // 重新创建
+            this.createFireFlies(root as Three.Group);
+            this.updateVisibility();
+        }
     }
 
     /**
@@ -240,13 +269,5 @@ export default class Fireflies extends Object3DComponent {
         if (this.fireFlies) {
             this.fireFlies.visible = datetimeManager.isNighttime();
         }
-    }
-
-    /**
-     * 从时间字符串提取小时
-     */
-    private getHourFromTime(timeString: string): number {
-        const parts = timeString.split(':');
-        return parseInt(parts[0], 10);
     }
 }

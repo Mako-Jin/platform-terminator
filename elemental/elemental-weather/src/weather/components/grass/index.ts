@@ -63,7 +63,7 @@ export default class GrassManager extends Object3DComponent {
     private biomeManager: BiomeManager | null = null;
     private settingsManager: SettingsManager;
 
-    constructor(scene: SceneWrapper, options: { 
+    constructor(scene: SceneWrapper, options: {
         isDebugMode?: boolean;
         config?: GrassConfig;
         biomeManager?: BiomeManager;
@@ -75,14 +75,14 @@ export default class GrassManager extends Object3DComponent {
         this.biomeManager = options.biomeManager || null;
 
         this.settingsManager = SettingsManager.getInstance();
-        
+
         this.worldSize = config.worldSize ?? 33;
         this.tileSize = config.tileSize ?? 11;
         this.gridCols = config.gridCols ?? 3;
         this.gridRows = config.gridRows ?? 3;
         this.gridSpacing = config.gridSpacing ?? this.tileSize;
         this.grassSize = config.grassSize ?? 1.185;
-        
+
         this.grassPerTile = config.grassPerTile ?? this.getInitialGrassDensity();
         this.flowersPerTile = config.flowersPerTile ?? 20;
         this.densityThreshold = config.densityThreshold ?? 0.9;
@@ -90,12 +90,12 @@ export default class GrassManager extends Object3DComponent {
 
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Grass] Initializing...');
-        this.colorConfig = this.getGrassColorConfig();
 
         const grassGroup = new Three.Group();
         grassGroup.name = 'GrassGroup';
         this.setRoot(grassGroup);
 
+        this.colorConfig = this.getGrassColorConfig();
         this.loadSharedResources();
         this.createAllGrassInSingleMesh();
         await this.createFlowers();
@@ -109,11 +109,11 @@ export default class GrassManager extends Object3DComponent {
 
     protected onUpdate(params: UpdateParams): void {
         if (this.sharedUniforms) {
-            this.sharedUniforms.uTime.value += 0.012;
+            this.sharedUniforms.uTime.value += params.delta * 12;
         }
 
         if (this.flowerMaterial) {
-            this.flowerMaterial.uniforms.uTime.value += 0.016;
+            this.flowerMaterial.uniforms.uTime.value += params.delta * 16
         }
     }
 
@@ -460,7 +460,7 @@ export default class GrassManager extends Object3DComponent {
         const dayNight = datetimeManager.isDaytime() ? 'day' : 'night';
         const colors = this.colorConfig[dayNight];
         const fogUniforms = Three.UniformsUtils.merge([Three.UniformsLib['fog']]);
-        
+
         this.flowerMaterial = new Three.ShaderMaterial({
             fog: true,
             uniforms: {
@@ -519,7 +519,7 @@ export default class GrassManager extends Object3DComponent {
         );
 
         this.flowerInstancedMesh.instanceMatrix.needsUpdate = true;
-        
+
         const root = this.root;
         if (root) {
             root.add(this.flowerInstancedMesh);

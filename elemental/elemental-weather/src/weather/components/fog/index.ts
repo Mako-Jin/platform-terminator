@@ -48,6 +48,10 @@ export default class Fog extends Object3DComponent {
         const color = this.getFogColor();
         const threeScene = this.scene.getScene();
 
+        const root = new Three.Group();
+        root.name = 'FogGroup';
+        this.setRoot(root);
+
         threeScene.fog = new Three.Fog(color, this.fogNear, this.fogFar);
 
         this.logger.info(`[Fog] Initialized with color: ${color.getHexString()}, near: ${this.fogNear}, far: ${this.fogFar}`);
@@ -123,7 +127,7 @@ export default class Fog extends Object3DComponent {
         // 雾相关调试选项
         const threeScene = this.scene.getScene();
         if (threeScene.fog) {
-            const fog = threeScene.fog as Three.Fog;  // ✅ 类型断言
+            const fog = threeScene.fog as Three.Fog;
             gui.add(fog, 'near', 0, 100, 0.5).name('Fog Near');
             gui.add(fog, 'far', 0, 100, 0.5).name('Fog Far');
 
@@ -191,7 +195,5 @@ export default class Fog extends Object3DComponent {
 
         const targetColor = this.getFogColor();
         threeScene.fog.color.copy(targetColor);
-
-        this.logger.debug(`[Fog] Color updated to: ${targetColor.getHexString()} (${this.currentSeason} ${this.envTime})`);
     }
 }
