@@ -72,7 +72,7 @@ export default class Lighting extends Object3DComponent {
         // 创建根节点
         const root = this.createRootGroup();
         root.name = 'LightsGroup';
-        this.setRoot(root); // ✅ 关键修复：设置 root
+        this.setRoot(root);
 
         // 创建灯光
         this.createLights(root);
@@ -95,6 +95,16 @@ export default class Lighting extends Object3DComponent {
     }
 
     /**
+     * 【失活】移除 Helper
+     */
+    protected onDeactivate(): void {
+        this.logger.info('[Lighting] Deactivating...');
+
+        // 移除 Helper
+        this.removeHelpers();
+    }
+
+    /**
      * 【更新】每帧调用
      */
     protected onUpdate(params: UpdateParams): void {
@@ -108,14 +118,7 @@ export default class Lighting extends Object3DComponent {
         this.logger.info('[Lighting] Disposing...');
 
         // 清理 Helper
-        this.helpers.forEach(helper => {
-            helper.removeFromParent();
-            if (helper instanceof Three.CameraHelper || helper instanceof Three.LightHelper) {
-                helper.dispose();
-            }
-        });
-        this.helpers = [];
-        this.shadowCameraHelper = null;
+        this.removeHelpers();
 
         // 清理引用
         this.environmentMap = null;
@@ -126,26 +129,46 @@ export default class Lighting extends Object3DComponent {
 
     // ==================== 事件监听 ====================
 
+    /**
+     * ✅ 时间变化监听器 - 每分钟调用
+     */
     public onTimeChanged(_data: TimeChangedData): void {
+        this.logger.debug('[Lighting] Time changed, refreshing lighting config');
         this.refreshLightingConfig();
     }
 
+    /**
+     * ✅ 日期变化监听器 - 每天午夜调用
+     */
     public onDateChanged(data: DateChangedData): void {
         this.logger.info(`[Lighting] Date changed: ${data.currentDate}`);
+        if (data.solarTerm) {
+            this.logger.info(`[Lighting] Solar term: ${data.solarTerm}`);
+        }
     }
 
+    /**
+     * ✅ 季节变化监听器 - 季节切换时调用
+     */
     public onSeasonChanged(data: SeasonChangedData): void {
-        this.logger.info(`[Lighting] Season changed: ${data.currentSeason}`);
+        this.logger.info(`[Lighting] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
         this.refreshLightingConfig();
     }
 
     // ==================== 调试面板 ====================
 
+    /**
+     * ✅ 配置调试面板（必须实现的抽象方法）
+     */
     protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
+        // 添加基本信息
         gui.add({ name: component.name }, 'name').name('Component').disable();
-        
+        gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
+        gui.add({ active: component.isActive }, 'active').name('Active').disable();
+        gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
+
         const folder = gui.addFolder('Lighting Controls');
-        
+
         if (this.lights.key) {
             folder.addColor(this.lights.key, 'color').name('Key Light Color');
             folder.add(this.lights.key, 'intensity', 0, 5, 0.05).name('Key Intensity');
@@ -157,6 +180,14 @@ export default class Lighting extends Object3DComponent {
         if (this.lights.ambient) {
             folder.addColor(this.lights.ambient, 'color').name('Ambient Color');
             folder.add(this.lights.ambient, 'intensity', 0, 2, 0.05).name('Ambient Intensity');
+        }
+        if (this.lights.rim) {
+            folder.addColor(this.lights.rim, 'color').name('Rim Light Color');
+            folder.add(this.lights.rim, 'intensity', 0, 5, 0.05).name('Rim Intensity');
+        }
+        if (this.lights.lamp) {
+            folder.addColor(this.lights.lamp, 'color').name('Lamp Light Color');
+            folder.add(this.lights.lamp, 'intensity', 0, 5, 0.05).name('Lamp Intensity');
         }
         if (this.environmentMap) {
             folder.add(this.environmentMap, 'intensity', 0, 2, 0.05).name('Env Intensity')
@@ -288,7 +319,7 @@ export default class Lighting extends Object3DComponent {
     private updateMaterials(): void {
         if (!this.environmentMap?.current) return;
         const scene = this.scene.getScene();
-        
+
         scene.traverse((child) => {
             if (child instanceof Three.Mesh && child.material) {
                 const mat = child.material as Three.MeshStandardMaterial;
@@ -329,7 +360,20 @@ export default class Lighting extends Object3DComponent {
             this.helpers.push(lampHelper);
             root.add(lampHelper);
         }
-        
+    }
+
+    /**
+     * 移除所有 Helper
+     */
+    private removeHelpers(): void {
+        this.helpers.forEach(helper => {
+            helper.removeFromParent();
+            if (helper instanceof Three.CameraHelper || helper instanceof Three.LightHelper) {
+                helper.dispose();
+            }
+        });
+        this.helpers = [];
+        this.shadowCameraHelper = null;
     }
 
 }

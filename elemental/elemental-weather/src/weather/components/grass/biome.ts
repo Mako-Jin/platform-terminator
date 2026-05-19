@@ -26,12 +26,12 @@ export default class BiomeManager extends Object3DComponent {
     private biomeTexture: Three.Texture | null | undefined = null;
     private biomeData: BiomeData | null = null;
 
-    constructor(scene: SceneWrapper, options: { 
+    constructor(scene: SceneWrapper, options: {
         isDebugMode?: boolean;
         worldSize?: number;
     } = {}) {
         super(scene, 'weather-biome', options.isDebugMode);
-        
+
         this.worldSize = options.worldSize ?? 33;
     }
 
@@ -40,9 +40,10 @@ export default class BiomeManager extends Object3DComponent {
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[BiomeManager] Initializing...');
-
+        const biomeGroup = new Three.Group();
+        biomeGroup.name = 'BiomeGroup';
+        this.setRoot(biomeGroup);
         this.loadBiomeTexture();
-
         this.logger.info(`[BiomeManager] Initialization complete. Texture size: ${this.biomeData?.width}x${this.biomeData?.height}`);
     }
 
@@ -95,10 +96,9 @@ export default class BiomeManager extends Object3DComponent {
     private loadBiomeTexture(): void {
         this.biomeTexture = resourcesManager.getItemById('grassPathDensityDataTexture');
         if (!this.biomeTexture) {
-            this.logger.error('[BiomeManager] Biome texture resource not found');
+            this.logger.error('[BiomeManager] Biome texture resource not found: grassPathDensityDataTexture');
             return;
         }
-
         this.biomeTexture.minFilter = Three.NearestFilter;
         this.biomeTexture.magFilter = Three.NearestFilter;
         this.biomeTexture.generateMipmaps = false;
@@ -117,22 +117,18 @@ export default class BiomeManager extends Object3DComponent {
 
         const img = this.biomeTexture.image as HTMLImageElement | HTMLCanvasElement | ImageBitmap | ImageData | undefined;
 
-        // 检查图片是否已加载
         if (!img) {
-            this.logger.warn('[BiomeManager] Biome texture image is null or undefined');
+            this.logger.error('[BiomeManager] Biome texture image is null or undefined');
             return;
         }
 
-        // 获取图片尺寸（兼容不同类型的图片源）
         let width = 0;
         let height = 0;
 
         if ('naturalWidth' in img) {
-            // HTMLImageElement
             width = (img as HTMLImageElement).naturalWidth;
             height = (img as HTMLImageElement).naturalHeight;
         } else if ('width' in img) {
-            // HTMLCanvasElement, ImageBitmap, ImageData
             width = (img as HTMLCanvasElement | ImageBitmap | ImageData).width;
             height = (img as HTMLCanvasElement | ImageBitmap | ImageData).height;
         }
@@ -149,8 +145,8 @@ export default class BiomeManager extends Object3DComponent {
             return;
         }
 
-        canvas.width = img.width;
-        canvas.height = img.height;
+        canvas.width = width;
+        canvas.height = height;
         ctx.drawImage(img as CanvasImageSource, 0, 0);
 
         const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -159,8 +155,6 @@ export default class BiomeManager extends Object3DComponent {
             width: canvas.width,
             height: canvas.height,
         };
-
-        this.logger.info(`[BiomeManager] Biome data cached: ${canvas.width}x${canvas.height}`);
     }
 
     /**
@@ -186,7 +180,7 @@ export default class BiomeManager extends Object3DComponent {
 
         const idx = (clampedY * this.biomeData.width + clampedX) * 4;
         const greenChannelValue = this.biomeData.data[idx + 1];
-        
+
         return greenChannelValue / 255;
     }
 
@@ -228,7 +222,7 @@ export default class BiomeManager extends Object3DComponent {
         testFolder.add(testCoords, 'x', -this.worldSize / 2, this.worldSize / 2).name('World X');
         testFolder.add(testCoords, 'z', -this.worldSize / 2, this.worldSize / 2).name('World Z');
         testFolder.add(testCoords, 'density', 0, 1).name('Density').disable();
-        
+
         testFolder.add({
             query: () => {
                 testCoords.density = this.getGrassDensity(testCoords.x, testCoords.z);

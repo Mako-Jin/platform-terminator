@@ -222,9 +222,6 @@ export default class GrassManager extends Object3DComponent {
         const bladeMinY = bb ? bb.min.y : 0.0;
         const bladeHeight = bb ? bb.max.y - bb.min.y : 1.0;
 
-        const dayNight = datetimeManager.isDaytime() ? 'day' : 'night';
-        const colors = this.colorConfig[dayNight];
-
         this.sharedUniforms = {
             uTime: { value: 0 },
             uDensityMap: { value: biomeTexture },
@@ -233,9 +230,9 @@ export default class GrassManager extends Object3DComponent {
             uGroundSize: { value: this.worldSize },
             uNormalStrength: { value: 0.3 },
             uTerrainNormalScale: { value: 1.0 },
-            uGrassColorDark: { value: colors.dark.clone() },
-            uGrassColorLight: { value: colors.light.clone() },
-            uShadowColor: { value: colors.shadow.clone() },
+            uGrassColorDark: { value: this.colorConfig.dark.clone() },
+            uGrassColorLight: { value: this.colorConfig.light.clone() },
+            uShadowColor: { value: this.colorConfig.shadow.clone() },
             uWindSpeed: { value: 1.5 },
             uWindAmplitude: { value: 1.5 },
             uWindWaveTiling: { value: 1.0 },
@@ -457,8 +454,6 @@ export default class GrassManager extends Object3DComponent {
             return;
         }
 
-        const dayNight = datetimeManager.isDaytime() ? 'day' : 'night';
-        const colors = this.colorConfig[dayNight];
         const fogUniforms = Three.UniformsUtils.merge([Three.UniformsLib['fog']]);
 
         this.flowerMaterial = new Three.ShaderMaterial({
@@ -469,7 +464,7 @@ export default class GrassManager extends Object3DComponent {
                 uFlowerAtlas: { value: atlasTexture },
                 uWindSpeed: { value: 1.5 },
                 uWindAmplitude: { value: 0.3 },
-                uTimeColorAlpha: { value: colors.flowerVisibility },
+                uTimeColorAlpha: { value: this.colorConfig.flowerVisibility },
             },
             vertexShader: flowersVertexShader,
             fragmentShader: flowersFragmentShader,
@@ -531,35 +526,32 @@ export default class GrassManager extends Object3DComponent {
             return;
         }
 
-        const dayNight = datetimeManager.isDaytime() ? 'day' : 'night';
-        const colors = this.colorConfig[dayNight];
-
         gsap.to(this.sharedUniforms.uShadowColor.value, {
-            r: colors.shadow.r,
-            g: colors.shadow.g,
-            b: colors.shadow.b,
+            r: this.colorConfig.shadow.r,
+            g: this.colorConfig.shadow.g,
+            b: this.colorConfig.shadow.b,
             duration: 1,
             ease: 'power2.out',
         });
 
         gsap.to(this.sharedUniforms.uGrassColorDark.value, {
-            r: colors.dark.r,
-            g: colors.dark.g,
-            b: colors.dark.b,
+            r: this.colorConfig.dark.r,
+            g: this.colorConfig.dark.g,
+            b: this.colorConfig.dark.b,
             duration: 1,
             ease: 'power2.out',
         });
 
         gsap.to(this.sharedUniforms.uGrassColorLight.value, {
-            r: colors.light.r,
-            g: colors.light.g,
-            b: colors.light.b,
+            r: this.colorConfig.light.r,
+            g: this.colorConfig.light.g,
+            b: this.colorConfig.light.b,
             duration: 1,
             ease: 'power2.out',
         });
 
         if (this.flowerMaterial) {
-            this.flowerMaterial.uniforms.uTimeColorAlpha.value = colors.flowerVisibility;
+            this.flowerMaterial.uniforms.uTimeColorAlpha.value = this.colorConfig.flowerVisibility;
         }
     }
 

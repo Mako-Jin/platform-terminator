@@ -78,7 +78,7 @@ export default class Rocks extends Object3DComponent {
      * 失活阶段
      */
     protected onDeactivate(): void {
-        this.logger.info('[Rocks] Deactivated');
+        this.logger.info('[Rocks] Deactivating...');
     }
 
     /**
@@ -110,7 +110,7 @@ export default class Rocks extends Object3DComponent {
     }
 
     /**
-     * ✅ 日期变化监听器 - 每天午夜调用（可选）
+     * ✅ 日期变化监听器 - 每天午夜调用
      */
     public onDateChanged(data: DateChangedData): void {
         this.logger.info(`[Rocks] Date changed: ${data.currentDate}`);
@@ -142,8 +142,10 @@ export default class Rocks extends Object3DComponent {
         // 岩石材质参数调试
         if (!this.customRockUniforms) return;
 
+        const folder = gui.addFolder('Rock Material');
+
         // 岩石颜色
-        const rockColor1Controller = gui.addColor(
+        const rockColor1Controller = folder.addColor(
             { rockColor1: this.customRockUniforms.uRockColor1.value.getHex() },
             'rockColor1'
         ).name('Rock Color Light');
@@ -151,7 +153,7 @@ export default class Rocks extends Object3DComponent {
             this.customRockUniforms.uRockColor1.value.setHex(hex);
         });
 
-        const rockColor2Controller = gui.addColor(
+        const rockColor2Controller = folder.addColor(
             { rockColor2: this.customRockUniforms.uRockColor2.value.getHex() },
             'rockColor2'
         ).name('Rock Color Dark');
@@ -159,7 +161,7 @@ export default class Rocks extends Object3DComponent {
             this.customRockUniforms.uRockColor2.value.setHex(hex);
         });
 
-        const rockColor3Controller = gui.addColor(
+        const rockColor3Controller = folder.addColor(
             { rockColor3: this.customRockUniforms.uRockColor3.value.getHex() },
             'rockColor3'
         ).name('Rock Color Dark Crevices');
@@ -168,7 +170,7 @@ export default class Rocks extends Object3DComponent {
         });
 
         // 苔藓颜色
-        const mossColor1Controller = gui.addColor(
+        const mossColor1Controller = folder.addColor(
             { mossColor1: this.customRockUniforms.uMossColor1.value.getHex() },
             'mossColor1'
         ).name('Rock Moss Color');
@@ -176,7 +178,7 @@ export default class Rocks extends Object3DComponent {
             this.customRockUniforms.uMossColor1.value.setHex(hex);
         });
 
-        const mossColor2Controller = gui.addColor(
+        const mossColor2Controller = folder.addColor(
             { mossColor2: this.customRockUniforms.uMossColor2.value.getHex() },
             'mossColor2'
         ).name('Rock Moss Color2');
@@ -184,7 +186,7 @@ export default class Rocks extends Object3DComponent {
             this.customRockUniforms.uMossColor2.value.setHex(hex);
         });
 
-        const mossColor3Controller = gui.addColor(
+        const mossColor3Controller = folder.addColor(
             { mossColor3: this.customRockUniforms.uMossColor3.value.getHex() },
             'mossColor3'
         ).name('Rock Moss Color3');
@@ -193,9 +195,9 @@ export default class Rocks extends Object3DComponent {
         });
 
         // 苔藓参数
-        gui.add(this.customRockUniforms.uMossNoiseFactor, 'value', 0.1, 100.0, 0.01)
+        folder.add(this.customRockUniforms.uMossNoiseFactor, 'value', 0.1, 100.0, 0.01)
             .name('Rock Moss Noise Factor');
-        gui.add(this.customRockUniforms.uMossVisibility, 'value', 0.0, 5.0, 0.01)
+        folder.add(this.customRockUniforms.uMossVisibility, 'value', 0.0, 5.0, 0.01)
             .name('Rock Moss Visibility');
     }
 
@@ -289,6 +291,9 @@ export default class Rocks extends Object3DComponent {
         });
     }
 
+    /**
+     * 获取岩石颜色配置
+     */
     public getRocksColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
         return this.settingsManager.getComponentConfig('rocks', easing);
     }

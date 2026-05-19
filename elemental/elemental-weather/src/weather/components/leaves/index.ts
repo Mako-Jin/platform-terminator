@@ -45,7 +45,7 @@ class FallingLeavesSystem {
 
         this.mesh = new Three.InstancedMesh(geometry, this.material, this.count);
         this.mesh.castShadow = true;
-        this.scene.addObject(this.mesh);
+        this.mesh.name = 'FallingLeavesSystem';
 
         this.dummy = new Three.Object3D();
         this.particles = [];
@@ -144,8 +144,18 @@ class FallingLeavesSystem {
         this.mesh.instanceMatrix.needsUpdate = true;
     }
 
+    addToScene(parent: Three.Object3D): void {
+        parent.add(this.mesh);
+    }
+
+    removeFromScene(): void {
+        if (this.mesh.parent) {
+            this.mesh.parent.remove(this.mesh);
+        }
+    }
+
     dispose(): void {
-        this.scene.removeObject(this.mesh);
+        this.removeFromScene();
         this.mesh.geometry.dispose();
         this.material.dispose();
     }
@@ -156,10 +166,12 @@ export default class FallingLeaves extends Object3DComponent {
 
     private fallingLeavesSystemOne: FallingLeavesSystem | null = null;
     private fallingLeavesSystemTwo: FallingLeavesSystem | null = null;
-    private leafGroup: Three.Group | null = null;
+    private settingsManager: SettingsManager;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'weather-fallingleaves', options.isDebugMode);
+
+        this.settingsManager = SettingsManager.getInstance();
     }
 
     /**
@@ -168,18 +180,21 @@ export default class FallingLeaves extends Object3DComponent {
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[FallingLeaves] Initializing...');
 
+        const startTime = performance.now();
+
+        const leafGroup = new Three.Group();
+        leafGroup.name = 'FallingLeavesGroup';
+        this.setRoot(leafGroup);
+
         const leafModelData = resourcesManager.getItemById("leafModel");
-        if (!leafModelData) {
-            this.logger.error('[FallingLeaves] leafModel not found in ResourcesManager');
-            return;
+        if (!leafModelData || !leafModelData.scene) {
+            throw new Error('[FallingLeaves] leafModel not found in ResourcesManager');
         }
 
-        const leafGeometry = leafModelData.scene.children[0].geometry;
-
-        // 创建组作为根节点
-        this.leafGroup = new Three.Group();
-        this.leafGroup.name = 'FallingLeavesGroup';
-        this.setRoot(this.leafGroup);
+        const leafGeometry = leafModelData.scene.children[0]?.geometry;
+        if (!leafGeometry) {
+            throw new Error('[FallingLeaves] leafModel geometry not found');
+        }
 
         const treeOneBounds = {
             yMin: 1.0,
@@ -209,7 +224,8 @@ export default class FallingLeaves extends Object3DComponent {
             treeTwoBounds
         );
 
-        this.logger.info('[FallingLeaves] Initialization complete');
+        const duration = performance.now() - startTime;
+        this.logger.info(`[FallingLeaves] Initialization completed in ${duration.toFixed(2)}ms`);
     }
 
     /**
@@ -217,6 +233,20 @@ export default class FallingLeaves extends Object3DComponent {
      */
     protected onActivate(): void {
         this.logger.info('[FallingLeaves] Activating...');
+
+        const root = this.root;
+        if (root) {
+            if (this.fallingLeavesSystemOne) {
+                this.fallingLeavesSystemOne.addToScene(root);
+                this.logger.info('[FallingLeaves] System One added to scene');
+            }
+            if (this.fallingLeavesSystemTwo) {
+                this.fallingLeavesSystemTwo.addToScene(root);
+                this.logger.info('[FallingLeaves] System Two added to scene');
+            }
+        } else {
+            this.logger.error('[FallingLeaves] Root is null, cannot add systems to scene');
+        }
     }
 
     /**
@@ -236,6 +266,12 @@ export default class FallingLeaves extends Object3DComponent {
      */
     protected onDeactivate(): void {
         this.logger.info('[FallingLeaves] Deactivated');
+        if (this.fallingLeavesSystemOne) {
+            this.fallingLeavesSystemOne.removeFromScene();
+        }
+        if (this.fallingLeavesSystemTwo) {
+            this.fallingLeavesSystemTwo.removeFromScene();
+        }
     }
 
     /**
@@ -244,7 +280,6 @@ export default class FallingLeaves extends Object3DComponent {
     protected onDispose(): void {
         this.logger.info('[FallingLeaves] Disposing...');
 
-        // 清理落叶系统
         if (this.fallingLeavesSystemOne) {
             this.fallingLeavesSystemOne.dispose();
             this.fallingLeavesSystemOne = null;
@@ -254,19 +289,13 @@ export default class FallingLeaves extends Object3DComponent {
             this.fallingLeavesSystemTwo = null;
         }
 
-        this.leafGroup = null;
+        this.logger.info('[FallingLeaves] Disposed successfully');
     }
 
-    /**
-     * ✅ 时间变化监听器 - 每分钟调用（可选）
-     */
     public onTimeChanged(_data: TimeChangedData): void {
         // FallingLeaves 不需要响应时间变化
     }
 
-    /**
-     * ✅ 日期变化监听器 - 每天午夜调用（可选）
-     */
     public onDateChanged(data: DateChangedData): void {
         this.logger.info(`[FallingLeaves] Date changed: ${data.currentDate}`);
         if (data.solarTerm) {
@@ -274,18 +303,11 @@ export default class FallingLeaves extends Object3DComponent {
         }
     }
 
-    /**
-     * ✅ 季节变化监听器 - 季节切换时调用
-     */
     public onSeasonChanged(data: SeasonChangedData): void {
         this.logger.info(`[FallingLeaves] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
     }
 
-    /**
-     * ✅ 配置调试面板（必须实现的抽象方法）
-     */
     protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
-        // 添加基本信息
         gui.add({ name: component.name }, 'name').name('Component').disable();
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();

@@ -238,10 +238,6 @@ export default class Rain extends Object3DComponent {
 
     private settingsManager: SettingsManager;
     private rainSystem: RainSystem | null = null;
-    private rainGroup: Three.Group | null = null;
-
-    // ✅ 添加延迟初始化标志
-    private isRainSystemInitialized = false;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'weather-rain', options.isDebugMode);
@@ -255,12 +251,12 @@ export default class Rain extends Object3DComponent {
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Rain] Initializing...');
 
-        // 创建组作为根节点
-        this.rainGroup = new Three.Group();
-        this.rainGroup.name = 'RainGroup';
-        this.setRoot(this.rainGroup);
+        // ✅ 创建根节点
+        const root = this.createRootGroup();
+        root.name = 'RainGroup';
 
         this.initializeRainSystem();
+
         this.logger.info('[Rain] Initialization complete');
     }
 
@@ -269,12 +265,6 @@ export default class Rain extends Object3DComponent {
      */
     protected onActivate(): void {
         this.logger.info('[Rain] Activating...');
-
-        // ✅ 防止重复激活
-        if (this.isActive) {
-            this.logger.warn('[Rain] Already activated, skipping duplicate activation');
-            return;
-        }
     }
 
     /**
@@ -290,7 +280,12 @@ export default class Rain extends Object3DComponent {
      * 失活阶段
      */
     protected onDeactivate(): void {
-        this.logger.info('[Rain] Deactivated');
+        this.logger.info('[Rain] Deactivating...');
+
+        // 隐藏雨系统
+        if (this.rainSystem) {
+            this.rainSystem.setVisible(false);
+        }
     }
 
     /**
@@ -304,19 +299,19 @@ export default class Rain extends Object3DComponent {
             this.rainSystem.dispose();
             this.rainSystem = null;
         }
-
-        this.rainGroup = null;
     }
 
+    // ==================== 事件监听 ====================
+
     /**
-     * ✅ 时间变化监听器 - 每分钟调用（可选）
+     * ✅ 时间变化监听器 - 每分钟调用
      */
-    public onTimeChanged(_data: TimeChangedData): void {
-        // Rain 不需要响应时间变化
+    public onTimeChanged(data: TimeChangedData): void {
+        this.logger.debug(`[Rain] Time changed: ${data.currentTime}`);
     }
 
     /**
-     * ✅ 日期变化监听器 - 每天午夜调用（可选）
+     * ✅ 日期变化监听器 - 每天午夜调用
      */
     public onDateChanged(data: DateChangedData): void {
         this.logger.info(`[Rain] Date changed: ${data.currentDate}`);
@@ -333,8 +328,26 @@ export default class Rain extends Object3DComponent {
         this.updateVisibility();
     }
 
+    // ==================== 调试面板 ====================
+
     /**
-     * ✅ 新增：初始化雨系统
+     * ✅ 配置调试面板（必须实现的抽象方法）
+     */
+    protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
+        // 添加基本信息
+        gui.add({ name: component.name }, 'name').name('Component').disable();
+        gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
+        gui.add({ active: component.isActive }, 'active').name('Active').disable();
+        gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
+
+        // 可以添加更多雨相关的调试选项
+        // 例如：粒子数量、雨滴速度等
+    }
+
+    // ==================== 内部逻辑 ====================
+
+    /**
+     * ✅ 初始化雨系统
      */
     private initializeRainSystem(): void {
         this.logger.info('[Rain] Starting RainSystem initialization...');
@@ -351,20 +364,6 @@ export default class Rain extends Object3DComponent {
         this.rainSystem = new RainSystem(this.scene, rainBounds);
 
         this.updateVisibility();
-    }
-
-    /**
-     * ✅ 配置调试面板（必须实现的抽象方法）
-     */
-    protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
-        // 添加基本信息
-        gui.add({ name: component.name }, 'name').name('Component').disable();
-        gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
-        gui.add({ active: component.isActive }, 'active').name('Active').disable();
-        gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
-
-        // 可以添加更多雨相关的调试选项
-        // 例如：粒子数量、雨滴速度等
     }
 
     /**

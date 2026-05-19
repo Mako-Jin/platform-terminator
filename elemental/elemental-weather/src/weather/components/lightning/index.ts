@@ -5,6 +5,7 @@ import {
     type ComponentConfig,
     type UpdateParams,
     type SeasonChangedData,
+    type TimeChangedData,
     type IObject3DComponent,
     SceneWrapper,
     sizeManager,
@@ -174,6 +175,10 @@ export default class Lightning extends Object3DComponent {
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Lightning] Initializing...');
 
+        // ✅ 创建根节点
+        const root = this.createRootGroup();
+        root.name = 'LightningGroup';
+
         // ✅ 创建粒子系统
         this.particleSystem = new ParticleSystem();
 
@@ -202,10 +207,26 @@ export default class Lightning extends Object3DComponent {
         sizeManager.onSizeChanged(this.handleResize.bind(this));
 
         // ✅ 监听闪电触发事件
-        eventBus.on(Lightning.LIGHTNING_STRIKE_TRIGGERED, () => {
-            this.logger.info('[Lightning] Received strike trigger event');
-            this.manualStrike();
-        });
+        eventBus.on(Lightning.LIGHTNING_STRIKE_TRIGGERED, this.handleLightningTrigger.bind(this));
+    }
+
+    /**
+     * 失活阶段
+     */
+    protected onDeactivate(): void {
+        this.logger.info('[Lightning] Deactivating...');
+
+        // ✅ 移除尺寸变化监听
+        sizeManager.offSizeChanged(this.handleResize.bind(this));
+
+        // ✅ 移除闪电触发事件监听
+        eventBus.off(Lightning.LIGHTNING_STRIKE_TRIGGERED, this.handleLightningTrigger.bind(this));
+
+        // 停止相机震动
+        this.stopCameraShake();
+
+        // 清理所有活跃的闪电弧
+        this.clearActiveLightningArcs();
     }
 
     /**
@@ -245,27 +266,10 @@ export default class Lightning extends Object3DComponent {
     }
 
     /**
-     * 失活阶段
-     */
-    protected onDeactivate(): void {
-        this.logger.info('[Lightning] Deactivated');
-
-        // 移除 resize 监听
-        sizeManager.offSizeChanged('resize', this.handleResize.bind(this));
-        // ✅ 移除事件监听
-        eventBus.off(Lightning.LIGHTNING_STRIKE_TRIGGERED, () => {});
-
-        // 停止相机震动
-        this.stopCameraShake();
-    }
-
-    /**
      * 销毁阶段
      */
     protected onDispose(): void {
         this.logger.info('[Lightning] Disposing...');
-
-        window.removeEventListener('resize', this.handleResize);
 
         // ✅ 清理粒子系统
         if (this.particleSystem) {
@@ -280,33 +284,39 @@ export default class Lightning extends Object3DComponent {
         }
 
         // 清理所有闪电弧
-        for (const arc of this.activeLightningArcs) {
-            this.scene.removeObject(arc);
-            arc.geometry.dispose();
-            (arc.material as Three.Material).dispose();
-        }
-        this.activeLightningArcs = [];
+        this.clearActiveLightningArcs();
 
         // 停止相机震动
         this.stopCameraShake();
     }
 
+    // ==================== 事件监听 ====================
+
     /**
-     * ✅ 季节变化监听器
+     * ✅ 时间变化监听器 - 每分钟调用
      */
-    public onSeasonChanged(data: SeasonChangedData): void {
-        this.logger.info(`[Lightning] Season changed: ${data.previousSeason} -> ${data.currentSeason}`);
-        this.currentSeason = data.currentSeason;
+    public onTimeChanged(data: TimeChangedData): void {
+        this.logger.debug(`[Lightning] Time changed: ${data.currentTime}`);
     }
 
     /**
-     * ✅ 配置调试面板
+     * ✅ 季节变化监听器 - 季节切换时调用
+     */
+    public onSeasonChanged(data: SeasonChangedData): void {
+        this.logger.info(`[Lightning] Season changed: ${data.previousSeason} -> ${data.currentSeason}`);
+    }
+
+    // ==================== 调试面板 ====================
+
+    /**
+     * ✅ 配置调试面板（必须实现的抽象方法）
      */
     protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {
         // 添加基本信息
         gui.add({ name: component.name }, 'name').name('Component').disable();
         gui.add({ initialized: component.isInitialized }, 'initialized').name('Initialized').disable();
         gui.add({ active: component.isActive }, 'active').name('Active').disable();
+        gui.add({ visible: component.isVisible }, 'visible').name('Visible').disable();
 
         // 爆炸粒子参数
         const explosionFolder = gui.addFolder('Explosion Particles');
@@ -387,6 +397,16 @@ export default class Lightning extends Object3DComponent {
 
         // 手动触发闪电
         gui.add({ strike: () => this.manualStrike() }, 'strike').name('⚡ Trigger Lightning');
+    }
+
+    // ==================== 内部逻辑 ====================
+
+    /**
+     * 处理闪电触发事件
+     */
+    private handleLightningTrigger(): void {
+        this.logger.info('[Lightning] Received strike trigger event');
+        this.manualStrike();
     }
 
     /**
@@ -546,7 +566,7 @@ export default class Lightning extends Object3DComponent {
         mesh.position.copy(position);
         mesh.frustumCulled = false;
 
-        this.scene.getScene().add(mesh);
+        this.scene.addObject(mesh);
         this.activeLightningArcs.push(mesh);
 
         return mesh;
@@ -591,8 +611,6 @@ export default class Lightning extends Object3DComponent {
 
         // 添加到场景
         this.scene.addObject(rendererParams.group);
-
-        return emitter;
     }
 
     /**
@@ -658,71 +676,23 @@ export default class Lightning extends Object3DComponent {
     }
 
     /**
-     * ✅ 更新相机震动
-     */
-    private updateCameraShake(): void {
-        const cameraManager = CameraManager.getInstance();
-        const camera = cameraManager.getThreeCamera();
-
-        if (!camera || !this.originalCameraPosition) return;
-
-        const elapsed = (performance.now() - this.shakeStart) / 1000;
-        const progress = Math.min(elapsed / this.cameraShakeDuration, 1);
-
-        if (progress < 1) {
-            // 缓入效果
-            const easeIn = progress < 0.1 ? Math.pow(progress / 0.1, 2) : 1;
-            // 衰减因子
-            const decayFactor = Math.pow(1 - progress, this.cameraShakeDecay);
-            // 当前强度
-            const currentIntensity = this.cameraShakeIntensity * decayFactor * easeIn;
-
-            // 噪声计算
-            const time = elapsed * this.cameraShakeFrequency;
-            const noise1 = Math.sin(time) * 0.6;
-            const noise2 = Math.sin(time * 2.3) * 0.3;
-            const noise3 = Math.sin(time * 4.7) * 0.1;
-            const combinedNoise = noise1 + noise2 + noise3;
-
-            // 随机偏移
-            const randomX = (Math.random() - 0.5) * 2;
-            const randomY = (Math.random() - 0.5) * 2;
-            const randomZ = (Math.random() - 0.5) * 2;
-
-            // 应用震动
-            camera.position.x =
-                this.originalCameraPosition.x +
-                (randomX + this.shakeDirection.x * combinedNoise * 0.5) * currentIntensity;
-            camera.position.y =
-                this.originalCameraPosition.y +
-                (randomY + this.shakeDirection.y * combinedNoise * 0.5) * currentIntensity;
-            camera.position.z =
-                this.originalCameraPosition.z +
-                (randomZ + this.shakeDirection.z * combinedNoise * 0.5) * currentIntensity;
-        } else {
-            // 震动结束，恢复原位
-            this.stopCameraShake();
-            if (this.originalCameraPosition) {
-                camera.position.copy(this.originalCameraPosition);
-            }
-        }
-    }
-
-    /**
-     * ✅ 查找场景中的相机（已废弃，使用 CameraManager）
-     * @deprecated 使用 CameraManager.getInstance().getThreeCamera() 代替
-     */
-    private findCamera(): Three.Camera | undefined {
-        const cameraManager = CameraManager.getInstance();
-        return cameraManager.getThreeCamera() || undefined;
-    }
-
-    /**
      * ✅ 停止相机震动
      */
     private stopCameraShake(): void {
         this.isShaking = false;
         this.originalCameraPosition = null;
+    }
+
+    /**
+     * 清理所有活跃的闪电弧
+     */
+    private clearActiveLightningArcs(): void {
+        for (const arc of this.activeLightningArcs) {
+            this.scene.removeObject(arc);
+            arc.geometry.dispose();
+            (arc.material as Three.Material).dispose();
+        }
+        this.activeLightningArcs = [];
     }
 
     /**
@@ -816,7 +786,10 @@ export default class Lightning extends Object3DComponent {
         }
     }
 
-    isRainySeason() {
+    /**
+     * 判断是否为雨季
+     */
+    private isRainySeason(): boolean {
         return datetimeManager.getCurrentSeason() === 'rainy';
     }
 }

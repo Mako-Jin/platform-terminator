@@ -57,29 +57,22 @@ export default class Ground extends Object3DComponent {
         this.gridSpacing = options.gridSpacing ?? this.groundSize;
         this.gridY = options.gridY ?? 0.0;
         this.worldSize = this.gridCols * this.groundSize;
-
+        this.biomeManager = new BiomeManager(this.scene, {
+            isDebugMode: this.isDebugMode,
+            worldSize: this.worldSize
+        });
+        this.grassManager = new GrassManager(this.scene, {
+            isDebugMode: this.isDebugMode,
+            biomeManager: this.biomeManager!,
+            config: {
+                worldSize: this.worldSize,
+                tileSize: this.groundSize,
+                gridCols: this.gridCols,
+                gridRows: this.gridRows,
+                gridSpacing: this.gridSpacing
+            }
+        });
         this.settingsManager = SettingsManager.getInstance();
-
-        if (!this.biomeManager) {
-            this.biomeManager = new BiomeManager(this.scene, {
-                isDebugMode: this.isDebugMode,
-                worldSize: this.worldSize
-            });
-        }
-
-        if (!this.grassManager) {
-            this.grassManager = new GrassManager(this.scene, {
-                isDebugMode: this.isDebugMode,
-                biomeManager: this.biomeManager!,
-                config: {
-                    worldSize: this.worldSize,
-                    tileSize: this.groundSize,
-                    gridCols: this.gridCols,
-                    gridRows: this.gridRows,
-                    gridSpacing: this.gridSpacing
-                }
-            });
-        }
     }
 
     /**
@@ -91,7 +84,8 @@ export default class Ground extends Object3DComponent {
 
         this.createGroundGroup();
         this.addGrid();
-        this.initializeBiomeAndGrass();
+        await this.initializeBiomeAndGrass();
+
         this.logger.info('[Ground] Initialization complete');
     }
 
@@ -102,22 +96,18 @@ export default class Ground extends Object3DComponent {
         this.logger.info('[Ground] Activating...');
 
         this.refreshGroundColors();
+        this.grassManager.activate();
+        this.biomeManager.activate();
     }
 
-    /**
-     * ✅ 添加到场景 - 确保 Biome 和 Grass 也被添加
-     */
-    public addToScene(): void {
+    public addToScene() {
         super.addToScene();
-
-        if (this.biomeManager && !this.biomeManager.isActive) {
-            this.biomeManager.addToScene();
-            this.logger.info('[Ground] BiomeManager added to scene');
+        if (this.grassManager && this.grassManager.isActive) {
+            this.grassManager.addToScene();
         }
 
-        if (this.grassManager && !this.grassManager.isActive) {
-            this.grassManager.addToScene();
-            this.logger.info('[Ground] GrassManager added to scene');
+        if (this.biomeManager && this.biomeManager.isActive) {
+            this.biomeManager.addToScene();
         }
     }
 
@@ -223,38 +213,13 @@ export default class Ground extends Object3DComponent {
     /**
      * ✅ 延迟初始化 Biome 和 Grass 管理器
      */
-    private initializeBiomeAndGrass(): void {
-        if (!this.biomeManager) {
-            this.biomeManager = new BiomeManager(this.scene, {
-                isDebugMode: this.isDebugMode,
-                worldSize: this.worldSize
-            });
-
-            this.biomeManager.initialize().then(() => {
-                this.logger.info('[Ground] BiomeManager initialized');
-            }).catch((error) => {
-                this.logger.error('[Ground] Failed to initialize BiomeManager:', error);
-            });
+    private async initializeBiomeAndGrass(): Promise<void> {
+        if (this.biomeManager && !this.biomeManager.isInitialized) {
+            await this.biomeManager.initialize();
         }
 
-        if (!this.grassManager) {
-            this.grassManager = new GrassManager(this.scene, {
-                isDebugMode: this.isDebugMode,
-                biomeManager: this.biomeManager!,
-                config: {
-                    worldSize: this.worldSize,
-                    tileSize: this.groundSize,
-                    gridCols: this.gridCols,
-                    gridRows: this.gridRows,
-                    gridSpacing: this.gridSpacing
-                }
-            });
-
-            this.grassManager.initialize().then(() => {
-                this.logger.info('[Ground] GrassManager initialized');
-            }).catch((error) => {
-                this.logger.error('[Ground] Failed to initialize GrassManager:', error);
-            });
+        if (this.grassManager && !this.grassManager.isInitialized) {
+            await this.grassManager.initialize();
         }
     }
 
