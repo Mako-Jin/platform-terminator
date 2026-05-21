@@ -17,3 +17,4 @@ export { default as Rain } from './rain';
 export { default as Snow } from './snow';
 export { default as Lightning } from './lightning';
 export { default as Fog } from './fog';
+export { default as Water } from './water';

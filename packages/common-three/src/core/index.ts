@@ -19,3 +19,7 @@ export { SceneWrapper } from './scene';
 
 
 export { default as Object3DComponent } from './object3d';
+
+
+export type { OrbitControlsConfig } from './controls/types';
+export { OrbitControls } from './controls';

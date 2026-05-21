@@ -11,6 +11,10 @@ import ShaderReveal from "/@/views/shader";
 import {MusicManager} from "/@/manager";
 import {Lightning} from "/@/weather/components";
 import useToast from "/@/hooks/useToast.ts";
+import ToastContainer from "/@/views/toast";
+import PageTitle from "/@/views/title";
+import HamburgerMenu from "/@/views/menu";
+import SettingsModal from "/@/views/settings";
 
 
 declare global {
@@ -31,11 +35,13 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
 
     const weatherContainerRef = useRef<HTMLDivElement>(null);
 
+    const [isSettingsOpen, setIsSettingsOpen] = useState(false);
+
     const [resourceLoader, setResourceLoader] = useState<ResourceLoader | null>(null);
 
     const [musicManager, setMusicManager] = useState<MusicManager | undefined>(undefined);
 
-    const {showSeasonToast, showDayNightToast} = useToast();
+    const {toasts, removeToast, showSeasonToast, showDayNightToast} = useToast();
 
     const debugMode = isDebugMode();
 
@@ -116,6 +122,14 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         eventBus.emit(Lightning.LIGHTNING_STRIKE_TRIGGERED);
     };
 
+    const handleOpenSettings = () => {
+        setIsSettingsOpen(true);
+    };
+
+    const handleCloseSettings = () => {
+        setIsSettingsOpen(false);
+    };
+
     useEffect(() => {
         logger.info("weather world view loading...")
 
@@ -146,7 +160,10 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
     }, [debugMode, getContainer, logger, resourceLoader]);
 
     return (
-        <div className="weather-container">
+        <>
+            <div className="weather-container">
+
+            </div>
             <div ref={weatherContainerRef}/>
 
             {/* 加载界面 */}
@@ -162,6 +179,9 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
                 <ShaderReveal onComplete={handleShaderComplete} />
             )}
 
+            {/* Toast通知容器 */}
+            <ToastContainer toasts={toasts} onClose={removeToast} />
+
             <ControlPanel
                 visible={showControls}
                 musicManager={musicManager}
@@ -169,7 +189,21 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
                 onTimeChange={handleTimeChange}
                 onLightningStrike={handleLightningStrike}
             />
-        </div>
+
+            {/* 页面标题 */}
+            {!isLoading && !showShader && <PageTitle />}
+
+            {/* 汉堡菜单 */}
+            {!isLoading && !showShader && (
+                <HamburgerMenu onOpenSettings={handleOpenSettings} />
+            )}
+
+            {/* 设置模态框 */}
+            <SettingsModal
+                isOpen={isSettingsOpen}
+                onClose={handleCloseSettings}
+            />
+        </>
     );
 }
 

@@ -36,11 +36,8 @@ export class PerspectiveCameraWrapper extends BaseCamera {
             this.setPosition(0, 5, 10);
         }
 
-        // 设置默认目标
         if (config.target) {
             this.lookAt(config.target.x, config.target.y, config.target.z);
-        } else {
-            this.lookAt(0, 0, 0);
         }
 
         this.logger.info('PerspectiveCamera created');

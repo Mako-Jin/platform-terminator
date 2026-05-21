@@ -19,6 +19,8 @@ import groundFragmentColorChunk from '/@/shaders/Chunks/ground/ground.fragment_c
 import {type ConfigObject, SettingsManager} from "/@/settings";
 import BiomeManager from "/@/weather/components/grass/biome.ts";
 import GrassManager from "/@/weather/components/grass";
+import {Water} from "/@/weather/components";
+
 
 
 export default class Ground extends Object3DComponent {
@@ -37,6 +39,8 @@ export default class Ground extends Object3DComponent {
     private settingsManager: SettingsManager;
     private biomeManager: BiomeManager | null = null;
     private grassManager: GrassManager | null = null;
+
+    private water: Water | null = null;
 
     constructor(
         scene: SceneWrapper,
@@ -72,6 +76,16 @@ export default class Ground extends Object3DComponent {
                 gridSpacing: this.gridSpacing
             }
         });
+        this.water = new Water(this.scene, {
+            isDebugMode: this.isDebugMode,
+            config: {
+                groundSize: this.groundSize,
+                gridCols: this.gridCols,
+                gridRows: this.gridRows,
+                gridSpacing: this.gridSpacing,
+                gridY: this.gridY
+            }
+        });
         this.settingsManager = SettingsManager.getInstance();
     }
 
@@ -85,7 +99,7 @@ export default class Ground extends Object3DComponent {
         this.createGroundGroup();
         this.addGrid();
         await this.initializeBiomeAndGrass();
-
+        await this.water.initialize();
         this.logger.info('[Ground] Initialization complete');
     }
 
@@ -96,8 +110,17 @@ export default class Ground extends Object3DComponent {
         this.logger.info('[Ground] Activating...');
 
         this.refreshGroundColors();
-        this.grassManager.activate();
-        this.biomeManager.activate();
+        if (this.grassManager) {
+            this.grassManager.activate();
+        }
+
+        if (this.biomeManager) {
+            this.biomeManager.activate();
+        }
+
+        if (this.water) {
+            this.water.activate();
+        }
     }
 
     public addToScene() {
@@ -109,6 +132,10 @@ export default class Ground extends Object3DComponent {
         if (this.biomeManager && this.biomeManager.isActive) {
             this.biomeManager.addToScene();
         }
+
+        if (this.water && this.water.isActive) {
+            this.water.addToScene();
+        }
     }
 
     /**
@@ -117,6 +144,12 @@ export default class Ground extends Object3DComponent {
     protected onUpdate(params: UpdateParams): void {
         if (this.grassManager && this.grassManager.isActive) {
             this.grassManager.update(params);
+        }
+        if (this.biomeManager && this.biomeManager.isActive) {
+            this.biomeManager.update(params);
+        }
+        if (this.water && this.water.isActive) {
+            this.water.update(params);
         }
     }
 
@@ -132,6 +165,10 @@ export default class Ground extends Object3DComponent {
 
         if (this.biomeManager && this.biomeManager.isActive) {
             this.biomeManager.deActivate();
+        }
+
+        if (this.water && this.water.isActive) {
+            this.water.deActivate();
         }
     }
 
@@ -149,6 +186,11 @@ export default class Ground extends Object3DComponent {
         if (this.biomeManager) {
             this.biomeManager.dispose();
             this.biomeManager = null;
+        }
+
+        if (this.water) {
+            this.water.dispose();
+            this.water = null;
         }
 
         if (this.gridGeometry) {

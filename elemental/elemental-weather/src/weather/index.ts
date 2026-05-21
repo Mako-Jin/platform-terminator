@@ -8,7 +8,7 @@ import {
     BaseCamera,
     sizeManager,
     type SizeChangedData,
-    clockManager
+    clockManager, OrbitControls
 } from "common-three";
 import * as Three from 'three';
 import {AmbientSoundManager, AudioManager, MusicManager} from "/@/manager";
@@ -33,6 +33,7 @@ class Weather {
     private scene!: SceneWrapper;
     private renderer!: RendererWrapper;
     private camera!: BaseCamera | null;
+    private orbitControls!: OrbitControls | null;
     private world!: World;
 
     private audioManager!: AudioManager;
@@ -146,6 +147,7 @@ class Weather {
         this.renderer.dispose();
         this.scene.dispose();
         cameraManager.dispose();
+        this.orbitControls?.dispose();
         datetimeManager.stop();
 
         this.ambientSoundManager?.dispose();
@@ -178,6 +180,16 @@ class Weather {
             backgroundColor: '#000000',
         });
         this.renderer.enable();
+        const orbitControlsConfig = {
+            enableDamping: true,
+                enablePan: false,
+                enableZoom: true,
+                maxPolarAngle: Math.PI / 2.2,
+                minPolarAngle: Math.PI / 4,
+                maxDistance: 35,
+                dampingFactor: 0.05,
+        }
+        this.orbitControls = new OrbitControls(this.camera.getCamera(), this.container, orbitControlsConfig);
     }
 
     private initializeGlobalManagers(): void {
@@ -212,7 +224,9 @@ class Weather {
 
     private update(delta: number, elapsedTime: number): void {
         this.world.update(delta, elapsedTime);
-        
+
+        this.orbitControls?.update(delta);
+
         this.camera?.update(delta, elapsedTime);
         if (this.ambientSoundManager) this.ambientSoundManager.update();
         this.renderer.render(this.scene, this.camera!);

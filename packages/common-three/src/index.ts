@@ -77,3 +77,6 @@ export type { SceneConfig } from './core';
 
 // 默认导出
 export { Object3DComponent as default } from './core';
+
+export type { OrbitControlsConfig } from './core';
+export { OrbitControls } from './core';
