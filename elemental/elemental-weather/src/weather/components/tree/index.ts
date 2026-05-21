@@ -40,7 +40,7 @@ export default class TreesTrunks extends Object3DComponent {
         this.treeModel = resource.scene;
         this.treeModel!.name = 'TreeTrunksModel';
 
-        // 设置为根节点
+        // ✅ 使用 setRoot() 设置根节点（符合规范）
         this.setRoot(this.treeModel!);
 
         // 配置阴影
@@ -134,3 +134,4 @@ export default class TreesTrunks extends Object3DComponent {
         });
     }
 }
+

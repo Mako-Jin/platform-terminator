@@ -73,7 +73,7 @@ export default class Tent extends Object3DComponent {
         this.tentModel!.position.set(2.5, 0.6, -9);
         this.tentModel!.rotation.y = -Math.PI / 60;
 
-        // ✅ 设置为根节点
+        // ✅ 使用 setRoot() 设置根节点（符合规范）
         this.setRoot(this.tentModel!);
 
         // 配置材质和阴影
@@ -273,3 +273,4 @@ export default class Tent extends Object3DComponent {
         return parseInt(parts[0], 10);
     }
 }
+

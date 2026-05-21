@@ -13,25 +13,39 @@ import {
 } from "common-three";
 
 
+// ✅ 定义粒子边界接口
+interface ParticleBounds {
+    yMin: number;
+    yMax: number;
+    xRange: number;
+    zRange: number;
+    originX: number;
+    originZ: number;
+}
+
+// ✅ 定义粒子数据结构
+interface SnowParticle {
+    pos: Three.Vector3;
+    vel: Three.Vector3;
+    life: number;
+    maxLife: number;
+    size: number;
+    rotationSpeed: number;
+    spawnDelay: number;
+}
+
+
 class SnowSystem {
     private scene: SceneWrapper;
-    private bounds: any;
+    private bounds: ParticleBounds;
     private count: number;
     private visible: boolean;
     private geometry!: Three.BufferGeometry;
     private material!: Three.PointsMaterial;
     private mesh!: Three.Points;
-    private particles!: Array<{
-        pos: Three.Vector3;
-        vel: Three.Vector3;
-        life: number;
-        maxLife: number;
-        size: number;
-        rotationSpeed: number;
-        spawnDelay: number;
-    }>;
+    private particles!: SnowParticle[];
 
-    constructor(scene: SceneWrapper, bounds: any) {
+    constructor(scene: SceneWrapper, bounds: ParticleBounds) {
         this.scene = scene;
         this.bounds = bounds;
 
@@ -115,15 +129,7 @@ class SnowSystem {
         this.updateGeometry();
     }
 
-    respawnParticle(particle: {
-        pos: Three.Vector3;
-        vel: Three.Vector3;
-        life: number;
-        maxLife: number;
-        size: number;
-        rotationSpeed: number;
-        spawnDelay: number;
-    }): void {
+    respawnParticle(particle: SnowParticle): void {
         particle.pos.x =
             this.bounds.originX + (Math.random() - 0.5) * this.bounds.xRange;
         particle.pos.y = this.bounds.yMax + Math.random() * 8.0;
@@ -190,6 +196,14 @@ class SnowSystem {
 
         const cappedDt = Math.min(delta, 0.2);
 
+        // ✅ 预计算 sin/cos 相关的值，避免在循环中重复计算
+        const time08 = elapsedTime * 0.8;
+        const time06 = elapsedTime * 0.6;
+        const time20 = elapsedTime * 2.0;
+        const swayStrength = 0.3;
+        const swayDt = swayStrength * cappedDt;
+        const verticalSwayFactor = 0.05 * cappedDt;
+
         for (let i = 0; i < this.count; i++) {
             const particle = this.particles[i];
 
@@ -200,19 +214,15 @@ class SnowSystem {
 
             particle.pos.add(particle.vel.clone().multiplyScalar(cappedDt));
 
-            const swayStrength = 0.3;
+            // ✅ 使用预计算的值
             const timeOffset = particle.pos.z * 0.1 + particle.pos.x * 0.05;
-            particle.pos.x +=
-                Math.sin(elapsedTime * 0.8 + timeOffset) * swayStrength * cappedDt;
-            particle.pos.z +=
-                Math.cos(elapsedTime * 0.6 + timeOffset) * swayStrength * cappedDt;
+            particle.pos.x += Math.sin(time08 + timeOffset) * swayDt;
+            particle.pos.z += Math.cos(time06 + timeOffset) * swayDt;
 
-            particle.pos.y +=
-                Math.sin(elapsedTime * 2.0 + particle.pos.x * 0.1) * 0.05 * cappedDt;
+            particle.pos.y += Math.sin(time20 + particle.pos.x * 0.1) * verticalSwayFactor;
 
             if (particle.pos.y < -2.0) {
                 this.respawnParticle(particle);
-
                 particle.spawnDelay = Math.random() * 0.2;
             }
         }
@@ -233,7 +243,6 @@ class SnowSystem {
 export default class Snow extends Object3DComponent {
 
     private snowSystem: SnowSystem | null = null;
-    private snowGroup: Three.Group | null = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'weather-snow', options.isDebugMode);
@@ -245,10 +254,9 @@ export default class Snow extends Object3DComponent {
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[Snow] Initializing...');
 
-        // 创建组作为根节点
-        this.snowGroup = new Three.Group();
-        this.snowGroup.name = 'SnowGroup';
-        this.setRoot(this.snowGroup);
+        // ✅ 使用 createRootGroup() 创建根节点
+        const root = this.createRootGroup();
+        root.name = 'SnowGroup';
 
         const snowBounds = {
             yMin: 15.0,
@@ -301,8 +309,6 @@ export default class Snow extends Object3DComponent {
             this.snowSystem.dispose();
             this.snowSystem = null;
         }
-
-        this.snowGroup = null;
     }
 
     /**
@@ -356,5 +362,3 @@ export default class Snow extends Object3DComponent {
         this.snowSystem.setVisible(isWinterSeason);
     }
 }
-
-

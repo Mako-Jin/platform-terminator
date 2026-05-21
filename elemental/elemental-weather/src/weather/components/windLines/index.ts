@@ -16,22 +16,47 @@ import windLinesFragmentShader from '/@/shaders/Materials/windLines/fragment.gls
 import {SettingsManager, type EasingType, type ConfigObject} from "/@/settings";
 
 
+// ✅ 定义风力线配置接口
+interface WindLineConfig {
+    length?: number;
+    handlesCount?: number;
+    amplitude?: number;
+    divisions?: number;
+    width?: number;
+    gap?: number;
+}
+
+
 class WindLine {
     private available: boolean;
     private material: Three.ShaderMaterial;
     public mesh: Three.Mesh;
+    private geometry: Three.BufferGeometry;
 
-    private settingsManager: SettingsManager;
+    // ✅ 预计算常量 - 避免重复创建对象
+    private static readonly UP_VECTOR = new Three.Vector3(0, 1, 0);
+    private static readonly DEFAULT_NORMAL = new Three.Vector3(1, 0, 0);
+    private static readonly TEMP_VECTOR = new Three.Vector3();
+    private static readonly TEMP_VECTOR2 = new Three.Vector3();
+    private static readonly TEMP_COLOR = new Three.Color();
 
-    constructor() {
+    constructor(config: WindLineConfig = {}) {
         this.available = true;
 
-        this.settingsManager = SettingsManager.getInstance();
+        const {
+            length = 11,
+            handlesCount = 4,
+            amplitude = 1,
+            divisions = 30,
+            width = 0.2,
+            gap = 0.3
+        } = config;
 
-        const geometry = this.createGeometry();
+        // ✅ 创建几何体
+        this.geometry = this.createGeometry(length, handlesCount, amplitude, divisions, width, gap);
 
-        const config = this.getWindLinesColorConfig();
-        const windColor = config?.color ?? new Three.Color(0.8, 0.8, 0.8);
+        // ✅ 获取颜色配置
+        const windColor = this.getWindColor();
 
         this.material = new Three.ShaderMaterial({
             transparent: true,
@@ -47,20 +72,37 @@ class WindLine {
             fragmentShader: windLinesFragmentShader,
         });
 
-        this.mesh = new Three.Mesh(geometry, this.material);
+        this.mesh = new Three.Mesh(this.geometry, this.material);
         this.mesh.renderOrder = 1;
         this.mesh.position.y = 3;
         this.mesh.visible = false;
     }
 
-    public getWindLinesColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
-        return this.settingsManager.getComponentConfig('windLines', easing);
+    /**
+     * ✅ 获取风力线颜色配置
+     */
+    private getWindColor(): Three.Color {
+        try {
+            const settingsManager = SettingsManager.getInstance();
+            const config = settingsManager.getComponentConfig('windLines', 'smoothstep');
+            return config?.color ?? new Three.Color(0.8, 0.8, 0.8);
+        } catch (error) {
+            // ✅ 容错处理：如果 SettingsManager 未初始化，使用默认颜色
+            return new Three.Color(0.8, 0.8, 0.8);
+        }
     }
 
+    /**
+     * ✅ 设置颜色 - 复用临时颜色对象
+     */
     public setColor(color: Three.Color): void {
-        this.material.uniforms.uColor.value.copy(color);
+        WindLine.TEMP_COLOR.copy(color);
+        this.material.uniforms.uColor.value.copy(WindLine.TEMP_COLOR);
     }
 
+    /**
+     * ✅ 创建几何体 - 性能优化版本
+     */
     createGeometry(
         length: number = 11,
         handlesCount: number = 4,
@@ -77,6 +119,7 @@ class WindLine {
         const halfExtent: number = length / 2;
         const handleSpan: number = length / (handlesCount - 1);
 
+        // ✅ 创建中心控制点
         const centerHandles: Three.Vector3[] = [];
         for (let i = 0; i < handlesCount; i++) {
             centerHandles.push(
@@ -99,6 +142,9 @@ class WindLine {
 
         const tangents: Three.Vector3[] = this.calculateTangents(centerPoints);
 
+        // ✅ 预计算宽度的一半
+        const halfWidth = width / 2;
+
         for (let bandIdx = 0; bandIdx < offsets.length; bandIdx++) {
             const offsetX: number = offsets[bandIdx];
             const bandVertices: Three.Vector3[] = [];
@@ -108,20 +154,27 @@ class WindLine {
                 const tangent: Three.Vector3 = tangents[i];
                 const ratio: number = i / (centerPoints.length - 1);
 
-                const translatedPoint: Three.Vector3 = point.clone();
-                translatedPoint.x += offsetX;
+                // ✅ 复用向量对象，减少内存分配
+                const translatedPoint = WindLine.TEMP_VECTOR.set(point.x + offsetX, point.y, point.z);
 
-                const up: Three.Vector3 = new Three.Vector3(0, 1, 0);
-                let normal: Three.Vector3 = new Three.Vector3().crossVectors(tangent, up).normalize();
+                // ✅ 计算法线 - 复用向量对象
+                const normal = WindLine.TEMP_VECTOR2.crossVectors(tangent, WindLine.UP_VECTOR).normalize();
 
-                if (Math.abs(normal.length()) < 0.001) {
-                    normal = new Three.Vector3(1, 0, 0);
+                if (normal.lengthSq() < 0.000001) {
+                    normal.copy(WindLine.DEFAULT_NORMAL);
                 }
 
-                const adjustedWidth: number = width;
-
-                const left: Three.Vector3 = translatedPoint.clone().sub(normal.clone().multiplyScalar(adjustedWidth / 2));
-                const right: Three.Vector3 = translatedPoint.clone().add(normal.clone().multiplyScalar(adjustedWidth / 2));
+                // ✅ 计算左右顶点 - 避免多次 clone
+                const left = new Three.Vector3(
+                    translatedPoint.x - normal.x * halfWidth,
+                    translatedPoint.y - normal.y * halfWidth,
+                    translatedPoint.z - normal.z * halfWidth
+                );
+                const right = new Three.Vector3(
+                    translatedPoint.x + normal.x * halfWidth,
+                    translatedPoint.y + normal.y * halfWidth,
+                    translatedPoint.z + normal.z * halfWidth
+                );
 
                 bandVertices.push(left, right);
                 allRatios.push(ratio, ratio);
@@ -159,17 +212,21 @@ class WindLine {
         }
     }
 
+    /**
+     * ✅ 计算切线 - 优化向量创建
+     */
     calculateTangents(points: Three.Vector3[]): Three.Vector3[] {
         const tangents: Three.Vector3[] = [];
+        const tempVec = new Three.Vector3();
 
         for (let i = 0; i < points.length; i++) {
             if (i === 0) {
-                tangents.push(new Three.Vector3().subVectors(points[1], points[0]).normalize());
+                tangents.push(tempVec.subVectors(points[1], points[0]).normalize().clone());
             } else if (i === points.length - 1) {
-                tangents.push(new Three.Vector3().subVectors(points[points.length - 1], points[points.length - 2]).normalize());
+                tangents.push(tempVec.subVectors(points[points.length - 1], points[points.length - 2]).normalize().clone());
             } else {
-                const tangent1: Three.Vector3 = new Three.Vector3().subVectors(points[i], points[i - 1]).normalize();
-                const tangent2: Three.Vector3 = new Three.Vector3().subVectors(points[i + 1], points[i]).normalize();
+                const tangent1 = tempVec.subVectors(points[i], points[i - 1]).normalize();
+                const tangent2 = tempVec.subVectors(points[i + 1], points[i]).normalize();
                 tangents.push(tangent1.clone().add(tangent2).normalize());
             }
         }
@@ -198,7 +255,6 @@ class WindLine {
 
 export default class WindLines extends Object3DComponent {
 
-    private windGroup: Three.Group | null = null;
     private pool: WindLine[] = [];
 
     private duration: number = 4;
@@ -206,6 +262,11 @@ export default class WindLines extends Object3DComponent {
     private thickness: number = 0.1;
     private intervalRange: { min: number; max: number } = { min: 500, max: 2000 };
     private intervalId: number | null = null;
+
+    // ✅ 预计算常量 - 避免每次调用都创建新对象
+    private static readonly FOCUS_POINT = new Three.Vector3(0, 0, 0);
+    private static readonly OPTIMAL_RADIUS = 15;
+    private static readonly TEMP_POSITION = new Three.Vector3();
 
     private settingsManager: SettingsManager;
 
@@ -218,9 +279,9 @@ export default class WindLines extends Object3DComponent {
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.info('[WindLines] Initializing...');
 
-        this.windGroup = new Three.Group();
-        this.windGroup.name = 'WindLinesGroup';
-        this.setRoot(this.windGroup);
+        // ✅ 使用 createRootGroup() 创建根节点
+        const root = this.createRootGroup();
+        root.name = 'WindLinesGroup';
 
         this.pool = [
             new WindLine(),
@@ -228,8 +289,11 @@ export default class WindLines extends Object3DComponent {
             new WindLine(),
         ];
 
+        // ✅ 修复：使用 this.root 而不是 this.windGroup
         this.pool.forEach(windLine => {
-            this.windGroup!.add(windLine.mesh);
+            if (this.root) {
+                this.root.add(windLine.mesh);
+            }
         });
 
         const windColor = this.getWindColor();
@@ -274,8 +338,6 @@ export default class WindLines extends Object3DComponent {
             windLine.dispose();
         });
         this.pool = [];
-
-        this.windGroup = null;
     }
 
     public onTimeChanged(_data: TimeChangedData): void {
@@ -318,9 +380,16 @@ export default class WindLines extends Object3DComponent {
         gui.add(params, 'intervalMax', 1000, 5000, 100).name('Interval Max');
     }
 
+    /**
+     * ✅ 获取风力颜色 - 添加容错处理
+     */
     private getWindColor(): Three.Color {
-        const config = this.getWindLinesColorConfig();
-        return config?.color ?? new Three.Color(0.8, 0.8, 0.8);
+        try {
+            const config = this.getWindLinesColorConfig();
+            return config?.color ?? new Three.Color(0.8, 0.8, 0.8);
+        } catch (error) {
+            return new Three.Color(0.8, 0.8, 0.8);
+        }
     }
 
     private startInterval(): void {
@@ -337,6 +406,9 @@ export default class WindLines extends Object3DComponent {
         displayInterval();
     }
 
+    /**
+     * ✅ 显示风力线 - 性能优化版本
+     */
     private display(): void {
         const windLine = this.pool.find((wl) => wl.getAvailable);
 
@@ -346,18 +418,32 @@ export default class WindLines extends Object3DComponent {
 
         windLine.mesh.visible = true;
         windLine.setAvailable = false;
-        windLine.thickness = this.thickness;
 
-        const focusPoint = this.getFocusPoint();
-        const radius = this.getOptimalRadius();
+        // ✅ 直接设置 uniform 值，避免不必要的属性访问
+        windLine.getMaterial().uniforms.uThickness.value = this.thickness;
 
-        windLine.mesh.position.x = focusPoint.x + (Math.random() - 0.5) * radius;
-        windLine.mesh.position.z = focusPoint.z + (Math.random() - 0.5) * radius;
+        // ✅ 复用静态向量对象
+        const focusPoint = WindLines.FOCUS_POINT;
+        const radius = WindLines.OPTIMAL_RADIUS;
+
+        WindLines.TEMP_POSITION.set(
+            focusPoint.x + (Math.random() - 0.5) * radius,
+            3,
+            focusPoint.z + (Math.random() - 0.5) * radius
+        );
+
+        windLine.mesh.position.copy(WindLines.TEMP_POSITION);
         windLine.mesh.rotation.y = angle;
 
+        // ✅ 预计算 sin/cos 值
+        const sinAngle = Math.sin(angle);
+        const cosAngle = Math.cos(angle);
+        const translationX = sinAngle * this.translation;
+        const translationZ = cosAngle * this.translation;
+
         gsap.to(windLine.mesh.position, {
-            x: windLine.mesh.position.x + Math.sin(angle) * this.translation,
-            z: windLine.mesh.position.z + Math.cos(angle) * this.translation,
+            x: windLine.mesh.position.x + translationX,
+            z: windLine.mesh.position.z + translationZ,
             duration: this.duration,
         });
 
@@ -380,10 +466,11 @@ export default class WindLines extends Object3DComponent {
     }
 
     private getFocusPoint(): Three.Vector3 {
-        return new Three.Vector3(0, 0, 0);
+        return WindLines.FOCUS_POINT;
     }
 
     private getOptimalRadius(): number {
-        return 15;
+        return WindLines.OPTIMAL_RADIUS;
     }
 }
+
