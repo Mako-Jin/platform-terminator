@@ -119,7 +119,7 @@ export default class World {
     }
 
     public update(delta: number, elapsedTime: number): void {
-        const updateParams = { delta, elapsedTime };
+        const updateParams = { delta: Math.min(delta, 0.1), elapsedTime };
         this.lighting.update(updateParams);
         this.skydome.update(updateParams);
         this.ground.update(updateParams);

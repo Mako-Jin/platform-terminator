@@ -2,6 +2,7 @@ import * as Three from 'three';
 import {LoggerFactory} from 'common-tools';
 import {OrbitControls as ThreeOrbitControls} from 'three/addons/controls/OrbitControls.js';
 import type {OrbitControlsConfig} from "./types.ts";
+import {Vector3} from "three";
 
 export abstract class BaseController {
     protected logger: ReturnType<typeof LoggerFactory.create>;
@@ -67,6 +68,9 @@ export class OrbitControls extends BaseController {
         this.logger.info('OrbitControls disposed');
     }
 
+    setTarget(target: Vector3): void {
+        this.controls.target.copy(target);
+    }
 
     getNativeControls(): ThreeOrbitControls {
         return this.controls;

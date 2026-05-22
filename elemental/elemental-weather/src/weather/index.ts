@@ -13,6 +13,7 @@ import {
 import * as Three from 'three';
 import {AmbientSoundManager, AudioManager, MusicManager} from "/@/manager";
 import World from "/@/weather/word.ts";
+import {Vector3} from "three";
 
 interface WeatherConfig {
     container: HTMLElement;
@@ -113,7 +114,9 @@ class Weather {
             return;
         }
         this.withMusic = withMusic ?? false;
-        if (this.isRunning) return;
+        if (this.isRunning) {
+            return;
+        }
 
         this.logger.info('[Weather] Starting render loop...');
         this.isRunning = true;
@@ -180,6 +183,7 @@ class Weather {
             backgroundColor: '#000000',
         });
         this.renderer.enable();
+
         const orbitControlsConfig = {
             enableDamping: true,
                 enablePan: false,
@@ -190,6 +194,10 @@ class Weather {
                 dampingFactor: 0.05,
         }
         this.orbitControls = new OrbitControls(this.camera.getCamera(), this.container, orbitControlsConfig);
+
+        this.camera.getCamera().lookAt(0, 0, 0);
+        this.orbitControls.setTarget(new Vector3(0, 0, 0));
+        this.orbitControls.update(0.1);
     }
 
     private initializeGlobalManagers(): void {
