@@ -50,7 +50,7 @@ const LightningButton: (props: LightningButtonProps) => JSX.Element = (props) =>
         setIsStriking(true);
         setTimeout(() => {
             setIsStriking(false);
-        }, 400);
+        }, 50);
 
         props.onStrike?.();
         logger.info('Lightning triggered');

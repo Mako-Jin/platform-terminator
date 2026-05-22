@@ -13,7 +13,7 @@ const PageTitle: () => JSX.Element = () => {
 
         setTimeout(() => {
             titleElement.classList.add('show');
-        }, 100);
+        }, 50);
 
         return () => {
             titleElement.classList.remove('show');

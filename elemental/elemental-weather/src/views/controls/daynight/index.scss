@@ -1,6 +1,6 @@
 
 // ✅ 昼夜切换容器样式
-#daynight-toggle {
+.daynight-toggle {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -9,9 +9,9 @@
   border-radius: 28px;
   padding: 8px;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08),
-              0 2px 8px rgba(0, 0, 0, 0.04),
-              inset 0 1px 0 rgba(255, 255, 255, 0.8),
-              inset 0 -1px 0 rgba(0, 0, 0, 0.02);
+  0 2px 8px rgba(0, 0, 0, 0.04),
+  inset 0 1px 0 rgba(255, 255, 255, 0.8),
+  inset 0 -1px 0 rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(0, 0, 0, 0.04);
   width: fit-content;
 }
@@ -99,7 +99,7 @@
 
 @media (max-width: 768px) {
 
-  #daynight-toggle {
+  .daynight-toggle {
     padding: 6px;
     gap: 4px;
   }
@@ -113,7 +113,7 @@
 }
 
 @media (max-width: 480px) {
-  #daynight-toggle {
+  .daynight-toggle {
     padding: 5px;
     gap: 3px;
     border-radius: 22px;
@@ -131,8 +131,13 @@
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
-  #daynight-toggle {
+  .daynight-toggle {
     flex-direction: row;
   }
 }
+
+.daynight-menu {
+  animation-delay: 0.2s;
+}
+
 

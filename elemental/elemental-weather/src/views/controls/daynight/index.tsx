@@ -67,7 +67,7 @@ const DayNightToggle: ({onTimeChange}: DayNightToggleProps) => JSX.Element = ({ 
     };
 
     return (
-        <div className="control-panel-group" id="daynight-toggle">
+        <div className="control-panel-group daynight-toggle">
             {timeOptions.map((option) => (
                 <button
                     key={option.id}

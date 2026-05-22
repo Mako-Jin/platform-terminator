@@ -97,7 +97,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         setShowShader(false);
         setTimeout(() => {
             setShowControls(true);
-        }, 500);
+        }, 50);
     };
 
     const handleSeasonChange = (season: SeasonType) => {

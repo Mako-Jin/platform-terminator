@@ -5,7 +5,7 @@ import "./index.scss";
 
 
 export interface SeasonToggleProps {
-    onSeasonChange?: (season: string) => void;
+    onSeasonChange?: (season: SeasonType) => void;
 }
 
 const SeasonToggle: ({onSeasonChange}: SeasonToggleProps) => JSX.Element = (props) => {
@@ -59,7 +59,7 @@ const SeasonToggle: ({onSeasonChange}: SeasonToggleProps) => JSX.Element = (prop
     };
 
     return (
-        <div className="control-panel-group" id="season-menu">
+        <div className="control-panel-group season-menu">
             {seasons.map((season) => (
                 <button
                     key={season.id}

@@ -3,10 +3,15 @@
   position: fixed;
   right: calc(24px + env(safe-area-inset-right, 0px));
   bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-  display: flex;
+  display: none;
   flex-direction: column;
   gap: 14px;
   z-index: 1000;
+
+  &.show {
+    display: flex;
+    animation: controlPanelFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
 }
 
 // ✅ 控制按钮基础样式
@@ -83,21 +88,6 @@
   }
 }
 
-#control-panel {
-  position: fixed;
-  right: calc(24px + env(safe-area-inset-right, 0px));
-  bottom: calc(24px + env(safe-area-inset-bottom, 0px));
-  display: none;
-  flex-direction: column;
-  gap: 14px;
-  z-index: 1000;
-
-  &.show {
-    display: flex;
-    animation: controlPanelFadeIn 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
-  }
-}
-
 .control-panel-group {
   display: flex;
   flex-direction: column;
@@ -110,6 +100,26 @@
   inset 0 1px 0 rgba(255, 255, 255, 0.8), inset 0 -1px 0 rgba(0, 0, 0, 0.02);
   border: 1px solid rgba(0, 0, 0, 0.04);
   width: fit-content;
+
+  .control-panel.show & {
+    animation: controlPanelFadeIn 0.6s cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+  }
+}
+
+.season-menu {
+  animation-delay: 0.1s;
+}
+
+.daynight-toggle {
+  animation-delay: 0.2s;
+}
+
+.music-control-wrapper {
+  animation-delay: 0.3s;
+}
+
+.lightning-btn-wrapper {
+  animation-delay: 0.4s;
 }
 
 @keyframes controlPanelFadeIn {
@@ -129,7 +139,7 @@
 }
 
 @media (max-height: 500px) and (orientation: landscape) {
-  #control-panel {
+  .control-panel {
     flex-direction: row;
     top: auto;
   }

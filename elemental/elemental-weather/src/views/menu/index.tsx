@@ -19,7 +19,7 @@ const HamburgerMenu: ({onOpenSettings}: HamburgerMenuProps) => (null | JSX.Eleme
     useEffect(() => {
         const timer = setTimeout(() => {
             setIsVisible(true);
-        }, 100);
+        }, 50);
 
         return () => clearTimeout(timer);
     }, []);

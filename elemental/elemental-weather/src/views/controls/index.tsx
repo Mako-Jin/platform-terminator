@@ -30,8 +30,13 @@ const ControlPanel: (
 
     const logger = LoggerFactory.create("weather-control-panel");
 
+    const lightningOnStrike = () => {
+        logger.debug('Lightning struck!');
+        onLightningStrike?.();
+    }
+
     return (
-        <div id="control-panel" className="show">
+        <div className={`control-panel ${visible ? 'show' : ''}`}>
 
             {/* 季节切换 */}
             <SeasonToggle onSeasonChange={onSeasonChange} />
@@ -44,10 +49,7 @@ const ControlPanel: (
 
             {/* 闪电按钮（仅雨天显示） */}
             <LightningButton
-                onStrike={() => {
-                    logger.debug('Lightning struck!');
-                    onLightningStrike?.();
-                }}
+                onStrike={lightningOnStrike}
             />
         </div>
     );

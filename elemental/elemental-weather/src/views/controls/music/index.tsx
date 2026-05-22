@@ -66,7 +66,7 @@ const MusicControl: ({musicManager}: MusicControlProps) => JSX.Element = ({ musi
         const timer = setTimeout(() => {
             setIsVisible(true);
             logger.info('Music control button shown');
-        }, 1000);
+        }, 50);
 
         return () => {
             clearTimeout(timer);
@@ -76,8 +76,7 @@ const MusicControl: ({musicManager}: MusicControlProps) => JSX.Element = ({ musi
 
     return (
         <button
-            id="music-control"
-            className={`control-btn ${!isMusicEnabled ? 'muted' : ''} ${isVisible ? 'show' : ''}`}
+            className={`music-control control-btn ${!isMusicEnabled ? 'muted' : ''} ${isVisible ? 'show' : ''}`}
             title={isMusicEnabled ? 'Disable Music' : 'Enable Music'}
             onClick={handleToggle}
         >
