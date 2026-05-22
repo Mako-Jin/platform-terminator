@@ -74,6 +74,11 @@ export interface IAudioPlayer {
     /**
      * 设置音量
      */
+    setMasterVolume(volume: number): void;
+
+    /**
+     * 设置音量
+     */
     getMusicVolume(): number;
 
     /**

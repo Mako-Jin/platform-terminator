@@ -247,4 +247,11 @@ export default class MusicManager {
         );
     }
 
+    /**
+     * 设置主音量
+     */
+    setMasterVolume(volume: number): void {
+        this.audioPlayer.setMasterVolume(Math.max(0, Math.min(1, volume)));
+    }
+
 }

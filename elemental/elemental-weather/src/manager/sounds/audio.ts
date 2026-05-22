@@ -452,6 +452,64 @@ export default class AudioManager implements IAudioPlayer {
     }
 
     /**
+     * 设置主音量
+     */
+    setMasterVolume(volume: number): void {
+        this.masterVolume = Math.max(0, Math.min(1, volume));
+        this.updateAllVolumes();
+        this.emitEvent('volumeChange', {
+            id: 'master',
+            type: 'volumeChange',
+            volume: this.masterVolume,
+            timestamp: Date.now()
+        });
+    }
+
+    /**
+     * 设置音乐音量
+     */
+    setMusicVolume(volume: number): void {
+        this.musicVolume = Math.max(0, Math.min(1, volume));
+        this.updateMusicVolumes();
+    }
+
+    /**
+     * 更新所有音频的音量
+     */
+    private updateAllVolumes(): void {
+        this.updateMusicVolumes();
+        this.updateAmbientVolumes();
+        this.updateUiVolumes();
+    }
+
+    private updateMusicVolumes(): void {
+        this.musicSounds.forEach(id => {
+            const audio = this.sounds.get(id);
+            if (audio) {
+                audio.setVolume(this.musicVolume * this.masterVolume);
+            }
+        });
+    }
+
+    private updateAmbientVolumes(): void {
+        this.ambientSounds.forEach(id => {
+            const audio = this.sounds.get(id);
+            if (audio) {
+                audio.setVolume(this.soundVolume * this.masterVolume);
+            }
+        });
+    }
+
+    private updateUiVolumes(): void {
+        this.uiSounds.forEach(id => {
+            const audio = this.sounds.get(id);
+            if (audio) {
+                audio.setVolume(this.soundVolume * this.masterVolume);
+            }
+        });
+    }
+
+    /**
      * ✅ 销毁音频管理器，释放所有资源
      */
     public dispose(): void {

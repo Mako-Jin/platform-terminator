@@ -202,6 +202,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
             <SettingsModal
                 isOpen={isSettingsOpen}
                 onClose={handleCloseSettings}
+                musicManager={musicManager}
             />
         </>
     );
