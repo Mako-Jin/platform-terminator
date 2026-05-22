@@ -118,5 +118,5 @@ export interface IAudioPlayer {
      * @param onComplete - 完成回调（可选）
      * @returns Promise<void>
      */
-    fadeVolume(audio: Three.Audio, targetVolume: number, duration: number, onComplete?: () => void): Promise<void>
+    fadeVolume(audio: Three.Audio, targetVolume: number, duration: number, onComplete?: () => void): Promise<void>;
 }

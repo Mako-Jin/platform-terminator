@@ -119,18 +119,18 @@ export default class World {
     }
 
     public update(delta: number, elapsedTime: number): void {
-        const updateParams = { delta: Math.min(delta, 0.1), elapsedTime };
+        const updateParams = { delta: Math.min(delta, 0.05), elapsedTime };
         this.lighting.update(updateParams);
         this.skydome.update(updateParams);
         this.ground.update(updateParams);
-        this.tent.update(updateParams);
-        this.bridge.update(updateParams);
+        // this.tent.update(updateParams);
+        // this.bridge.update(updateParams);
         this.windLines.update(updateParams);
-        this.rocks.update(updateParams);
+        // this.rocks.update(updateParams);
         this.bush.update(updateParams);
-        this.treeTrunks.update(updateParams);
+        // this.treeTrunks.update(updateParams);
         this.fallingLeaves.update(updateParams);
-        this.camp.update(updateParams);
+        // this.camp.update(updateParams);
         this.fire.update(updateParams);
         this.fireflies.update(updateParams);
         this.rain.update(updateParams);

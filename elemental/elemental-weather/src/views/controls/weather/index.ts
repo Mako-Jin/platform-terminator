@@ -4,15 +4,15 @@ import {Haptics} from "/@/utils";
 import "./index.scss";
 
 
-export interface SeasonToggleProps {
-    onSeasonChange?: (season: SeasonType) => void;
+export interface WeatherToggleProps {
+    onWeatherChange?: (weather: WeatherType) => void;
 }
 
-const SeasonToggle: ({onSeasonChange}: SeasonToggleProps) => JSX.Element = (props) => {
+const WeatherToggle: ({onWeatherChange}: WeatherToggleProps) => JSX.Element = (props) => {
 
-    const [currentSeason, setCurrentSeason] = useState<SeasonType>(() => datetimeManager.getCurrentSeason());
+    const [currentWeather, setCurrentWeather] = useState<WeatherType>(() => datetimeManager.getCurrentSeason());
 
-    const seasons: Array<{ id: SeasonType; icon: string; className: string }> = [
+    const weather: Array<{ id: WeatherType; icon: string; className: string }> = [
         { id: 'spring', icon: 'fas fa-seedling', className: 'spring' },
         { id: 'summer', icon: 'fas fa-sun', className: 'summer' },
         { id: 'autumn', icon: 'fa-brands fa-canadian-maple-leaf', className: 'autumn' },
@@ -61,20 +61,20 @@ const SeasonToggle: ({onSeasonChange}: SeasonToggleProps) => JSX.Element = (prop
     return (
         <div className="control-panel-group season-menu">
             {seasons.map((season) => (
-                <button
-                    key={season.id}
-                    className={`season-button ${season.className} ${
-                        currentSeason === season.id ? 'active' : ''
-                    }`}
-                    data-season={season.id}
-                    title={season.id.charAt(0).toUpperCase() + season.id.slice(1)}
-                    onClick={() => handleSeasonClick(season.id)}
-                >
-                    <i className={season.icon}/>
-                </button>
-            ))}
-        </div>
-    );
+                    <button
+                        key={season.id}
+                className={`season-button ${season.className} ${
+                    currentSeason === season.id ? 'active' : ''
+                }`}
+    data-season={season.id}
+    title={season.id.charAt(0).toUpperCase() + season.id.slice(1)}
+    onClick={() => handleSeasonClick(season.id)}
+>
+    <i className={season.icon}/>
+    </button>
+))}
+    </div>
+);
 
 }
 

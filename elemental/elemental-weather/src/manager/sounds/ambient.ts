@@ -36,6 +36,13 @@ export default class AmbientSoundManager {
     private wasAmbientPlayingBeforeHide: boolean = false;
     private isAmbientSoundsPaused: boolean = false;
 
+    private birdSounds = [
+        'birds1Sound',
+        'birds2Sound',
+        'birds3Sound',
+        'birds4Sound',
+    ];
+
     private config: AmbientSoundConfig = {
         shortGapMin: 8000,
         shortGapMax: 10000,
@@ -184,27 +191,51 @@ export default class AmbientSoundManager {
 
         this.handleBirds(season, timeOfDay);
         this.handleCrickets(season, timeOfDay);
+        // 猫头鹰
         this.handleOwl(season, timeOfDay);
         this.handleRain(season);
         this.handleThunder(season);
         this.handleWolf(timeOfDay);
         this.handleFire(season);
+        // 湖水波浪声
         this.handleLakeWaves();
     }
 
     private handleBirds(season: string, timeOfDay: string): void {
-        const shouldPlay = (season === 'autumn' || season === 'spring' || season === 'winter') && timeOfDay === 'day';
+        const shouldPlay = timeOfDay === 'day';
 
         if (shouldPlay) {
             this.scheduleRandomSound('birds', () => this.playRandomBird(), 'short');
         }
     }
 
+    getRandomBirdSound() {
+        return this.birdSounds[Math.floor(Math.random() * this.birdSounds.length)];
+    }
+
+    playRandomBird() {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
+        const birdSoundId = this.getRandomBirdSound();
+        this.audioPlayer.play(birdSoundId,   {
+            loop: false,
+            volume: this.config.baseVolume
+        })
+    }
+
     private handleCrickets(season: string, timeOfDay: string): void {
-        const shouldPlay = (season === 'autumn' || season === 'spring' || season === 'winter') && timeOfDay === 'night';
+        const shouldPlay = (season === 'autumn' || season === 'spring' || season === 'summer') && timeOfDay === 'night';
 
         if (shouldPlay) {
             this.playContinuousSound('cricketsSound');
+        }
+    }
+
+    playContinuousSound(soundId: string) {
+        if (!this.activeContinuousSounds.has(soundId)) {
+            this.audioPlayer.play(soundId, {loop: true, volume: this.config.baseVolume * 0.7});
+            this.activeContinuousSounds.add(soundId);
         }
     }
 
@@ -212,12 +243,31 @@ export default class AmbientSoundManager {
         if (timeOfDay !== 'night') {
             return;
         }
-
-        if (season === 'autumn' || season === 'spring' || season === 'rainy') {
+        if (season === 'autumn' || season === 'spring' || season === 'summer') {
             this.scheduleRandomSound('owlHowling', () => this.playOwlHowling(), 'long');
         } else if (season === 'winter') {
             this.scheduleRandomSound('owlHooting', () => this.playOwlHooting(), 'long');
         }
+    }
+
+    playOwlHooting() {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
+        this.audioPlayer.play('owlHootingSound', {
+            loop: false,
+            volume: this.config.baseVolume
+        });
+    }
+
+    playOwlHowling() {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
+        this.audioPlayer.play('owlHowlingSound', {
+            loop: false,
+            volume: this.config.baseVolume
+        });
     }
 
     private handleRain(season: string): void {
@@ -234,6 +284,16 @@ export default class AmbientSoundManager {
         if (shouldPlay) {
             this.scheduleRandomSound('thunderDistant', () => this.playThunder(), 'thunder');
         }
+    }
+
+    playThunder() {
+        if (this.isAmbientSoundsPaused) {
+            return;
+        }
+        this.audioPlayer.play('thunderDistantSound', {
+            loop: false,
+            volume: this.config.baseVolume * 0.9
+        });
     }
 
     /**
@@ -274,8 +334,11 @@ export default class AmbientSoundManager {
         }
     }
 
-    private handleLakeWaves(): void {
-        this.playContinuousSoundWithDistance('lakeWavesSound', this.config.lakePosition);
+    private handleLakeWaves(season: string): void {
+        const shouldPlay = season !== 'winter';
+        if (shouldPlay) {
+            this.playContinuousSoundWithDistance('lakeWavesSound', this.config.lakePosition);
+        }
     }
 
     private clearTimer(soundKey: string): void {
@@ -334,7 +397,6 @@ export default class AmbientSoundManager {
 
     private shouldSoundBePlaying(soundKey: string): boolean {
         const season = datetimeManager.getCurrentSeason();
-        const hour = datetimeManager.getHour();
         const timeOfDay = datetimeManager.isDaytime() ? 'day' : 'night';
 
         switch (soundKey) {
