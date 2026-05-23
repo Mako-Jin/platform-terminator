@@ -47,7 +47,7 @@ export default class Bush extends Object3DComponent {
      * 初始化阶段 - 创建灌木系统
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Bush] Initializing...');
+        this.logger.debug('[Bush] Initializing...');
         // ✅ 创建组作为根节点
         const bushGroup = new Three.Group();
         bushGroup.name = 'BushGroup';
@@ -127,14 +127,14 @@ export default class Bush extends Object3DComponent {
 
         await this.spawnFromDefinitionsAsync();
 
-        this.logger.info(`[Bush] Initialization complete`);
+        this.logger.debug(`[Bush] Initialization complete`);
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Bush] Activating...');
+        this.logger.debug('[Bush] Activating...');
     }
 
     /**

@@ -17,7 +17,6 @@ const SeasonToggle: ({onSeasonChange}: SeasonToggleProps) => JSX.Element = (prop
         { id: 'summer', icon: 'fas fa-sun', className: 'summer' },
         { id: 'autumn', icon: 'fa-brands fa-canadian-maple-leaf', className: 'autumn' },
         { id: 'winter', icon: 'fas fa-snowflake', className: 'winter' },
-        // { id: 'rainy', icon: 'fas fa-cloud-rain', className: 'rainy' },
     ];
 
     useEffect(() => {
@@ -40,17 +39,6 @@ const SeasonToggle: ({onSeasonChange}: SeasonToggleProps) => JSX.Element = (prop
         }
 
         Haptics.buttonTap();
-
-        // 触发自定义事件
-        window.dispatchEvent(
-            new CustomEvent('seasonChange', {
-                detail: {
-                    season: seasonId,
-                    oldSeason: currentSeason,
-                    timestamp: datetimeManager.getCurrentTime(),
-                },
-            })
-        );
 
         // 更新本地状态
         setCurrentSeason(seasonId);

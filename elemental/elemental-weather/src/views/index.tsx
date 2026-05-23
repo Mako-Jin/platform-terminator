@@ -115,6 +115,11 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         }
     };
 
+    const handleWeatherChange = (weather: WeatherType) => {
+        logger.info(`Weather changed to: ${weather}`);
+        // TODO: 实现天气变化逻辑
+    };
+
     const handleLightningStrike = () => {
         logger.info('Lightning strike triggered');
         // ✅ 通过事件总线触发闪电
@@ -186,6 +191,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
                 musicManager={musicManager}
                 onSeasonChange={handleSeasonChange}
                 onTimeChange={handleTimeChange}
+                onWeatherChange={handleWeatherChange}
                 onLightningStrike={handleLightningStrike}
             />
 

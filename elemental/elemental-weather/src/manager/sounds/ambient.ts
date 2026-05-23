@@ -2,6 +2,8 @@ import {eventBus, LoggerFactory} from "common-tools";
 import {datetimeManager, type IAudioPlayer} from "common-three";
 import * as Three from 'three';
 import MusicManager from "./music";
+import {weatherManager} from "/@/manager/weather/manager";
+import type {WeatherChangedData} from "/@/manager/weather/types";
 
 
 export interface AmbientSoundConfig {
@@ -89,6 +91,11 @@ export default class AmbientSoundManager {
         });
 
         datetimeManager.onSeasonChanged(() => {
+            this.updateAmbientSounds();
+        });
+
+        weatherManager.onWeatherChanged((data: WeatherChangedData) => {
+            this.logger.info(`Weather changed event received: ${data.previousWeather} -> ${data.currentWeather}`);
             this.updateAmbientSounds();
         });
 
@@ -183,25 +190,26 @@ export default class AmbientSoundManager {
         }
 
         const season = datetimeManager.getCurrentSeason();
+        const weather = weatherManager.getCurrentWeather();
         const timeOfDay = datetimeManager.isDaytime() ? 'day' : 'night';
 
-        this.logger.info(`Updating ambient sounds: season=${season}, time=${timeOfDay}`);
+        this.logger.info(`Updating ambient sounds: season=${season}, weather=${weather}, time=${timeOfDay}`);
 
         this.stopAllAmbientSounds();
 
-        this.handleBirds(season, timeOfDay);
+        this.handleBirds(timeOfDay);
         this.handleCrickets(season, timeOfDay);
         // 猫头鹰
         this.handleOwl(season, timeOfDay);
-        this.handleRain(season);
-        this.handleThunder(season);
+        this.handleRain(weather);
+        this.handleThunder(season, weather);
         this.handleWolf(timeOfDay);
         this.handleFire(season);
         // 湖水波浪声
-        this.handleLakeWaves();
+        this.handleLakeWaves(season);
     }
 
-    private handleBirds(season: string, timeOfDay: string): void {
+    private handleBirds(timeOfDay: string): void {
         const shouldPlay = timeOfDay === 'day';
 
         if (shouldPlay) {
@@ -270,16 +278,16 @@ export default class AmbientSoundManager {
         });
     }
 
-    private handleRain(season: string): void {
-        const shouldPlay = season === 'rainy';
+    private handleRain(weather: string): void {
+        const shouldPlay = weather === 'rainy';
 
         if (shouldPlay) {
             this.playContinuousSound('rainSound');
         }
     }
 
-    private handleThunder(season: string): void {
-        const shouldPlay = season === 'rainy';
+    private handleThunder(season: string, weather: string): void {
+        const shouldPlay = season === 'summer' && weather === 'rainy';
 
         if (shouldPlay) {
             this.scheduleRandomSound('thunderDistant', () => this.playThunder(), 'thunder');
@@ -326,8 +334,8 @@ export default class AmbientSoundManager {
         });
     }
 
-    private handleFire(season: string): void {
-        const shouldPlay = season !== 'rainy';
+    private handleFire(weather: string): void {
+        const shouldPlay = weather !== 'rainy';
 
         if (shouldPlay) {
             this.playContinuousSoundWithDistance('fireBurningSound', this.config.firePosition);
@@ -397,17 +405,18 @@ export default class AmbientSoundManager {
 
     private shouldSoundBePlaying(soundKey: string): boolean {
         const season = datetimeManager.getCurrentSeason();
+        const weather = weatherManager.getCurrentWeather();
         const timeOfDay = datetimeManager.isDaytime() ? 'day' : 'night';
 
         switch (soundKey) {
             case 'birds':
                 return (season === 'autumn' || season === 'spring' || season === 'winter') && timeOfDay === 'day';
             case 'owlHowling':
-                return (season === 'autumn' || season === 'spring' || season === 'rainy') && timeOfDay === 'night';
+                return (season === 'autumn' || season === 'spring' || season === 'summer' || weather === 'rainy') && timeOfDay === 'night';
             case 'owlHooting':
                 return season === 'winter' && timeOfDay === 'night';
             case 'thunderDistant':
-                return season === 'rainy';
+                return season === 'summer' && weather === 'rainy';
             case 'wolf':
                 return timeOfDay === 'night';
             default:

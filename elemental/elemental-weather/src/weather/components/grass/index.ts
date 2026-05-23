@@ -89,7 +89,7 @@ export default class GrassManager extends Object3DComponent {
     }
 
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Grass] Initializing...');
+        this.logger.debug('[Grass] Initializing...');
 
         const grassGroup = new Three.Group();
         grassGroup.name = 'GrassGroup';
@@ -100,11 +100,11 @@ export default class GrassManager extends Object3DComponent {
         this.createAllGrassInSingleMesh();
         await this.createFlowers();
 
-        this.logger.info('[Grass] Initialization complete');
+        this.logger.debug('[Grass] Initialization complete');
     }
 
     protected onActivate(): void {
-        this.logger.info('[Grass] Activating...');
+        this.logger.debug('[Grass] Activating...');
     }
 
     protected onUpdate(params: UpdateParams): void {
@@ -118,11 +118,11 @@ export default class GrassManager extends Object3DComponent {
     }
 
     protected onDeactivate(): void {
-        this.logger.info('[Grass] Deactivated');
+        this.logger.debug('[Grass] Deactivated');
     }
 
     protected onDispose(): void {
-        this.logger.info('[Grass] Disposing...');
+        this.logger.debug('[Grass] Disposing...');
 
         if (this.grassInstancedMesh) {
             this.grassInstancedMesh.dispose();

@@ -7,6 +7,7 @@ import SeasonToggle from "/@/views/controls/seasons";
 import type {JSX} from "react";
 import DayNightToggle from "/@/views/controls/daynight";
 import type {SeasonType} from "common-three";
+import WeatherToggle, {type WeatherType} from "/@/views/controls/weather";
 
 
 interface ControlPanelProps {
@@ -15,6 +16,7 @@ interface ControlPanelProps {
     onSeasonChange?: (season: SeasonType) => void;
     onTimeChange?: (time: string) => void;
     onLightningStrike?: () => void;
+    onWeatherChange?: (weather: WeatherType) => void;
 }
 
 
@@ -26,6 +28,7 @@ const ControlPanel: (
     onSeasonChange,
     onTimeChange,
     onLightningStrike,
+    onWeatherChange
 }) => {
 
     const logger = LoggerFactory.create("weather-control-panel");
@@ -44,13 +47,16 @@ const ControlPanel: (
             {/* 昼夜切换 */}
             <DayNightToggle onTimeChange={onTimeChange} />
 
-            {/* 音乐控制 */}
-            {musicManager && <MusicControl musicManager={musicManager} />}
+            {/* 天气控制 */}
+            <WeatherToggle onWeatherChange={onWeatherChange} />
 
             {/* 闪电按钮（仅雨天显示） */}
             <LightningButton
                 onStrike={lightningOnStrike}
             />
+
+            {/* 音乐控制 */}
+            {musicManager && <MusicControl musicManager={musicManager} />}
         </div>
     );
 

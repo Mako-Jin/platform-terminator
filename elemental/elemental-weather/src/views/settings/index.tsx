@@ -1,6 +1,7 @@
 import {useState, useEffect, type JSX, type FC, useCallback} from 'react';
 import './index.scss';
 import {MusicManager} from "/@/manager";
+import {LoggerFactory} from "common-tools";
 
 interface SettingsModalProps {
     isOpen: boolean;
@@ -173,6 +174,9 @@ const SettingsModal: ({isOpen, onClose, musicManager}: SettingsModalProps) => (n
 };
 
 const SettingsTab: ({musicManager}: {musicManager: MusicManager}) => (null | JSX.Element) = ({musicManager }) => {
+
+    const logger = LoggerFactory.create("weather-settings-tab");
+
     const [volume, setVolume] = useState(() => {
         const saved = localStorage.getItem('settings_volume');
         return saved ? parseInt(saved) : 50;
@@ -193,13 +197,8 @@ const SettingsTab: ({musicManager}: {musicManager: MusicManager}) => (null | JSX
                 return;
             }
 
-            console.log(`[Settings] Applying graphics preset: ${quality}`, preset);
+            logger.info(`[Settings] Applying graphics preset: ${quality}`, preset);
 
-            if (window.weatherInstance) {
-                window.dispatchEvent(new CustomEvent('graphicsQualityChanged', {
-                    detail: { quality, settings: preset }
-                }));
-            }
         };
         
         localStorage.setItem('settings_graphics_quality', graphicsQuality);

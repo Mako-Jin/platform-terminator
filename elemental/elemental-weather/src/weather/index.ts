@@ -71,7 +71,7 @@ class Weather {
         this.onInitProgress = config.onInitProgress;
 
         try {
-            this.logger.info('[Weather] Initializing...');
+            this.logger.debug('[Weather] Initializing...');
 
             this.reportProgress(0);
 
@@ -95,7 +95,7 @@ class Weather {
 
             this.isInitialized = true;
             this.reportProgress(100);
-            this.logger.info('[Weather] Initialization complete');
+            this.logger.debug('[Weather] Initialization complete');
         } catch (error) {
             this.logger.error('[Weather] Initialization failed', error);
             throw error;
@@ -218,13 +218,13 @@ class Weather {
 
     private async initializeAudioSystem(): Promise<void> {
         try {
-            this.logger.info('Initializing audio system...');
+            this.logger.debug('Initializing audio system...');
             this.audioManager = AudioManager.getInstance();
             await this.audioManager.loadAllSounds();
             if (this.camera) this.audioManager.addListenerToCamera(this.camera);
             this.musicManager = new MusicManager(this.audioManager);
             this.ambientSoundManager = new AmbientSoundManager(this.audioManager);
-            this.logger.info('Audio system initialized successfully');
+            this.logger.debug('Audio system initialized successfully');
         } catch (error) {
             this.logger.error('Failed to initialize audio system', error);
         }

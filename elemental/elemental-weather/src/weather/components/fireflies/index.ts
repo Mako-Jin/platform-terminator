@@ -37,7 +37,7 @@ export default class Fireflies extends Object3DComponent {
      * 初始化阶段 - 创建萤火虫粒子系统
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[FireFlies] Initializing...');
+        this.logger.debug('[FireFlies] Initializing...');
 
         // ✅ 创建组作为根节点
         const firefliesGroup = new Three.Group();
@@ -50,14 +50,14 @@ export default class Fireflies extends Object3DComponent {
         // 根据时间设置可见性
         this.updateVisibility();
 
-        this.logger.info('[FireFlies] Initialization complete');
+        this.logger.debug('[FireFlies] Initialization complete');
     }
 
     /**
      * 激活阶段
      */
     protected onActivate(): void {
-        this.logger.info('[FireFlies] Activating...');
+        this.logger.debug('[FireFlies] Activating...');
     }
 
     /**
@@ -79,7 +79,7 @@ export default class Fireflies extends Object3DComponent {
      * 失活阶段
      */
     protected onDeactivate(): void {
-        this.logger.info('[FireFlies] Deactivated');
+        this.logger.debug('[FireFlies] Deactivated');
     }
 
     /**

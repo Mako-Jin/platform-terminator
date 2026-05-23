@@ -252,7 +252,7 @@ export default class Snow extends Object3DComponent {
      * 初始化阶段 - 创建雪系统
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Snow] Initializing...');
+        this.logger.debug('[Snow] Initializing...');
 
         // ✅ 使用 createRootGroup() 创建根节点
         const root = this.createRootGroup();
@@ -272,14 +272,14 @@ export default class Snow extends Object3DComponent {
         // 更新可见性
         this.updateVisibility();
 
-        this.logger.info('[Snow] Initialization complete');
+        this.logger.debug('[Snow] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Snow] Activating...');
+        this.logger.debug('[Snow] Activating...');
     }
 
     /**

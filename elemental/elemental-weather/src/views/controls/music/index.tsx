@@ -65,7 +65,6 @@ const MusicControl: ({musicManager}: MusicControlProps) => JSX.Element = ({ musi
         // ✅ 延迟显示按钮，等待动画就绪
         const timer = setTimeout(() => {
             setIsVisible(true);
-            logger.info('Music control button shown');
         }, 50);
 
         return () => {

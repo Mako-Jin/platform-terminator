@@ -35,7 +35,7 @@ export default class Rocks extends Object3DComponent {
      * 初始化阶段 - 加载岩石模型
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Rocks] Initializing...');
+        this.logger.debug('[Rocks] Initializing...');
 
         const rocksResource = resourcesManager.getItemById("rocksModel");
         if (!rocksResource || !rocksResource.scene) {
@@ -54,14 +54,14 @@ export default class Rocks extends Object3DComponent {
         // 配置模型
         await this.configureModel();
 
-        this.logger.info('[Rocks] Initialization complete');
+        this.logger.debug('[Rocks] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Rocks] Activating...');
+        this.logger.debug('[Rocks] Activating...');
 
         // 立即更新颜色
         this.updateColors();

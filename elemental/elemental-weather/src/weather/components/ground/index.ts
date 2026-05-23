@@ -93,21 +93,21 @@ export default class Ground extends Object3DComponent {
      * 初始化阶段 - 创建地面网格
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Ground] Initializing...');
+        this.logger.debug('[Ground] Initializing...');
         await this.waitForDependencies();
 
         this.createGroundGroup();
         this.addGrid();
         await this.initializeBiomeAndGrass();
-        await this.water.initialize();
-        this.logger.info('[Ground] Initialization complete');
+        await this.water?.initialize();
+        this.logger.debug('[Ground] Initialization complete');
     }
 
     /**
      * ✅ 激活阶段 - 延迟初始化 Biome 和 Grass
      */
     protected onActivate(): void {
-        this.logger.info('[Ground] Activating...');
+        this.logger.debug('[Ground] Activating...');
 
         this.refreshGroundColors();
         if (this.grassManager) {

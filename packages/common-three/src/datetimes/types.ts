@@ -24,7 +24,7 @@ export interface TimeChangedData {
  */
 export type SeasonType = 'spring' | 'summer' | 'autumn' | 'winter' | 'rainy';
 
-export const AVAILABLE_SEASONS: string[] = ['spring', 'summer', 'autumn', 'winter', 'rainy'];
+export const AVAILABLE_SEASONS: string[] = ['spring', 'summer', 'autumn', 'winter'];
 
 /**
  * 季节显示名称映射

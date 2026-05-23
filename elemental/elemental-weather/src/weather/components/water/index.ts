@@ -17,6 +17,7 @@ import waterVertexCommonChunk from '/@/shaders/Chunks/water/water.vertex_common_
 import waterVertexBeginChunk from '/@/shaders/Chunks/water/water.vertex_begin_chunk.glsl';
 import waterFragmentCommonChunk from '/@/shaders/Chunks/water/water.fragment_common_chunk.glsl';
 import waterFragmentColorChunk from '/@/shaders/Chunks/water/water.fragment_color_chunk.glsl';
+import {type WeatherChangedData, weatherManager} from "/@/manager";
 
 
 export interface WaterConfig {
@@ -68,7 +69,7 @@ export default class Water extends Object3DComponent {
      * 初始化阶段 - 创建水面（参考 Ground.addWaterRipples）
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Water] Initializing...');
+        this.logger.debug('[Water] Initializing...');
 
         await this.waitForDependencies();
 
@@ -99,7 +100,7 @@ export default class Water extends Object3DComponent {
         }
 
         // ✅ 根据季节动态调整水效果（参考 Ground.update 第 449-505 行）
-        this.updateSeasonalEffects();
+        this.updateSeasonalAndWeatherEffects();
     }
 
     /**
@@ -152,6 +153,11 @@ export default class Water extends Object3DComponent {
     public onSeasonChanged(data: SeasonChangedData): void {
         this.logger.info(`[Water] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
         this.updateWaterColors();
+    }
+
+    public onWeatherChanged(data: WeatherChangedData): void {
+        this.logger.info(`[Water] Weather changed: ${data.previousWeather} -> ${data.currentWeather}`);
+        this.updateSeasonalAndWeatherEffects();
     }
 
     /**
@@ -444,14 +450,16 @@ export default class Water extends Object3DComponent {
     /**
      * ✅ 根据季节动态调整水效果（完全参考 Ground.update 第 449-505 行）
      */
-    private updateSeasonalEffects(): void {
+    private updateSeasonalAndWeatherEffects(): void {
         if (!this.customWaterUniforms) return;
 
         const lerp = Three.MathUtils.lerp;
 
         const currentSeason = datetimeManager.getCurrentSeason();
 
-        if (currentSeason === 'rainy') {
+        const currentWeather = weatherManager.getCurrentWeather();
+
+        if (currentSeason != 'winter' && currentWeather === 'rainy') {
             // ✅ 雨天：增强波纹和飞溅
             this.customWaterUniforms.uRipplesRatio.value = lerp(
                 this.customWaterUniforms.uRipplesRatio.value,

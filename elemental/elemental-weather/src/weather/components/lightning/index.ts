@@ -28,7 +28,7 @@ import particleExplosionFragmentShader from '/@/shaders/Materials/fire/fragment.
 import lightningArcVertexShader from '/@/shaders/Materials/lightning/vertex.glsl';
 import lightningArcFragmentShader from '/@/shaders/Materials/lightning/fragment.glsl';
 // ✅ 导入环境音效管理器
-import {AmbientSoundManager} from "/@/manager";
+import {AmbientSoundManager, type WeatherChangedData, weatherManager} from "/@/manager";
 import {eventBus} from 'common-tools';
 
 
@@ -173,7 +173,7 @@ export default class Lightning extends Object3DComponent {
      * 初始化阶段
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Lightning] Initializing...');
+        this.logger.debug('[Lightning] Initializing...');
 
         // ✅ 创建根节点
         const root = this.createRootGroup();
@@ -195,16 +195,18 @@ export default class Lightning extends Object3DComponent {
         // 设置随机闪电时间
         this.nextLightningTime = this.getRandomDelay();
 
-        this.logger.info('[Lightning] Initialization complete');
+        this.logger.debug('[Lightning] Initialization complete');
     }
 
     /**
      * 激活阶段
      */
     protected onActivate(): void {
-        this.logger.info('[Lightning] Activating...');
+        this.logger.debug('[Lightning] Activating...');
 
         sizeManager.onSizeChanged(this.handleResize.bind(this));
+
+        weatherManager.onWeatherChanged(this.handleWeatherChanged.bind(this));
 
         // ✅ 监听闪电触发事件
         eventBus.on(Lightning.LIGHTNING_STRIKE_TRIGGERED, this.handleLightningTrigger.bind(this));
@@ -224,6 +226,8 @@ export default class Lightning extends Object3DComponent {
 
         // 停止相机震动
         this.stopCameraShake();
+
+        weatherManager.offWeatherChanged(this.handleWeatherChanged.bind(this));
 
         // 清理所有活跃的闪电弧
         this.clearActiveLightningArcs();
@@ -258,11 +262,15 @@ export default class Lightning extends Object3DComponent {
         }
 
         // 雨季时触发随机闪电
-        if (this.isRainySeason() && this.elapsedTime >= this.nextLightningTime) {
+        if (this.isRainyWeather() && this.elapsedTime >= this.nextLightningTime) {
             this.strikeRandom();
             this.elapsedTime = 0;
             this.nextLightningTime = this.getRandomDelay();
         }
+    }
+
+    private handleWeatherChanged(data: WeatherChangedData): void {
+        this.logger.info(`[Lightning] Weather changed: ${data.previousWeather} -> ${data.currentWeather}`);
     }
 
     /**
@@ -740,7 +748,9 @@ export default class Lightning extends Object3DComponent {
      * 手动触发电闪
      */
     public manualStrike(): void {
-        this.strikeRandom();
+        if (this.isRainyWeather()) {
+            this.strikeRandom();
+        }
     }
 
     /**
@@ -789,7 +799,7 @@ export default class Lightning extends Object3DComponent {
     /**
      * 判断是否为雨季
      */
-    private isRainySeason(): boolean {
-        return datetimeManager.getCurrentSeason() === 'rainy';
+    private isRainyWeather(): boolean {
+        return weatherManager.getCurrentWeather() === 'rainy';
     }
 }

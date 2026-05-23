@@ -178,7 +178,7 @@ export default class FallingLeaves extends Object3DComponent {
      * 初始化阶段 - 创建落叶系统
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[FallingLeaves] Initializing...');
+        this.logger.debug('[FallingLeaves] Initializing...');
 
         const startTime = performance.now();
 
@@ -225,14 +225,14 @@ export default class FallingLeaves extends Object3DComponent {
         );
 
         const duration = performance.now() - startTime;
-        this.logger.info(`[FallingLeaves] Initialization completed in ${duration.toFixed(2)}ms`);
+        this.logger.debug(`[FallingLeaves] Initialization completed in ${duration.toFixed(2)}ms`);
     }
 
     /**
      * 激活阶段
      */
     protected onActivate(): void {
-        this.logger.info('[FallingLeaves] Activating...');
+        this.logger.debug('[FallingLeaves] Activating...');
 
         const root = this.root;
         if (root) {

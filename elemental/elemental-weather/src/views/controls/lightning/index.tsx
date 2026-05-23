@@ -1,7 +1,7 @@
 import {LoggerFactory} from "common-tools";
 import {type JSX, useCallback, useEffect, useState} from "react";
 import "./index.scss";
-import {datetimeManager, type SeasonChangedData} from "common-three";
+import {type WeatherChangedData, weatherManager} from "/@/manager";
 
 
 interface LightningButtonProps {
@@ -15,28 +15,23 @@ const LightningButton: (props: LightningButtonProps) => JSX.Element = (props) =>
 
     const [isStriking, setIsStriking] = useState(false);
 
-    const [isVisible, setIsVisible] = useState(true);
+    const [isVisible, setIsVisible] = useState(false);
 
     useEffect(() => {
-        const handleSeasonChange = (data: SeasonChangedData) => {
-            const shouldShow = data.currentSeason === 'rainy';
+        const handleWeatherChange = (data: WeatherChangedData) => {
+            const shouldShow = data.currentWeather === 'rainy';
             setIsVisible(shouldShow);
-            logger.debug(`Lightning button visibility: ${shouldShow} (season: ${data.currentSeason})`);
+            logger.debug(`Lightning button visibility: ${shouldShow} (weather: ${data.currentWeather})`);
         };
 
-        const currentSeason = datetimeManager.getCurrentSeason();
-        handleSeasonChange({
-            currentSeason: currentSeason,
-            previousSeason: currentSeason,
-            solarTerm: "",
-            date: "",
-            timestamp: ""
-        } as unknown as SeasonChangedData);
+        const currentWeather = weatherManager.getCurrentWeather();
+        setIsVisible(currentWeather === 'rainy');
+        logger.debug(`Initial lightning button visibility: ${currentWeather === 'rainy'} (weather: ${currentWeather})`);
 
-        datetimeManager.onSeasonChanged(handleSeasonChange);
+        weatherManager.onWeatherChanged(handleWeatherChange);
 
         return () => {
-            datetimeManager.offSeasonChanged(handleSeasonChange);
+            weatherManager.offWeatherChanged(handleWeatherChange);
         };
     }, [logger]);
 

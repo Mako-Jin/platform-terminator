@@ -25,7 +25,7 @@ export default class Camp extends Object3DComponent {
      * 初始化阶段 - 加载营地模型
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Camp] Initializing...');
+        this.logger.debug('[Camp] Initializing...');
 
         const campResource = resourcesManager.getItemById("campModel");
         if (!campResource || !campResource.scene) {
@@ -42,14 +42,14 @@ export default class Camp extends Object3DComponent {
         // 配置阴影
         this.configureShadows();
 
-        this.logger.info('[Camp] Initialization complete');
+        this.logger.debug('[Camp] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Camp] Activating...');
+        this.logger.debug('[Camp] Activating...');
     }
 
     /**
@@ -63,7 +63,7 @@ export default class Camp extends Object3DComponent {
      * 失活阶段
      */
     protected onDeactivate(): void {
-        this.logger.info('[Camp] Deactivated');
+        this.logger.debug('[Camp] Deactivated');
     }
 
     /**

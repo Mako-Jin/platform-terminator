@@ -56,7 +56,7 @@ export default class Tent extends Object3DComponent {
      * 初始化阶段 - 加载帐篷模型
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Tent] Initializing...');
+        this.logger.debug('[Tent] Initializing...');
 
         // 等待依赖初始化
         await this.waitForDependencies();
@@ -79,14 +79,14 @@ export default class Tent extends Object3DComponent {
         // 配置材质和阴影
         await this.configureMaterials();
 
-        this.logger.info('[Tent] Initialization complete');
+        this.logger.debug('[Tent] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Tent] Activating...');
+        this.logger.debug('[Tent] Activating...');
 
         // 应用初始灯光配置（默认白天）
         const timeKey = datetimeManager.isDaytime() ? 'day' : 'night';

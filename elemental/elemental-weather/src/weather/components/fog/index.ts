@@ -43,7 +43,7 @@ export default class Fog extends Object3DComponent {
      * 初始化阶段 - 创建雾效果
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Fog] Initializing...');
+        this.logger.debug('[Fog] Initializing...');
 
         const color = this.getFogColor();
         const threeScene = this.scene.getScene();
@@ -61,7 +61,7 @@ export default class Fog extends Object3DComponent {
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Fog] Activating...');
+        this.logger.debug('[Fog] Activating...');
     }
 
     /**

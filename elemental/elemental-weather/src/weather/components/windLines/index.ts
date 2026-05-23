@@ -277,7 +277,7 @@ export default class WindLines extends Object3DComponent {
     }
 
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[WindLines] Initializing...');
+        this.logger.debug('[WindLines] Initializing...');
 
         // ✅ 使用 createRootGroup() 创建根节点
         const root = this.createRootGroup();
@@ -301,7 +301,7 @@ export default class WindLines extends Object3DComponent {
             windLine.setColor(windColor);
         });
 
-        this.logger.info('[WindLines] Initialization complete');
+        this.logger.debug('[WindLines] Initialization complete');
     }
 
     public getWindLinesColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
@@ -309,7 +309,7 @@ export default class WindLines extends Object3DComponent {
     }
 
     protected onActivate(): void {
-        this.logger.info('[WindLines] Activating...');
+        this.logger.debug('[WindLines] Activating...');
 
         this.startInterval();
     }

@@ -29,7 +29,7 @@ export default class TreesTrunks extends Object3DComponent {
      * 初始化阶段 - 加载树木模型
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[TreesTrunks] Initializing...');
+        this.logger.debug('[TreesTrunks] Initializing...');
 
         const resource = resourcesManager.getItemById("TreeTrunksModel");
         if (!resource || !resource.scene) {
@@ -46,14 +46,14 @@ export default class TreesTrunks extends Object3DComponent {
         // 配置阴影
         this.configureShadows();
 
-        this.logger.info('[TreesTrunks] Initialization complete');
+        this.logger.debug('[TreesTrunks] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[TreesTrunks] Activating...');
+        this.logger.debug('[TreesTrunks] Activating...');
     }
 
     /**

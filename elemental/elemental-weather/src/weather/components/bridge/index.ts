@@ -31,7 +31,7 @@ export default class Bridge extends Object3DComponent {
      * 初始化阶段 - 加载桥梁模型
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Bridge] Initializing...');
+        this.logger.debug('[Bridge] Initializing...');
 
         const bridgeResource = resourcesManager.getItemById("bridgeModel");
         if (!bridgeResource || !bridgeResource.scene) {
@@ -52,14 +52,14 @@ export default class Bridge extends Object3DComponent {
         // 配置材质和阴影
         await this.configureMaterials();
 
-        this.logger.info('[Bridge] Initialization complete');
+        this.logger.debug('[Bridge] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Bridge] Activating...');
+        this.logger.debug('[Bridge] Activating...');
     }
 
     /**

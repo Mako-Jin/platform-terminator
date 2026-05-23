@@ -65,7 +65,7 @@ export default class Lighting extends Object3DComponent {
      * 【初始化】创建灯光、环境贴图和阴影配置
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Lighting] Initializing...');
+        this.logger.debug('[Lighting] Initializing...');
 
         await this.waitForDependencies();
 
@@ -79,14 +79,14 @@ export default class Lighting extends Object3DComponent {
         this.configureShadows();
         this.setupEnvironment();
 
-        this.logger.info('[Lighting] Initialization complete');
+        this.logger.debug('[Lighting] Initialization complete');
     }
 
     /**
      * 【激活】应用初始配置并添加 Helper
      */
     protected onActivate(): void {
-        this.logger.info('[Lighting] Activating...');
+        this.logger.debug('[Lighting] Activating...');
         this.refreshLightingConfig();
 
         if (this.helperEnabled) {
@@ -98,7 +98,7 @@ export default class Lighting extends Object3DComponent {
      * 【失活】移除 Helper
      */
     protected onDeactivate(): void {
-        this.logger.info('[Lighting] Deactivating...');
+        this.logger.debug('[Lighting] Deactivating...');
 
         // 移除 Helper
         this.removeHelpers();

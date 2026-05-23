@@ -24,6 +24,7 @@ import {
     EmitterParams,
     ParticleRendererParams
 } from "/@/particle";
+import {type WeatherChangedData, weatherManager} from "/@/manager";
 
 
 interface ColorStop {
@@ -143,7 +144,7 @@ export default class Fire extends Object3DComponent {
      * 初始化阶段 - 创建火焰粒子系统
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Fire] Initializing...');
+        this.logger.debug('[Fire] Initializing...');
 
         this.smokeAlphaConfig = this.getFireColorConfig();
 
@@ -167,14 +168,15 @@ export default class Fire extends Object3DComponent {
         this.addFireLighting();
         this.updateFireEffectsForSeason();
 
-        this.logger.info('[Fire] Initialization complete');
+        this.logger.debug('[Fire] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Fire] Activating...');
+        this.logger.debug('[Fire] Activating...');
+        weatherManager.onWeatherChanged(this.handleWeatherChanged.bind(this));
         this.updateSmokeAlpha();
     }
 
@@ -209,6 +211,7 @@ export default class Fire extends Object3DComponent {
      */
     protected onDeactivate(): void {
         this.logger.info('[Fire] Deactivated');
+        weatherManager.offWeatherChanged(this.handleWeatherChanged.bind(this));
     }
 
     /**
@@ -289,6 +292,11 @@ export default class Fire extends Object3DComponent {
         this.updateSmokeAlpha();
 
         // 更新火焰效果
+        this.updateFireEffectsForSeason();
+    }
+
+    private handleWeatherChanged(data: WeatherChangedData): void {
+        this.logger.info(`[Fire] Weather changed: ${data.previousWeather} -> ${data.currentWeather}`);
         this.updateFireEffectsForSeason();
     }
 
@@ -869,26 +877,26 @@ export default class Fire extends Object3DComponent {
      * 更新火焰效果的季節性
      */
     private updateFireEffectsForSeason(): void {
-        const isRainySeason = datetimeManager.getCurrentSeason() === 'rainy';
+        const isRainyWeather = weatherManager.getCurrentWeather() === 'rainy';
 
         if (this.fireEmitterParams) {
-            this.fireEmitterParams.emissionRate = isRainySeason
+            this.fireEmitterParams.emissionRate = isRainyWeather
                 ? 0
                 : this.originalFireEmissionRate;
         }
 
         if (this.amberEmitterParams) {
-            this.amberEmitterParams.emissionRate = isRainySeason
+            this.amberEmitterParams.emissionRate = isRainyWeather
                 ? 0
                 : this.originalAmberEmissionRate;
         }
 
         if (this.smokeEmitterParams) {
-            this.smokeEmitterParams.emissionRate = isRainySeason
+            this.smokeEmitterParams.emissionRate = isRainyWeather
                 ? this.rainySmokeEmissionRate
                 : this.originalSmokeEmissionRate;
 
-            const smokePos = isRainySeason
+            const smokePos = isRainyWeather
                 ? this.rainySmokePosition
                 : this.originalSmokePosition;
             this.smokeEmitterParams.shape.position.set(
@@ -898,30 +906,30 @@ export default class Fire extends Object3DComponent {
             );
         }
 
-        this.updateSmokeColorForSeason(isRainySeason);
+        this.updateSmokeColorForSeason(isRainyWeather);
 
         if (this.fireRendererGroup) {
-            this.fireRendererGroup.visible = !isRainySeason;
+            this.fireRendererGroup.visible = !isRainyWeather;
         }
 
         if (this.amberRendererGroup) {
-            this.amberRendererGroup.visible = !isRainySeason;
+            this.amberRendererGroup.visible = !isRainyWeather;
         }
 
         if (this.fireLight) {
-            this.fireLight.visible = !isRainySeason;
+            this.fireLight.visible = !isRainyWeather;
         }
 
         if (this.fireLight2) {
-            this.fireLight2.visible = !isRainySeason;
+            this.fireLight2.visible = !isRainyWeather;
         }
     }
 
     /**
      * 更新烟雾颜色的季節性
      */
-    private updateSmokeColorForSeason(isRainySeason: boolean): void {
-        const colorStops = isRainySeason
+    private updateSmokeColorForSeason(isRainyWeather: boolean): void {
+        const colorStops = isRainyWeather
             ? this.rainySmokeColorStops
             : this.originalSmokeColorStops;
 

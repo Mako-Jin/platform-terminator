@@ -38,20 +38,20 @@ export default class Skydome extends Object3DComponent {
      * 初始化阶段 - 创建天空穹顶
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Skydome] Initializing...');
+        this.logger.debug('[Skydome] Initializing...');
 
         await this.waitForDependencies();
 
         this.createSkydome();
 
-        this.logger.info('[Skydome] Initialization complete');
+        this.logger.debug('[Skydome] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用初始颜色配置
      */
     protected onActivate(): void {
-        this.logger.info('[Skydome] Activating...');
+        this.logger.debug('[Skydome] Activating...');
 
         this.updateSkyColors();
     }
@@ -144,7 +144,7 @@ export default class Skydome extends Object3DComponent {
             .name('Night Mode');
         skyFolder
             .add(this.skydomeMaterial.uniforms.uSeason, 'value', 0, 3)
-            .name('Season (0=Spring, 1=Winter, 2=Autumn, 3=Rainy)');
+            .name('Season (0=Spring, 1=Summer, 2=Autumn, 3=Winter)');
         skyFolder
             .add(this.skydomeMaterial.uniforms.uAtmosphereIntensity, 'value', 0, 3.0)
             .name('Atmosphere');

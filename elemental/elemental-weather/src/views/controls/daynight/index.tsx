@@ -9,7 +9,7 @@ export interface DayNightToggleProps {
 }
 
 const DayNightToggle: ({onTimeChange}: DayNightToggleProps) => JSX.Element = ({ onTimeChange }) => {
-    const logger = LoggerFactory.create('DayNightToggleButton');
+    const logger = LoggerFactory.create('day-night-toggle-button');
     
     const [currentTime, setCurrentTime] = useState<'day' | 'night'>(
         datetimeManager.isDaytime() ? 'day' : 'night'
@@ -52,16 +52,6 @@ const DayNightToggle: ({onTimeChange}: DayNightToggleProps) => JSX.Element = ({ 
 
         // 更新本地状态并触发事件
         setCurrentTime(timeId);
-
-        window.dispatchEvent(
-            new CustomEvent('timeChange', {
-                detail: {
-                    time: timeId,
-                    oldTime: currentTime,
-                    timestamp: datetimeManager.getCurrentTime(),
-                },
-            })
-        );
 
         onTimeChange?.(timeId);
     };

@@ -39,19 +39,19 @@ export default class BiomeManager extends Object3DComponent {
      * 初始化阶段 - 加载并缓存 Biome 数据
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[BiomeManager] Initializing...');
+        this.logger.debug('[BiomeManager] Initializing...');
         const biomeGroup = new Three.Group();
         biomeGroup.name = 'BiomeGroup';
         this.setRoot(biomeGroup);
         this.loadBiomeTexture();
-        this.logger.info(`[BiomeManager] Initialization complete. Texture size: ${this.biomeData?.width}x${this.biomeData?.height}`);
+        this.logger.debug(`[BiomeManager] Initialization complete. Texture size: ${this.biomeData?.width}x${this.biomeData?.height}`);
     }
 
     /**
      * 激活阶段
      */
     protected onActivate(): void {
-        this.logger.info('[BiomeManager] Activating...');
+        this.logger.debug('[BiomeManager] Activating...');
     }
 
     /**

@@ -11,7 +11,7 @@ import {
     type UpdateParams,
     datetimeManager
 } from "common-three";
-import {SettingsManager} from "/@/settings";
+import {type WeatherChangedData, weatherManager} from "/@/manager";
 
 
 class RainSystem {
@@ -168,7 +168,7 @@ class RainSystem {
         const season = datetimeManager.getCurrentSeason();
 
         switch (season) {
-            case 'rainy':
+            case 'summer':
                 return new Three.Color(0.7, 0.8, 0.9);
             case 'winter':
                 return new Three.Color(0.9, 0.9, 1.0);
@@ -236,20 +236,17 @@ class RainSystem {
 
 export default class Rain extends Object3DComponent {
 
-    private settingsManager: SettingsManager;
     private rainSystem: RainSystem | null = null;
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
         super(scene, 'weather-rain', options.isDebugMode);
-
-        this.settingsManager = SettingsManager.getInstance();
     }
 
     /**
      * 初始化阶段 - 创建雨系统
      */
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
-        this.logger.info('[Rain] Initializing...');
+        this.logger.debug('[Rain] Initializing...');
 
         // ✅ 创建根节点
         const root = this.createRootGroup();
@@ -257,14 +254,15 @@ export default class Rain extends Object3DComponent {
 
         this.initializeRainSystem();
 
-        this.logger.info('[Rain] Initialization complete');
+        this.logger.debug('[Rain] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Rain] Activating...');
+        this.logger.debug('[Rain] Activating...');
+        weatherManager.onWeatherChanged(this.handleWeatherChanged.bind(this));
     }
 
     /**
@@ -286,6 +284,9 @@ export default class Rain extends Object3DComponent {
         if (this.rainSystem) {
             this.rainSystem.setVisible(false);
         }
+
+        weatherManager.offWeatherChanged(this.handleWeatherChanged.bind(this));
+
     }
 
     /**
@@ -293,7 +294,7 @@ export default class Rain extends Object3DComponent {
      */
     protected onDispose(): void {
         this.logger.info('[Rain] Disposing...');
-
+        this.deActivate();
         // 清理雨系统
         if (this.rainSystem) {
             this.rainSystem.dispose();
@@ -327,6 +328,12 @@ export default class Rain extends Object3DComponent {
         this.logger.info(`[Rain] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
         this.updateVisibility();
     }
+
+    private handleWeatherChanged(data: WeatherChangedData): void {
+        this.logger.info(`[Rain] Weather changed: ${data.previousWeather} -> ${data.currentWeather}`);
+        this.updateVisibility();
+    }
+
 
     // ==================== 调试面板 ====================
 
@@ -374,7 +381,7 @@ export default class Rain extends Object3DComponent {
             return;
         }
 
-        const isRainySeason = datetimeManager.getCurrentSeason() === 'rainy';
-        this.rainSystem.setVisible(isRainySeason);
+        const isRainyWeather = weatherManager.getCurrentWeather() === 'rainy';
+        this.rainSystem.setVisible(isRainyWeather);
     }
 }
