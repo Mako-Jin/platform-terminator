@@ -23,7 +23,6 @@ const SeasonToggle: ({onSeasonChange}: SeasonToggleProps) => JSX.Element = (prop
         // 监听季节变化
         const handleSeasonChange = (data: SeasonChangedData) => {
             setCurrentSeason(data.currentSeason);
-            props.onSeasonChange?.(data.currentSeason);
         };
 
         datetimeManager.onSeasonChanged(handleSeasonChange);
@@ -39,6 +38,8 @@ const SeasonToggle: ({onSeasonChange}: SeasonToggleProps) => JSX.Element = (prop
         }
 
         Haptics.buttonTap();
+
+        datetimeManager.setManualSeason(seasonId);
 
         // 更新本地状态
         setCurrentSeason(seasonId);

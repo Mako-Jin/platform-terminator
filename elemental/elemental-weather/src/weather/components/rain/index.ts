@@ -375,7 +375,7 @@ export default class Rain extends Object3DComponent {
      * ✅ 初始化雨系统
      */
     private initializeRainSystem(): void {
-        this.logger.info('[Rain] Starting RainSystem initialization...');
+        this.logger.debug('[Rain] Starting RainSystem initialization...');
 
         const rainBounds = {
             yMin: 15.0,

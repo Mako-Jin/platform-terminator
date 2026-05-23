@@ -22,10 +22,8 @@ const WeatherToggle: ({onWeatherChange}: WeatherToggleProps) => JSX.Element = (p
     ];
 
     useEffect(() => {
-        // 监听季节变化
         const handleWeatherChange = (data: WeatherChangedData) => {
             setCurrentWeather(data.currentWeather);
-            props.onWeatherChange?.(data.currentWeather);
         };
 
         weatherManager.onWeatherChanged(handleWeatherChange);
@@ -33,7 +31,7 @@ const WeatherToggle: ({onWeatherChange}: WeatherToggleProps) => JSX.Element = (p
         return () => {
             weatherManager.offWeatherChanged(handleWeatherChange);
         };
-    }, [props]);
+    }, []);
 
     const handleWeatherClick = (weatherId: WeatherType) => {
         if (weatherId === currentWeather) {
@@ -44,7 +42,6 @@ const WeatherToggle: ({onWeatherChange}: WeatherToggleProps) => JSX.Element = (p
 
         weatherManager.setWeather(weatherId);
 
-        // 更新本地状态
         setCurrentWeather(weatherId);
         props.onWeatherChange?.(weatherId);
     };

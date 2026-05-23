@@ -154,14 +154,14 @@ export default class Bush extends Object3DComponent {
      * 失活阶段
      */
     protected onDeactivate(): void {
-        this.logger.info('[Bush] Deactivated');
+        this.logger.debug('[Bush] Deactivated');
     }
 
     /**
      * 销毁阶段
      */
     protected onDispose(): void {
-        this.logger.info('[Bush] Disposing...');
+        this.logger.debug('[Bush] Disposing...');
 
         // 清理 BushManager
         if (this.bushManager) {
@@ -194,9 +194,9 @@ export default class Bush extends Object3DComponent {
      * ✅ 日期变化监听器 - 每天午夜调用
      */
     public onDateChanged(data: DateChangedData): void {
-        this.logger.info(`[Bush] Date changed: ${data.currentDate}`);
+        this.logger.debug(`[Bush] Date changed: ${data.currentDate}`);
         if (data.solarTerm) {
-            this.logger.info(`[Bush] Solar term: ${data.solarTerm}`);
+            this.logger.debug(`[Bush] Solar term: ${data.solarTerm}`);
         }
     }
 
@@ -204,7 +204,7 @@ export default class Bush extends Object3DComponent {
      * ✅ 季节变化监听器 - 季节切换时调用
      */
     public onSeasonChanged(data: SeasonChangedData): void {
-        this.logger.info(`[Bush] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
+        this.logger.debug(`[Bush] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
         // ✅ 季节变化时才需要重建（因为可能改变叶子数量等）
         this.updateColors();
     }
@@ -393,7 +393,7 @@ export default class Bush extends Object3DComponent {
         if (!leavesAlphaMap) {
             this.logger.error('[Bush] leavesAlphaMap not found! This will cause rendering issues.');
         } else {
-            this.logger.info('[Bush] leavesAlphaMap loaded successfully');
+            this.logger.debug('[Bush] leavesAlphaMap loaded successfully');
         }
 
         const preset = this.getBushColorConfig();
@@ -440,7 +440,7 @@ export default class Bush extends Object3DComponent {
             alphaTest: 0.8,
         });
 
-        this.logger.info('[Bush] Bush material created successfully');
+        this.logger.debug('[Bush] Bush material created successfully');
     }
 
     /**
@@ -544,7 +544,7 @@ export default class Bush extends Object3DComponent {
                 await new Promise(resolve => setTimeout(resolve, 0));
             }
         }
-        this.logger.info(`[Bush] Successfully created ${totalBushes} bushes with ${totalLeaves} total leaves`);
+        this.logger.debug(`[Bush] Successfully created ${totalBushes} bushes with ${totalLeaves} total leaves`);
     }
 
     /**

@@ -3,7 +3,7 @@ import { useState, useCallback } from 'react';
 export interface ToastConfig {
     id: string;
     message: string;
-    type?: 'info' | 'success' | 'error' | 'warning' | 'season' | 'daynight' | 'music';
+    type?: 'info' | 'success' | 'error' | 'warning' | 'season' | 'daynight' | 'music' | 'weather';
     icon?: string;
     gradient?: string;
     label?: string;
@@ -52,9 +52,9 @@ const useToast = () => {
                     displayName = 'Frosty Winter';
                     break;
                 default:
-                    icon = 'fas fa-cloud-rain';
-                    gradient = 'linear-gradient(145deg, #9ca3af, #6b7280)';
-                    displayName = 'Thundering Rain';
+                    icon = 'fas fa-cloud-seedling';
+                    gradient = 'linear-gradient(145deg, #34d399, #10b981)';
+                    displayName = 'Blooming Spring';
             }
 
             addToast({
@@ -100,6 +100,70 @@ const useToast = () => {
         [addToast]
     );
 
+    const showWeatherToast = useCallback(
+        (weather: string) => {
+            let icon: string;
+            let gradient: string;
+            let displayName: string;
+
+            switch (weather) {
+                case 'sunny':
+                    icon = 'fas fa-sun';
+                    gradient = 'linear-gradient(145deg, #fbbf24, #f59e0b)';
+                    displayName = 'Sunny';
+                    break;
+                case 'cloudy':
+                    icon = 'fas fa-cloud';
+                    gradient = 'linear-gradient(145deg, #9ca3af, #6b7280)';
+                    displayName = 'Cloudy';
+                    break;
+                case 'rainy':
+                    icon = 'fas fa-cloud-rain';
+                    gradient = 'linear-gradient(145deg, #60a5fa, #3b82f6)';
+                    displayName = 'Rainy';
+                    break;
+                case 'snowy':
+                    icon = 'fas fa-snowflake';
+                    gradient = 'linear-gradient(145deg, #e0f2fe, #bae6fd)';
+                    displayName = 'Snowy';
+                    break;
+                case 'foggy':
+                    icon = 'fas fa-smog';
+                    gradient = 'linear-gradient(145deg, #d1d5db, #9ca3af)';
+                    displayName = 'Foggy';
+                    break;
+                default:
+                    icon = 'fas fa-sun';
+                    gradient = 'linear-gradient(145deg, #fbbf24, #f59e0b)';
+                    displayName = 'Weather Changed';
+            }
+
+            addToast({
+                message: displayName,
+                type: 'weather',
+                icon,
+                gradient,
+                label: 'Weather Changed',
+                duration: 3000,
+            });
+        },
+        [addToast]
+    );
+
+    const showLightningToast = useCallback(
+        () => {
+            addToast({
+                message: 'Lightning Strike!',
+                type: 'warning',
+                icon: 'fas fa-bolt',
+                gradient: 'linear-gradient(145deg, #fbbf24, #f59e0b)',
+                label: '⚡ Thunderstorm',
+                duration: 2000,
+            });
+        },
+        [addToast]
+    );
+
     const showToast = useCallback(
         (message: string, type: ToastConfig['type'] = 'info', duration = 3000) => {
             addToast({ message, type, duration });
@@ -113,6 +177,8 @@ const useToast = () => {
         showSeasonToast,
         showDayNightToast,
         showMusicToast,
+        showWeatherToast,
+        showLightningToast,
         showToast,
     };
 };

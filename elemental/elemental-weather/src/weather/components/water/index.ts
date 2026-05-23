@@ -79,14 +79,14 @@ export default class Water extends Object3DComponent {
 
         this.createWaterSurface();
 
-        this.logger.info('[Water] Initialization complete');
+        this.logger.debug('[Water] Initialization complete');
     }
 
     /**
      * 激活阶段 - 应用配置
      */
     protected onActivate(): void {
-        this.logger.info('[Water] Activating...');
+        this.logger.debug('[Water] Activating...');
         this.updateWaterColors();
     }
 
@@ -105,14 +105,14 @@ export default class Water extends Object3DComponent {
      * 失活阶段
      */
     protected onDeactivate(): void {
-        this.logger.info('[Water] Deactivated');
+        this.logger.debug('[Water] Deactivated');
     }
 
     /**
      * 销毁阶段
      */
     protected onDispose(): void {
-        this.logger.info('[Water] Disposing...');
+        this.logger.debug('[Water] Disposing...');
 
         if (this.waterMesh) {
             this.waterMesh.geometry.dispose();
@@ -139,9 +139,9 @@ export default class Water extends Object3DComponent {
      * ✅ 日期变化监听器
      */
     public onDateChanged(data: DateChangedData): void {
-        this.logger.info(`[Water] Date changed: ${data.currentDate}`);
+        this.logger.debug(`[Water] Date changed: ${data.currentDate}`);
         if (data.solarTerm) {
-            this.logger.info(`[Water] Solar term: ${data.solarTerm}`);
+            this.logger.debug(`[Water] Solar term: ${data.solarTerm}`);
         }
     }
 
@@ -149,12 +149,12 @@ export default class Water extends Object3DComponent {
      * ✅ 季节变化监听器
      */
     public onSeasonChanged(data: SeasonChangedData): void {
-        this.logger.info(`[Water] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
+        this.logger.debug(`[Water] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
         this.updateWaterColors();
     }
 
     public onWeatherChanged(data: WeatherChangedData): void {
-        this.logger.info(`[Water] Weather changed: ${data.previousWeather} -> ${data.currentWeather}`);
+        this.logger.debug(`[Water] Weather changed: ${data.previousWeather} -> ${data.currentWeather}`);
         this.updateSeasonalAndWeatherEffects();
     }
 
@@ -230,7 +230,6 @@ export default class Water extends Object3DComponent {
             return;  // ✅ 关键修复：资源缺失时提前返回
         }
         biomeTexture.wrapS = biomeTexture.wrapT = Three.ClampToEdgeWrapping;
-        this.logger.info('[Water] biomeTexture loaded:', biomeTexture);
 
         const waterDepthTexture = resourcesManager.getItemById('waterDepthMap');
         if (!waterDepthTexture) {
@@ -238,7 +237,6 @@ export default class Water extends Object3DComponent {
             return;  // ✅ 关键修复：资源缺失时提前返回
         }
         waterDepthTexture.wrapS = waterDepthTexture.wrapT = Three.RepeatWrapping;
-        this.logger.info('[Water] waterDepthTexture loaded:', waterDepthTexture);
 
         const perlinNoise = resourcesManager.getItemById('perlinNoise');
         if (!perlinNoise) {
@@ -246,11 +244,9 @@ export default class Water extends Object3DComponent {
             return;  // ✅ 关键修复：资源缺失时提前返回
         }
         perlinNoise.wrapS = perlinNoise.wrapT = Three.RepeatWrapping;
-        this.logger.info('[Water] perlinNoise loaded:', perlinNoise);
 
         // ✅ 获取颜色配置
         const colors = this.getWaterColorConfig();
-        this.logger.info('[Water] Color config:', colors);
 
         // ✅ 创建水面几何体（参考 Ground.addWaterRipples 第 228-233 行）
         this.waterGeometry = new Three.PlaneGeometry(
@@ -259,7 +255,6 @@ export default class Water extends Object3DComponent {
             1,
             1
         );
-        this.logger.info('[Water] Geometry created, size:', this.groundSize + 0.5, 'x', this.groundSize + 2);
 
         // ✅ 创建材质并注入 shader chunks（参考 Ground.addWaterRipples 第 234-313 行）
         this.waterMaterial = new Three.MeshStandardMaterial({
@@ -316,8 +311,6 @@ export default class Water extends Object3DComponent {
             uIceColor: { value: new Three.Color(0.9, 0.95, 1.0) },
         };
 
-        // ✅ 注入 shader chunks（修正替换顺序）
-        let shaderCompiled = false;
         this.waterMaterial.onBeforeCompile = (shader) => {
             shader.uniforms = {
                 ...shader.uniforms,
@@ -346,23 +339,6 @@ export default class Water extends Object3DComponent {
                 '#include <color_fragment>',
                 waterFragmentColorChunk
             );
-
-            if (!shaderCompiled) {
-                this.logger.info('[Water] Shader chunks injected successfully');
-                this.logger.info('[Water] Vertex shader length:', shader.vertexShader.length);
-                this.logger.info('[Water] Fragment shader length:', shader.fragmentShader.length);
-
-                // ✅ 关键调试：输出 fragment shader 的关键部分
-                const discardIndex = shader.fragmentShader.indexOf('discard');
-                if (discardIndex !== -1) {
-                    this.logger.info('[Water] Found discard statement at position:', discardIndex);
-                    this.logger.info('[Water] Context around discard:',
-                        shader.fragmentShader.substring(Math.max(0, discardIndex - 100), discardIndex + 50)
-                    );
-                }
-
-                shaderCompiled = true;
-            }
         };
 
         // ✅ 创建 Mesh（参考 Ground.addWaterRipples 第 315-318 行）
@@ -385,35 +361,6 @@ export default class Water extends Object3DComponent {
         const root = this.root;
         if (root) {
             root.add(this.waterMesh);
-            this.logger.info('[Water] Water mesh added to scene at position:', this.waterMesh.position);
-            this.logger.info('[Water] Material properties:', {
-                transparent: this.waterMaterial.transparent,
-                depthWrite: this.waterMaterial.depthWrite,
-                depthTest: this.waterMaterial.depthTest,
-                side: this.waterMaterial.side,
-                renderOrder: this.waterMesh.renderOrder
-            });
-
-            // ✅ 关键调试：检查纹理是否正确加载
-            this.logger.info('[Water] Texture check:', {
-                uDensityMap: this.customWaterUniforms.uDensityMap.value !== null,
-                uPerlinNoise: this.customWaterUniforms.uPerlinNoise.value !== null,
-                uWaterDepthTexture: this.customWaterUniforms.uWaterDepthTexture.value !== null,
-                worldSize: this.worldSize
-            });
-
-            // ✅ 新增：检查纹理尺寸和格式
-            const densityMap = this.customWaterUniforms.uDensityMap.value;
-            if (densityMap && densityMap.image) {
-                this.logger.info('[Water] Density map info:', {
-                    width: densityMap.image.width || densityMap.image.naturalWidth,
-                    height: densityMap.image.height || densityMap.image.naturalHeight,
-                    wrapS: densityMap.wrapS,
-                    wrapT: densityMap.wrapT
-                });
-            }
-        } else {
-            this.logger.error('[Water] Root node is null, cannot add water mesh!');
         }
     }
 

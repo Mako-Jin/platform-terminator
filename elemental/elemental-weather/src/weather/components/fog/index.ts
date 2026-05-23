@@ -54,7 +54,7 @@ export default class Fog extends Object3DComponent {
 
         threeScene.fog = new Three.Fog(color, this.fogNear, this.fogFar);
 
-        this.logger.info(`[Fog] Initialized with color: ${color.getHexString()}, near: ${this.fogNear}, far: ${this.fogFar}`);
+        this.logger.debug(`[Fog] Initialized with color: ${color.getHexString()}, near: ${this.fogNear}, far: ${this.fogFar}`);
     }
 
     /**

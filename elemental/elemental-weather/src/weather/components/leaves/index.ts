@@ -233,11 +233,11 @@ export default class FallingLeaves extends Object3DComponent {
         if (root) {
             if (this.fallingLeavesSystemOne) {
                 this.fallingLeavesSystemOne.addToScene(root);
-                this.logger.info('[FallingLeaves] System One added to scene');
+                this.logger.debug('[FallingLeaves] System One added to scene');
             }
             if (this.fallingLeavesSystemTwo) {
                 this.fallingLeavesSystemTwo.addToScene(root);
-                this.logger.info('[FallingLeaves] System Two added to scene');
+                this.logger.debug('[FallingLeaves] System Two added to scene');
             }
         } else {
             this.logger.error('[FallingLeaves] Root is null, cannot add systems to scene');

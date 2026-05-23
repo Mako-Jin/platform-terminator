@@ -429,7 +429,7 @@ export default class Ground extends Object3DComponent {
                 '#include <color_fragment>',
                 groundFragmentColorChunk
             );
-            this.logger.info('[Ground] Shader compiled successfully');
+            this.logger.debug('[Ground] Shader compiled successfully');
         };
 
         const geometries: Three.BufferGeometry[] = [];

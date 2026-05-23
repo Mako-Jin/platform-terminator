@@ -1,6 +1,6 @@
 import {LoggerFactory, isDebugMode, eventBus} from "common-tools";
 import {useCallback, useEffect, useRef, useState} from "react";
-import {datetimeManager, ResourceLoader, type SeasonType} from "common-three";
+import {ResourceLoader, type SeasonType} from "common-three";
 import {ASSETS} from "/@/settings/resources";
 import LoadingScreen from "./loading";
 import {Haptics} from "/@/utils";
@@ -8,7 +8,7 @@ import Weather from "/@/weather";
 import SettingsManager from "/@/settings/manager.ts";
 import ControlPanel from "/@/views/controls";
 import ShaderReveal from "/@/views/shader";
-import {MusicManager} from "/@/manager";
+import {MusicManager, type WeatherType} from "/@/manager";
 import {Lightning} from "/@/weather/components";
 import useToast from "/@/hooks/useToast.ts";
 import ToastContainer from "/@/views/toast";
@@ -41,7 +41,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
 
     const [musicManager, setMusicManager] = useState<MusicManager | undefined>(undefined);
 
-    const {toasts, removeToast, showSeasonToast, showDayNightToast} = useToast();
+    const {toasts, showToast, removeToast, showSeasonToast, showDayNightToast, showWeatherToast, showMusicToast, showLightningToast} = useToast();
 
     const debugMode = isDebugMode();
     
@@ -116,27 +116,21 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
     const handleSeasonChange = (season: SeasonType) => {
         logger.info(`Season changed to: ${season}`);
         showSeasonToast(season);
-        datetimeManager.setManualSeason(season);
     };
 
     const handleTimeChange = (time: string) => {
         logger.info(`Time changed to: ${time}`);
         showDayNightToast(time);
-        if ('day' === time) {
-            datetimeManager.setToDaytime();
-        } else {
-            datetimeManager.setToNighttime();
-        }
     };
 
     const handleWeatherChange = (weather: WeatherType) => {
         logger.info(`Weather changed to: ${weather}`);
-        // TODO: 实现天气变化逻辑
+        showWeatherToast(weather);
     };
 
     const handleLightningStrike = () => {
         logger.info('Lightning strike triggered');
-        // ✅ 通过事件总线触发闪电
+        showLightningToast();
         eventBus.emit(Lightning.LIGHTNING_STRIKE_TRIGGERED);
     };
 
@@ -183,7 +177,33 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
                 weatherInitializedRef.current = false;
             }
         };
-    }, [debugMode, getContainer]); // ✅ 移除 logger 和 resourceLoader 依赖
+    }, [debugMode, getContainer]);
+
+    useEffect(() => {
+        if (!musicManager) {
+            return;
+        }
+
+        const handleTrackChanged = (data: { trackName: string }) => {
+            showMusicToast(data.trackName);
+        };
+
+        const handleMusicEnabledChanged = (data: { enabled: boolean }) => {
+            if (data.enabled) {
+                showToast('Music Enabled', 'success', 2000);
+            } else {
+                showToast('Music Paused', 'info', 2000);
+            }
+        };
+        
+        eventBus.on(MusicManager.ELEMENTAL_WEATHER_MUSIC_TRACK_CHANGED, handleTrackChanged);
+        eventBus.on(MusicManager.ELEMENTAL_WEATHER_MUSIC_ENABLED_CHANGED, handleMusicEnabledChanged);
+        
+        return () => {
+            eventBus.off(MusicManager.ELEMENTAL_WEATHER_MUSIC_TRACK_CHANGED, handleTrackChanged);
+            eventBus.off(MusicManager.ELEMENTAL_WEATHER_MUSIC_ENABLED_CHANGED, handleMusicEnabledChanged);
+        };
+    }, [musicManager, showMusicToast, showToast]);
 
     return (
         <>

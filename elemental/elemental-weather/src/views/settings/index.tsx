@@ -6,7 +6,7 @@ import {LoggerFactory} from "common-tools";
 interface SettingsModalProps {
     isOpen: boolean;
     onClose: () => void;
-    musicManager: MusicManager;
+    musicManager: MusicManager | undefined;
 }
 
 type TabType = 'settings' | 'about' | 'credits';
@@ -173,7 +173,7 @@ const SettingsModal: ({isOpen, onClose, musicManager}: SettingsModalProps) => (n
     );
 };
 
-const SettingsTab: ({musicManager}: {musicManager: MusicManager}) => (null | JSX.Element) = ({musicManager }) => {
+const SettingsTab: ({musicManager}: {musicManager: MusicManager | undefined}) => (null | JSX.Element) = ({musicManager }) => {
 
     const logger = LoggerFactory.create("weather-settings-tab");
 
@@ -206,7 +206,7 @@ const SettingsTab: ({musicManager}: {musicManager: MusicManager}) => (null | JSX
         if (graphicsQuality !== 'custom') {
             applyGraphicsPreset(graphicsQuality);
         }
-    }, [graphicsQuality]);
+    }, [graphicsQuality, logger]);
 
     useEffect(() => {
         localStorage.setItem('settings_volume', volume.toString());

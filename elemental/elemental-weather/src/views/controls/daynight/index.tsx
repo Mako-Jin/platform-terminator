@@ -23,7 +23,7 @@ const DayNightToggle: ({onTimeChange}: DayNightToggleProps) => JSX.Element = ({ 
     useEffect(() => {
         // 监听时间变化（每分钟更新）
         const handleTimeChanged = (data: TimeChangedData) => {
-        logger.info('Time changed:', data);
+            logger.info('Time changed:', data);
             const isDay = datetimeManager.isDaytime();
             const newTime = isDay ? 'day' : 'night';
 
@@ -48,6 +48,12 @@ const DayNightToggle: ({onTimeChange}: DayNightToggleProps) => JSX.Element = ({ 
         // 触觉反馈（移动端）
         if (navigator.vibrate) {
             navigator.vibrate(10);
+        }
+
+        if ('day' === timeId) {
+            datetimeManager.setToDaytime();
+        } else {
+            datetimeManager.setToNighttime();
         }
 
         // 更新本地状态并触发事件

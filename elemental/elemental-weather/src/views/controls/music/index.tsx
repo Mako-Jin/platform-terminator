@@ -1,6 +1,6 @@
-import {MusicManager} from "/src/manager";
+import {MusicManager} from "/@/manager";
 import {eventBus, LoggerFactory} from "common-tools";
-import {useCallback, useEffect, useState} from "react";
+import {type JSX, useCallback, useEffect, useState} from "react";
 import "./index.scss";
 
 
@@ -20,7 +20,9 @@ const MusicControl: ({musicManager}: MusicControlProps) => JSX.Element = ({ musi
 
     const logger = LoggerFactory.create('weather-control-music');
 
-    const [isMusicEnabled, setIsMusicEnabled] = useState(false);
+    const [isMusicEnabled, setIsMusicEnabled] = useState(() => {
+        return musicManager?.getIsMusicEnabled() ?? false;
+    });
 
     const [isVisible, setIsVisible] = useState(false);
 
@@ -29,7 +31,6 @@ const MusicControl: ({musicManager}: MusicControlProps) => JSX.Element = ({ musi
             return;
         }
 
-        // 触觉反馈
         if (navigator.haptic) {
             navigator.haptic([{ intensity: 0.7, sharpness: 0.1 }]);
         } else if (navigator.vibrate) {
@@ -52,8 +53,6 @@ const MusicControl: ({musicManager}: MusicControlProps) => JSX.Element = ({ musi
         if (!musicManager) {
             return;
         }
-
-        setIsMusicEnabled(musicManager.getIsMusicEnabled());
 
         const handleMusicEnabledChange = (data: { enabled: boolean }) => {
             setIsMusicEnabled(data.enabled);

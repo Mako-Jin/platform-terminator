@@ -1,4 +1,4 @@
-import {MusicManager} from "/@/manager";
+import {MusicManager, type WeatherType} from "/@/manager";
 import MusicControl from "/@/views/controls/music";
 import "./index.scss";
 import LightningButton from "/@/views/controls/lightning";
@@ -7,7 +7,7 @@ import SeasonToggle from "/@/views/controls/seasons";
 import type {JSX} from "react";
 import DayNightToggle from "/@/views/controls/daynight";
 import type {SeasonType} from "common-three";
-import WeatherToggle, {type WeatherType} from "/@/views/controls/weather";
+import WeatherToggle from "/@/views/controls/weather";
 
 
 interface ControlPanelProps {
