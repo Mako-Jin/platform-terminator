@@ -167,7 +167,7 @@ export class ClockManager {
 
         const currentTime = performance.now();
 
-        // 计算 delta（限制最大值防止卡顿）
+        // 计算 delta(限制最大值防止卡顿)
         this.delta = Math.min(
             (currentTime - this.previousTime) / 1000,
             this.maxDelta

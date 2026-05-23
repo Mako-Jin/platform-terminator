@@ -4,17 +4,7 @@ import type {SceneWrapper} from "common-three";
 
 import BushVertexShader from '/@/shaders/Materials/bush/vertex.glsl';
 
-import {random} from '/@/utils';
 import {LoggerFactory} from "common-tools";
-
-const mulberry32 = (seed: number) => {
-    return function (): number {
-        let t = (seed += 0x6d2b79f5);
-        t = Math.imul(t ^ (t >>> 15), t | 1);
-        t ^= t + Math.imul(t ^ (t >>> 7), t | 61);
-        return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
-    };
-};
 
 interface BushConfig {
     position?: Three.Vector3;
@@ -131,87 +121,6 @@ export default class BushManager {
         }
     }
 
-    addBush(config: BushConfig = {}): BushInfo | null {
-        const {
-            position = new Three.Vector3(0, 0.0, 0),
-            leafCount = 25,
-            scale = 1.0,
-            randomSeed = null,
-            shadowColor = new Three.Color(0.01, 0.12, 0.01),
-            midColor = new Three.Color(0.0, 0.25, 0.015),
-            highlightColor = new Three.Color(0.25, 0.5, 0.007),
-            colorMultiplier = new Three.Color(0.73, 0.89, 0.62),
-        } = config;
-
-        if (this.currentLeafIndex + leafCount > this.maxLeaves) {
-            this.logger.warn('[BushManager] Maximum leaf count exceeded');
-            return null;
-        }
-
-        const startIndex = this.currentLeafIndex;
-        const dummy = new Three.Object3D();
-        const positionLocal = new Three.Vector3();
-        const normal = new Three.Vector3();
-
-        let sampler = this.sampler;
-        if (randomSeed !== null) {
-            sampler = new MeshSurfaceSampler(this.samplerMesh)
-                // .setRandomGenerator(mulberry32(randomSeed))
-                .build();
-        }
-
-        for (let i = 0; i < leafCount; i++) {
-            const instanceIndex = startIndex + i;
-            const baseIndex = instanceIndex * 3;
-
-            sampler.sample(positionLocal, normal);
-
-            dummy.position.copy(positionLocal).add(position);
-
-            const s = random() * 0.5 + scale;
-            dummy.scale.set(s, s, s);
-
-            dummy.updateMatrix();
-            this.instancedMesh.setMatrixAt(instanceIndex, dummy.matrix);
-
-            this.instanceNormals[baseIndex] = normal.x;
-            this.instanceNormals[baseIndex + 1] = normal.y;
-            this.instanceNormals[baseIndex + 2] = normal.z;
-
-            this.instanceShadowColors[baseIndex] = shadowColor.r;
-            this.instanceShadowColors[baseIndex + 1] = shadowColor.g;
-            this.instanceShadowColors[baseIndex + 2] = shadowColor.b;
-
-            this.instanceMidColors[baseIndex] = midColor.r;
-            this.instanceMidColors[baseIndex + 1] = midColor.g;
-            this.instanceMidColors[baseIndex + 2] = midColor.b;
-
-            this.instanceHighlightColors[baseIndex] = highlightColor.r;
-            this.instanceHighlightColors[baseIndex + 1] = highlightColor.g;
-            this.instanceHighlightColors[baseIndex + 2] = highlightColor.b;
-
-            this.instanceColorMultiplier[baseIndex] = colorMultiplier.r;
-            this.instanceColorMultiplier[baseIndex + 1] = colorMultiplier.g;
-            this.instanceColorMultiplier[baseIndex + 2] = colorMultiplier.b;
-        }
-
-        const bush: BushInfo = {
-            position: position.clone(),
-            startIndex,
-            leafCount,
-            scale,
-            shadowColor: shadowColor.clone(),
-            midColor: midColor.clone(),
-            highlightColor: highlightColor.clone(),
-        };
-        this.bushes.push(bush);
-        this.currentLeafIndex += leafCount;
-
-        this.updateMesh();
-
-        return bush;
-    }
-
     /**
      * 批量添加灌木（性能优化版本）
      */
@@ -219,10 +128,6 @@ export default class BushManager {
         const dummy = new Three.Object3D();
         const positionLocal = new Three.Vector3();
         const normal = new Three.Vector3();
-
-        let sampleTime = 0;
-        let matrixTime = 0;
-        let attributeTime = 0;
 
         for (const config of configs) {
             const {
@@ -266,10 +171,7 @@ export default class BushManager {
                 const instanceIndex = startIndex + i;
                 const baseIndex = instanceIndex * 3;
 
-                // ✅ 采样性能监控
-                const sampleStart = performance.now();
                 sampler.sample(positionLocal, normal);
-                sampleTime += performance.now() - sampleStart;
 
                 dummy.position.copy(positionLocal).add(position);
 
@@ -277,14 +179,10 @@ export default class BushManager {
                 const s = Math.random() * 0.5 + scale;
                 dummy.scale.set(s, s, s);
 
-                // ✅ 矩阵计算性能监控
-                const matrixStart = performance.now();
                 dummy.updateMatrix();
                 this.instancedMesh.setMatrixAt(instanceIndex, dummy.matrix);
-                matrixTime += performance.now() - matrixStart;
 
                 // ✅ 属性设置性能监控
-                const attrStart = performance.now();
                 this.instanceNormals[baseIndex] = normal.x;
                 this.instanceNormals[baseIndex + 1] = normal.y;
                 this.instanceNormals[baseIndex + 2] = normal.z;
@@ -304,7 +202,6 @@ export default class BushManager {
                 this.instanceColorMultiplier[baseIndex] = multR;
                 this.instanceColorMultiplier[baseIndex + 1] = multG;
                 this.instanceColorMultiplier[baseIndex + 2] = multB;
-                attributeTime += performance.now() - attrStart;
             }
 
             const bush: BushInfo = {

@@ -99,8 +99,6 @@ export default class Water extends Object3DComponent {
             this.customWaterUniforms.uTime.value += params.delta;
         }
 
-        // ✅ 根据季节动态调整水效果（参考 Ground.update 第 449-505 行）
-        this.updateSeasonalAndWeatherEffects();
     }
 
     /**
@@ -265,11 +263,9 @@ export default class Water extends Object3DComponent {
 
         // ✅ 创建材质并注入 shader chunks（参考 Ground.addWaterRipples 第 234-313 行）
         this.waterMaterial = new Three.MeshStandardMaterial({
-            // color: 0x000000,
-            // transparent: true,
-            color: 0x006994,  // ✅ 临时调试：使用蓝色作为基础色
+            color: 0x000000,
             transparent: true,
-            opacity: 0.8,  // ✅ 临时调试：设置透明度
+            opacity: 1.0,
         });
 
         // ✅ 设置 uniforms（参考 Ground.addWaterRipples 第 248-286 行）

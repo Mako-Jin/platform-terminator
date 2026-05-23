@@ -37,6 +37,7 @@ export class RendererWrapper {
 
         this.renderer = this.createRenderer();
         this.setupRenderer();
+        this.renderer.setAnimationLoop(null);
         
         this.logger.info('RendererWrapper created');
     }
@@ -91,7 +92,7 @@ export class RendererWrapper {
         const threeCamera = camera instanceof BaseCamera
             ? camera.getCamera()
             : camera;
-        
+
         this.renderer.render(threeScene, threeCamera);
     }
 

@@ -139,16 +139,27 @@ class RainSystem {
                 continue;
             }
 
-            const dropLength = Math.min(particle.vel.length() * 0.08, 0.4);
-            const direction = particle.vel.clone().normalize();
+            // ✅ 关键优化:缓存vel的长度,避免重复计算
+            const velLength = Math.sqrt(
+                particle.vel.x * particle.vel.x +
+                particle.vel.y * particle.vel.y +
+                particle.vel.z * particle.vel.z
+            );
+            const dropLength = Math.min(velLength * 0.08, 0.4);
+            
+            // ✅ 关键优化:避免clone(),直接归一化
+            const invVelLength = velLength > 0 ? 1 / velLength : 0;
+            const dirX = particle.vel.x * invVelLength;
+            const dirY = particle.vel.y * invVelLength;
+            const dirZ = particle.vel.z * invVelLength;
 
             positions[i6] = particle.pos.x;
             positions[i6 + 1] = particle.pos.y;
             positions[i6 + 2] = particle.pos.z;
 
-            positions[i6 + 3] = particle.pos.x - direction.x * dropLength;
-            positions[i6 + 4] = particle.pos.y - direction.y * dropLength;
-            positions[i6 + 5] = particle.pos.z - direction.z * dropLength;
+            positions[i6 + 3] = particle.pos.x - dirX * dropLength;
+            positions[i6 + 4] = particle.pos.y - dirY * dropLength;
+            positions[i6 + 5] = particle.pos.z - dirZ * dropLength;
 
             // ✅ 使用预计算的颜色值
             colors[i6] = rainColor.r * baseAlpha;
@@ -207,7 +218,14 @@ class RainSystem {
                 continue;
             }
 
-            particle.pos.add(particle.vel.clone().multiplyScalar(cappedDt));
+            // ✅ 关键优化:直接计算位置变化,避免向量运算
+            const velX = particle.vel.x * cappedDt;
+            const velY = particle.vel.y * cappedDt;
+            const velZ = particle.vel.z * cappedDt;
+            
+            particle.pos.x += velX;
+            particle.pos.y += velY;
+            particle.pos.z += velZ;
 
             const posZ05 = particle.pos.z * 0.05;
             const posX03 = particle.pos.x * 0.03;

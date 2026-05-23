@@ -38,6 +38,9 @@ export default class World {
     private snow!: Snow;
     private lightning!: Lightning;
     private fog!: Fog;
+    
+    // ✅ 添加帧计数器(移到前面避免时序问题)
+    private _frameCount: number = 0;
 
     constructor(scene: SceneWrapper, isDebugMode: boolean = false) {
         this.scene = scene;
@@ -96,7 +99,6 @@ export default class World {
     }
 
     public async initialize(onProgress?: (progress: number) => void): Promise<void> {
-        const startTime = performance.now();
         this.logger.info('[World] Initializing all components in parallel...');
 
         const totalComponents = this.worldComponents.length;
@@ -115,9 +117,6 @@ export default class World {
         });
 
         await Promise.all(componentPromises);
-
-        const elapsed = performance.now() - startTime;
-        this.logger.info(`[World] All components initialized in ${elapsed.toFixed(2)}ms`);
     }
 
     public activate(): void {
@@ -129,14 +128,16 @@ export default class World {
         });
     }
 
-    public update(delta: number, elapsedTime: number): void {
+    public async update(delta: number, elapsedTime: number): Promise<void> {
         const updateParams: UpdateParams = { delta: Math.min(delta, 0.05), elapsedTime };
 
-        this.worldComponents.forEach(item => {
+        const componentPromises = this.worldComponents.map(async (item) => {
             if (item.needsUpdate) {
-                item.component.update(updateParams);
+                await item.component.update(updateParams);
             }
         });
+
+        await Promise.all(componentPromises);
     }
 
     public dispose(): void {

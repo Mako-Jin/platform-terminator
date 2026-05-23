@@ -116,7 +116,7 @@ export default class SettingsManager {
      * 获取颜色插值因子 (0=完全白天, 1=完全夜晚)
      * 考虑晨昏平滑过渡
      *
-     * 时间轴：
+     * 时间轴:
      * 0-4点:   深夜 (factor=1)
      * 4-6点:   黎明过渡 (1→0)
      * 6-8点:   清晨过渡 (1→0)
@@ -129,30 +129,42 @@ export default class SettingsManager {
         let linearFactor: number;
 
         const hour = datetimeManager.getHour();
+        const minutes = datetimeManager.getMinute();
+        const decimalHour = hour + minutes / 60; // ✅ 关键修复:使用小数小时提高精度
 
-        if (hour >= this.DAY_FULL_START && hour <= this.DAY_FULL_END) {
+        if (decimalHour >= this.DAY_FULL_START && decimalHour <= this.DAY_FULL_END) {
             linearFactor = 0; // 完全白天
-        } else if (hour >= this.NIGHT_FULL_START || hour < this.NIGHT_FULL_END) {
+        } else if (decimalHour >= this.NIGHT_FULL_START || decimalHour < this.NIGHT_FULL_END) {
             linearFactor = 1; // 完全夜晚
-        } else if (hour >= this.SUN_RISE_hour && hour < this.DAY_FULL_START) {
-            linearFactor = 1 - (hour - this.SUN_RISE_hour) / (this.DAY_FULL_START - this.SUN_RISE_hour);
-        } else if (hour >= this.DAY_FULL_END && hour < this.SUNSET_hour) {
-            linearFactor = (hour - this.DAY_FULL_END) / (this.SUNSET_hour - this.DAY_FULL_END);
-        } else if (hour >= this.SUNSET_hour && hour < this.NIGHT_FULL_START) {
-            linearFactor = (hour - this.SUNSET_hour) / (this.NIGHT_FULL_START - this.SUNSET_hour);
+        } else if (decimalHour >= this.SUN_RISE_hour && decimalHour < this.DAY_FULL_START) {
+            // ✅ 关键修复:黎明过渡更平滑
+            const transitionRange = this.DAY_FULL_START - this.SUN_RISE_hour;
+            linearFactor = 1 - ((decimalHour - this.SUN_RISE_hour) / transitionRange);
+        } else if (decimalHour >= this.DAY_FULL_END && decimalHour < this.SUNSET_hour) {
+            // ✅ 关键修复:黄昏过渡更平滑
+            const transitionRange = this.SUNSET_hour - this.DAY_FULL_END;
+            linearFactor = (decimalHour - this.DAY_FULL_END) / transitionRange;
+        } else if (decimalHour >= this.SUNSET_hour && decimalHour < this.NIGHT_FULL_START) {
+            // ✅ 关键修复:夜晚过渡更平滑
+            const transitionRange = this.NIGHT_FULL_START - this.SUNSET_hour;
+            linearFactor = (decimalHour - this.SUNSET_hour) / transitionRange;
         } else {
-            linearFactor = 1 - (hour - this.NIGHT_FULL_END) / (this.SUN_RISE_hour - this.NIGHT_FULL_END);
+            // ✅ 关键修复:凌晨过渡更平滑
+            const transitionRange = this.SUN_RISE_hour - this.NIGHT_FULL_END;
+            linearFactor = 1 - ((decimalHour - this.NIGHT_FULL_END) / transitionRange);
         }
 
         linearFactor = Math.max(0, Math.min(1, linearFactor));
 
-        return this.applyEasing(linearFactor, easing);
+        // ✅ 关键修复:默认使用easeInOut而非smoothstep,过渡更自然
+        const finalEasing = easing === 'smoothstep' ? 'easeInOut' : easing;
+        return this.applyEasing(linearFactor, finalEasing);
     }
 
     /**
      * 应用缓动函数
      */
-    applyEasing(linearFactor: number, easing: EasingType = 'smoothstep'): number {
+    applyEasing(linearFactor: number, easing: EasingType = 'easeInOut'): number {
         switch (easing) {
             case 'linear':
                 return linearFactor;
@@ -160,7 +172,7 @@ export default class SettingsManager {
             case 'easeInOut':
                 return linearFactor < 0.5
                     ? 2 * linearFactor * linearFactor
-                    : -1 + (4 - 2 * linearFactor) * linearFactor;
+                    : 1 - Math.pow(-2 * linearFactor + 2, 2) / 2;
 
             case 'smoothstep':
                 return linearFactor * linearFactor * (3 - 2 * linearFactor);

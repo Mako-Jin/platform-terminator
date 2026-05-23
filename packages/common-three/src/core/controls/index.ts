@@ -56,7 +56,7 @@ export class OrbitControls extends BaseController {
         this.logger.info('OrbitControls created');
     }
 
-    update(delta: number): void {
+    update(delta?: number): void {
         if (!this.isEnabled) {
             return;
         }

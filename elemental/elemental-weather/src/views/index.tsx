@@ -44,6 +44,9 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
     const {toasts, removeToast, showSeasonToast, showDayNightToast} = useToast();
 
     const debugMode = isDebugMode();
+    
+    // ✅ 新增:跟踪Weather实例是否已初始化,防止重复初始化
+    const weatherInitializedRef = useRef<boolean>(false);
 
     const getContainer = useCallback((): HTMLElement | null => {
         // 优先使用传入的container，否则使用ref
@@ -61,6 +64,12 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
 
 
     const initializeWeather = (withMusic: boolean) => {
+        // ✅ 关键修复:防止重复初始化
+        if (weatherInitializedRef.current) {
+            logger.warn('[WeatherView] Weather already initialized, skipping...');
+            return;
+        }
+        
         const targetContainer = getContainer();
         if (!targetContainer) {
             logger.error('weather world container not found');
@@ -68,6 +77,8 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         }
 
         logger.info('[Weather] Initializing weather application...');
+        weatherInitializedRef.current = true; // ✅ 标记为已初始化
+        
         const weather = Weather.getInstance();
         weather.init({container: targetContainer, isDebugMode: debugMode, onInitProgress: (progress: number) => {
                 logger.debug(`Loading progress: ${progress * 100}%`);
@@ -77,6 +88,9 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
             // ✅ 获取并设置 musicManager 以便传递给 UI
             setMusicManager(weather.getMusicManager());
             window.weatherInstance?.start(withMusic);
+        }).catch((error) => {
+            logger.error('[Weather] Initialization failed:', error);
+            weatherInitializedRef.current = false;
         });
     };
 
@@ -159,9 +173,17 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         SettingsManager.getInstance();
 
         return () => {
-            logger.info('WeatherView unmounting');
+            logger.info('WeatherView unmounting, cleaning up...');
+            
+            // 停止并销毁Weather实例
+            if (window.weatherInstance) {
+                window.weatherInstance.stop();
+                window.weatherInstance.dispose();
+                window.weatherInstance = undefined;
+                weatherInitializedRef.current = false;
+            }
         };
-    }, [debugMode, getContainer, logger, resourceLoader]);
+    }, [debugMode, getContainer]); // ✅ 移除 logger 和 resourceLoader 依赖
 
     return (
         <>

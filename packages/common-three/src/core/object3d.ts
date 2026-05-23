@@ -95,7 +95,7 @@ export abstract class Object3DComponent implements IObject3DComponent {
         });
     }
 
-    update(params: UpdateParams): void {
+    async update(params: UpdateParams): Promise<void> {
         if (!this._isActive || !this._isVisible || this._isPaused) {
             return;
         }

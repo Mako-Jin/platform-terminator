@@ -180,8 +180,6 @@ export default class FallingLeaves extends Object3DComponent {
     protected async onInitialize(_config?: ComponentConfig): Promise<void> {
         this.logger.debug('[FallingLeaves] Initializing...');
 
-        const startTime = performance.now();
-
         const leafGroup = new Three.Group();
         leafGroup.name = 'FallingLeavesGroup';
         this.setRoot(leafGroup);
@@ -223,9 +221,6 @@ export default class FallingLeaves extends Object3DComponent {
             leafGeometry,
             treeTwoBounds
         );
-
-        const duration = performance.now() - startTime;
-        this.logger.debug(`[FallingLeaves] Initialization completed in ${duration.toFixed(2)}ms`);
     }
 
     /**
