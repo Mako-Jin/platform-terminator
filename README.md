@@ -56,9 +56,15 @@ pnpm create vite platform/platform-portal --template react-ts
 
 
 2026-05-22 TOFIX
+
 1、[Violation] 'requestAnimationFrame' handler took 275ms；
+
 2、相机初始化视角不对，虽然设置的参数都是一样的；
+
 3、水面波纹也不是很对；
+
 4、react项目，多次加载的问题，出现的界面闪退，又出现一次。
-6、我想将雨季从季节里移出来，单独添加一个天气的控制按钮面板，包含晴天，多云，下雨，下雪等四个天气元素，也可以添加雾天。
+
 7、还有颜色插值不是很准确，白天和夜晚切换也不是很自然，可能插值的计算不是很精确。
+
+8、界面渲染看着很卡顿

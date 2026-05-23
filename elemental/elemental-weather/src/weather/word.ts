@@ -1,5 +1,5 @@
 import {LoggerFactory} from "common-tools";
-import {SceneWrapper} from "common-three";
+import {Object3DComponent, SceneWrapper, type UpdateParams} from "common-three";
 import {
     Ground,
     Lighting, Skydome, Tent, Bridge, WindLines, Rocks, Bush,
@@ -14,6 +14,12 @@ export default class World {
 
     private scene: SceneWrapper;
     private isDebugMode: boolean;
+
+    private worldComponents: Array<{
+        name: string;
+        component: Object3DComponent;
+        needsUpdate: boolean;
+    }> = [];
 
     private lighting!: Lighting;
     private skydome!: Skydome;
@@ -66,25 +72,38 @@ export default class World {
         this.snow = new Snow(this.scene, { isDebugMode: this.isDebugMode });
         this.lightning = new Lightning(this.scene, { isDebugMode: this.isDebugMode });
         this.fog = new Fog(this.scene, { isDebugMode: this.isDebugMode });
+
+        this.worldComponents.length = 0;
+        this.worldComponents.push(
+            { name: 'lighting', component: this.lighting, needsUpdate: true },
+            { name: 'skydome', component: this.skydome, needsUpdate: true },
+            { name: 'ground', component: this.ground, needsUpdate: true },
+            { name: 'tent', component: this.tent, needsUpdate: false },
+            { name: 'bridge', component: this.bridge, needsUpdate: false },
+            { name: 'windLines', component: this.windLines, needsUpdate: true },
+            { name: 'rocks', component: this.rocks, needsUpdate: false },
+            { name: 'bush', component: this.bush, needsUpdate: true },
+            { name: 'treeTrunks', component: this.treeTrunks, needsUpdate: false },
+            { name: 'fallingLeaves', component: this.fallingLeaves, needsUpdate: true },
+            { name: 'camp', component: this.camp, needsUpdate: false },
+            { name: 'fire', component: this.fire, needsUpdate: true },
+            { name: 'fireflies', component: this.fireflies, needsUpdate: true },
+            { name: 'rain', component: this.rain, needsUpdate: true },
+            { name: 'snow', component: this.snow, needsUpdate: true },
+            { name: 'lightning', component: this.lightning, needsUpdate: true },
+            { name: 'fog', component: this.fog, needsUpdate: true }
+        );
     }
 
     public async initialize(onProgress?: (progress: number) => void): Promise<void> {
         const startTime = performance.now();
         this.logger.info('[World] Initializing all components in parallel...');
 
-        const components = [
-            this.lighting, this.skydome,
-            this.ground, this.tent, this.bridge,
-            this.windLines, this.rocks, this.bush, this.treeTrunks,
-            this.fallingLeaves, this.camp, this.fire, this.fireflies,
-            this.rain, this.snow, this.lightning, this.fog
-        ];
-
-        const totalComponents = components.length;
+        const totalComponents = this.worldComponents.length;
         let completedComponents = 0;
 
-        const componentPromises = components.map(async (comp, index) => {
-            await comp.initialize();
+        const componentPromises = this.worldComponents.map(async (item, index) => {
+            await item.component.initialize();
             completedComponents++;
             
             if (onProgress) {
@@ -92,7 +111,7 @@ export default class World {
                 onProgress(progress);
             }
             
-            this.logger.debug(`[World] Component ${index + 1}/${totalComponents} initialized`);
+            this.logger.debug(`[World] Component ${index + 1}/${totalComponents} initialized: ${item.name}`);
         });
 
         await Promise.all(componentPromises);
@@ -104,53 +123,28 @@ export default class World {
     public activate(): void {
         this.logger.info('[World] Activating and adding components to scene...');
 
-        const components = [
-            this.lighting, this.skydome,
-            this.ground, this.tent, this.bridge,
-            this.windLines, this.rocks, this.bush, this.treeTrunks,
-            this.fallingLeaves, this.camp, this.fire, this.fireflies,
-            this.rain, this.snow, this.lightning, this.fog
-        ];
-
-        components.forEach(comp => {
-            comp.activate();
-            comp.addToScene();
+        this.worldComponents.forEach(item => {
+            item.component.activate();
+            item.component.addToScene();
         });
     }
 
     public update(delta: number, elapsedTime: number): void {
-        const updateParams = { delta: Math.min(delta, 0.05), elapsedTime };
-        this.lighting.update(updateParams);
-        this.skydome.update(updateParams);
-        this.ground.update(updateParams);
-        // this.tent.update(updateParams);
-        // this.bridge.update(updateParams);
-        this.windLines.update(updateParams);
-        // this.rocks.update(updateParams);
-        this.bush.update(updateParams);
-        // this.treeTrunks.update(updateParams);
-        this.fallingLeaves.update(updateParams);
-        // this.camp.update(updateParams);
-        this.fire.update(updateParams);
-        this.fireflies.update(updateParams);
-        this.rain.update(updateParams);
-        this.snow.update(updateParams);
-        this.lightning.update(updateParams);
-        this.fog.update(updateParams);
+        const updateParams: UpdateParams = { delta: Math.min(delta, 0.05), elapsedTime };
+
+        this.worldComponents.forEach(item => {
+            if (item.needsUpdate) {
+                item.component.update(updateParams);
+            }
+        });
     }
 
     public dispose(): void {
         this.logger.info('[World] Disposing all components...');
-        
-        const components = [
-            this.lighting, this.skydome,
-            this.ground, this.tent, this.bridge,
-            this.windLines, this.rocks, this.bush, this.treeTrunks,
-            this.fallingLeaves, this.camp, this.fire, this.fireflies,
-            this.rain, this.snow, this.lightning, this.fog
-        ];
 
-        components.forEach(comp => comp.dispose());
+        this.worldComponents.forEach(item => {
+            item.component.dispose();
+        });
     }
 
 }
