@@ -108,7 +108,7 @@ export interface IAudioPlayer {
 
     setCurrentTrackId(trackId: string): void;
 
-    getListener(): Three.AudioListener;
+    getListener(): Three.AudioListener | null;
 
     /**
      * 音频淡入淡出工具函数

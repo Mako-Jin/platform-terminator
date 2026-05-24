@@ -567,7 +567,9 @@ export default class GrassManager extends Object3DComponent {
         }
 
         this.createAllGrassInSingleMesh();
-        this.createFlowers().then();
+        this.createFlowers().catch(error => {
+            this.logger.error('Failed to create flowers', error);
+        });
     }
 
     protected configureDebugPanel(gui: GUI, component: IObject3DComponent): void {

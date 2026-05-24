@@ -114,13 +114,9 @@ export default class Lightning extends Object3DComponent {
         meshes: Three.Mesh[];
     };
 
-    private currentSeason: string = 'spring';
-
     // ✅ 相机震动状态
     private isShaking: boolean = false;
-    private shakeStart: number = 0;
     private originalCameraPosition: Three.Vector3 | null = null;
-    private shakeDirection: Three.Vector3 = new Three.Vector3(0, 0, 1);
 
     public static readonly LIGHTNING_STRIKE_TRIGGERED = 'lightning:strike:triggered';
 

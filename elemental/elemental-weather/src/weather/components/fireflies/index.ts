@@ -174,7 +174,7 @@ export default class Fireflies extends Object3DComponent {
             uniforms: {
                 uTime: { value: 0 },
                 uResolution: {
-                    value: new Three.Vector2(sizeManager.getWidth(), sizeManager.getWidth()),
+                    value: new Three.Vector2(sizeManager.getWidth(), sizeManager.getHeight()),
                 },
                 uTexture: {
                     value: particleTexture?.resource || null,

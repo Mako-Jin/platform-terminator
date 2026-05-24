@@ -22,11 +22,15 @@ export default class ColorInterpolator {
   }
 
   static lerpArray(arr1: [number, number, number], arr2: [number, number, number], t: number): [number, number, number] {
-    return [
-      arr1[0] + (arr2[0] - arr1[0]) * t,
-      arr1[1] + (arr2[1] - arr1[1]) * t,
-      arr1[2] + (arr2[2] - arr1[2]) * t,
-    ];
+      if (!Array.isArray(arr1) || arr1.length < 3) {
+          ColorInterpolator.logger.warn('Invalid arr1 for lerpArray:', arr1);
+          arr1 = [0, 0, 0];
+      }
+      return [
+          arr1[0] + (arr2[0] - arr1[0]) * t,
+          arr1[1] + (arr2[1] - arr1[1]) * t,
+          arr1[2] + (arr2[2] - arr1[2]) * t,
+        ];
   }
 
   static lerpValue(val1: number, val2: number, t: number): number {

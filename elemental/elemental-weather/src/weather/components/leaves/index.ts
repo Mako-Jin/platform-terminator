@@ -15,10 +15,20 @@ import {datetimeManager} from "common-three";
 import {SettingsManager, type EasingType, type ConfigObject} from "/@/settings";
 
 
+// ✅ 定义边界类型接口
+export interface ParticleBounds {
+    originX: number;
+    xRange: number;
+    originZ: number;
+    zRange: number;
+    yMax: number;
+}
+
+
 class FallingLeavesSystem {
     private count: number;
     private scene: SceneWrapper;
-    private bounds: any;
+    private bounds: ParticleBounds;
     private material: Three.MeshStandardMaterial;
     private settingsManager: SettingsManager;
     private mesh: Three.InstancedMesh;
@@ -31,7 +41,7 @@ class FallingLeavesSystem {
         scale: number;
     }>;
 
-    constructor(scene: SceneWrapper, geometry: Three.BufferGeometry, bounds: any) {
+    constructor(scene: SceneWrapper, geometry: Three.BufferGeometry, bounds: ParticleBounds) {
         this.count = 35;
         this.scene = scene;
         this.bounds = bounds;

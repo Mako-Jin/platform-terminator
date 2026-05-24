@@ -29,6 +29,48 @@ export interface WaterConfig {
 }
 
 
+export interface WaterUniforms {
+    uTime: { value: number };
+    uDensityMap: { value: Three.Texture };
+    uGroundSize: { value: Three.Vector3 };
+    uPerlinNoise: { value: Three.Texture };
+    uWaterDepthTexture: { value: Three.Texture };
+    // 波纹参数
+    uRipplesRatio: { value: number };
+    uDensityMaskMin: { value: number };
+    uDensityMaskMax: { value: number };
+    uShoreMaskThreshold: { value: number };
+    uNoiseScale1: { value: number };
+    uNoiseScale2: { value: number };
+    uNoiseSpeed1: { value: number };
+    uNoiseSpeed2: { value: number };
+    uNoiseMix1: { value: number };
+    uNoiseMix2: { value: number };
+    uNoiseDepthInfluence: { value: number };
+    uRippleFrequency: { value: number };
+    uRippleInnerEdge: { value: number };
+    uRippleOuterEdge: { value: number };
+    uBreakupMin: { value: number };
+    uBreakupMax: { value: number };
+    uWaterDepthFade: { value: number };
+    uDiscardThreshold: { value: number };
+    uRippleOpacity: { value: number };
+    // 飞溅参数
+    uSplashesRatio: { value: number };
+    uSplashesNoiseFrequency: { value: number };
+    uSplashesTimeFrequency: { value: number };
+    uSplashesThickness: { value: number };
+    uSplashesEdgeAttenuationLow: { value: number };
+    uSplashesEdgeAttenuationHigh: { value: number };
+    uSplashesCenterMin: { value: number };
+    uSplashesCenterMax: { value: number };
+    // 冰层参数
+    uIceRatio: { value: number };
+    uIceNoiseFrequency: { value: number };
+    uIceColor: { value: Three.Color };
+}
+
+
 export default class Water extends Object3DComponent {
 
     private settingsManager: SettingsManager;
@@ -44,7 +86,7 @@ export default class Water extends Object3DComponent {
     // ✅ 水面 Mesh 和材质
     private waterGeometry: Three.PlaneGeometry | null = null;
     private waterMaterial: Three.MeshStandardMaterial | null = null;
-    private customWaterUniforms: any = null;
+    private customWaterUniforms: WaterUniforms | null = null;
     private waterMesh: Three.Mesh | null = null;
 
     constructor(

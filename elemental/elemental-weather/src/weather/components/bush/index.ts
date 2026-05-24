@@ -285,6 +285,10 @@ export default class Bush extends Object3DComponent {
      * 辅助函数：创建 Vector3
      */
     private v3(arr: number[]): Three.Vector3 {
+        if (!Array.isArray(arr) || arr.length < 3) {
+            this.logger.warn('[Bush] Invalid array for Vector3 creation:', arr);
+            return new Three.Vector3(0, 0, 0);
+        }
         return new Three.Vector3(arr[0], arr[1], arr[2]);
     }
 
@@ -292,6 +296,10 @@ export default class Bush extends Object3DComponent {
      * 辅助函数：创建 Color
      */
     private col(arr: number[]): Three.Color {
+        if (!Array.isArray(arr) || arr.length < 3) {
+            this.logger.warn('[Bush] Invalid array for Color creation:', arr);
+            return new Three.Color(1, 1, 1);
+        }
         return new Three.Color(arr[0], arr[1], arr[2]);
     }
 

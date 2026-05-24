@@ -1,16 +1,15 @@
-import {defineConfig} from 'vite'
+import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from "path";
 import qiankun from 'vite-plugin-qiankun';
 import glsl from 'vite-plugin-glsl'
 
-// https://vite.dev/config/
 export default defineConfig({
   plugins: [
     react(),
     glsl(),
-    qiankun('elemental-weather', {  // 子应用名称，与基座注册时一致
-      useDevMode: true, // 开发模式
+    qiankun('elemental-weather', {
+      useDevMode: process.env.NODE_ENV === 'development', // 根据环境动态设置
     }),
   ],
   resolve: {
@@ -25,6 +24,8 @@ export default defineConfig({
     origin: '//localhost:5001',
     headers: {
       'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Methods': 'GET, POST, PUT, DELETE, OPTIONS',
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     },
   },
   preview: {
@@ -38,15 +39,9 @@ export default defineConfig({
       output: {
         manualChunks(id) {
           if (id.includes('node_modules')) {
-            if (id.includes('three')) {
-              return 'three';
-            }
-            if (id.includes('gsap')) {
-              return 'gsap';
-            }
-            if (id.includes('lil-gui')) {
-              return 'lil-gui';
-            }
+            if (id.includes('three')) return 'three';
+            if (id.includes('gsap')) return 'gsap';
+            if (id.includes('lil-gui')) return 'lil-gui';
           }
         },
         entryFileNames: 'assets/[name].[hash].js',

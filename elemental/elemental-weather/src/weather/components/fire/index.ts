@@ -10,12 +10,11 @@ import {
     type IObject3DComponent,
     SceneWrapper,
     resourcesManager,
-    datetimeManager
 } from "common-three";
 import particleVertexShader from '/@/shaders/Materials/fire/vertex.glsl';
 import particleFragmentShader from '/@/shaders/Materials/fire/fragment.glsl';
 import * as MATH from '/@/utils/math';
-import {SettingsManager, type EasingType, type ConfigObject} from "/@/settings";
+import {SettingsManager, type EasingType} from "/@/settings";
 import {
     Emitter,
     ParticleRenderer,
@@ -35,6 +34,20 @@ interface ColorStop {
 interface FloatStop {
     time: number;
     value: number;
+}
+
+// ✅ 烟雾透明度配置接口
+export interface SmokeAlphaConfig {
+    smokeAlphaFirstStop?: number;
+    smokeAlphaSecondStop?: number;
+    [key: string]: number | undefined;
+}
+
+
+export interface ParticlePreset {
+    fireEmissionRate: number;
+    smokeEmissionRate: number;
+    amberEmissionRate: number;
 }
 
 
@@ -118,7 +131,7 @@ export default class Fire extends Object3DComponent {
     private rainySmokeEmissionRate: number = 8;
     private originalSmokeColorStops: ColorStop[] = [];
     private rainySmokeColorStops: ColorStop[] = [];
-    private smokeAlphaConfig: any = {};
+    private smokeAlphaConfig: SmokeAlphaConfig | null | undefined = {};
 
 
     constructor(scene: SceneWrapper, options: { isDebugMode?: boolean } = {}) {
@@ -275,8 +288,8 @@ export default class Fire extends Object3DComponent {
         }
     }
 
-    public getFireColorConfig(easing: EasingType = 'smoothstep'): ConfigObject | null | undefined {
-        return this.settingsManager.getComponentConfig('fire', easing);
+    public getFireColorConfig(easing: EasingType = 'smoothstep'): SmokeAlphaConfig | null | undefined {
+        return this.settingsManager.getComponentConfig('fire', easing) as SmokeAlphaConfig;
     }
 
     /**
@@ -341,7 +354,7 @@ export default class Fire extends Object3DComponent {
                 };
             }
 
-            const presetSettings: any = {
+            const presetSettings: Record<string, ParticlePreset> = {
                 low: {
                     fireEmissionRate: 350,
                     smokeEmissionRate: 35,
@@ -404,7 +417,7 @@ export default class Fire extends Object3DComponent {
             { time: 1.0, value: 20 },
         ];
         const smokeAlphaValue =
-            this.smokeAlphaConfig.smokeAlphaSecondStop;
+            this.smokeAlphaConfig?.smokeAlphaSecondStop || 0.0;
         this.smokeAlphaStops = [
             { time: 0.0, value: 0.0 },
             { time: 0.1, value: smokeAlphaValue },
@@ -579,9 +592,9 @@ export default class Fire extends Object3DComponent {
                 uParticleTexture: { value: fireTexture || null },
                 uSizeOverLife: { value: this.fireSizeOverLife?.toTexture() || null },
                 uColorOverLife: {
-                    value: this.fireColorOverLife.toTexture(this.fireAlphaOverLife),
+                    value: this.fireColorOverLife?.toTexture(this.fireAlphaOverLife!),
                 },
-                uTwinkleOverLife: { value: this.fireTwinkleOverLife.toTexture() },
+                uTwinkleOverLife: { value: this.fireTwinkleOverLife?.toTexture() },
                 uSizeMultiplier: { value: 1.0 },
                 uColorTint: { value: new Three.Vector3(1.0, 1.0, 1.0) },
             },
@@ -616,9 +629,9 @@ export default class Fire extends Object3DComponent {
                 uParticleTexture: { value: smokeTexture || null },
                 uSizeOverLife: { value: this.smokeSizeOverLife?.toTexture() || null },
                 uColorOverLife: {
-                    value: this.smokeColorOverLife.toTexture(this.smokeAlphaOverLife),
+                    value: this.smokeColorOverLife?.toTexture(this.smokeAlphaOverLife!),
                 },
-                uTwinkleOverLife: { value: this.smokeTwinkleOverLife.toTexture() },
+                uTwinkleOverLife: { value: this.smokeTwinkleOverLife?.toTexture() },
                 uSizeMultiplier: { value: 1.0 },
                 uColorTint: { value: new Three.Vector3(1.0, 1.0, 1.0) },
             },
@@ -651,11 +664,11 @@ export default class Fire extends Object3DComponent {
             uniforms: {
                 uTime: { value: 0 },
                 uParticleTexture: { value: amberTexture || null },
-                uSizeOverLife: { value: this.amberSizeOverLife.toTexture() },
+                uSizeOverLife: { value: this.amberSizeOverLife?.toTexture() || null },
                 uColorOverLife: {
-                    value: this.amberColorOverLife.toTexture(this.amberAlphaOverLife),
+                    value: this.amberColorOverLife?.toTexture(this.amberAlphaOverLife!),
                 },
-                uTwinkleOverLife: { value: this.amberTwinkleOverLife.toTexture() },
+                uTwinkleOverLife: { value: this.amberTwinkleOverLife?.toTexture() },
                 uSizeMultiplier: { value: 1.0 },
                 uColorTint: { value: new Three.Vector3(1.0, 1.0, 1.0) },
             },
@@ -723,7 +736,7 @@ export default class Fire extends Object3DComponent {
         this.fireEmitter = fireEmitter;
         this.fireRendererGroup = fireRendererParams.group;
 
-        this.particleSystem.addEmitter(fireEmitter);
+        this.particleSystem?.addEmitter(fireEmitter);
         this.fireGroup!.add(fireRendererParams.group);
     }
 
@@ -782,7 +795,7 @@ export default class Fire extends Object3DComponent {
         this.smokeEmitter = smokeEmitter;
         this.smokeRendererGroup = smokeRendererParams.group;
 
-        this.particleSystem.addEmitter(smokeEmitter);
+        this.particleSystem?.addEmitter(smokeEmitter);
         this.smokeGroup!.add(smokeRendererParams.group);
     }
 
@@ -834,7 +847,7 @@ export default class Fire extends Object3DComponent {
         this.amberEmitter = amberEmitter;
         this.amberRendererGroup = amberRendererParams.group;
 
-        this.particleSystem.addEmitter(amberEmitter);
+        this.particleSystem?.addEmitter(amberEmitter);
         this.amberGroup!.add(amberRendererParams.group);
     }
 
@@ -950,7 +963,7 @@ export default class Fire extends Object3DComponent {
             return;
         }
 
-        this.smokeAlphaStops[1].value = this.smokeAlphaConfig.smokeAlphaSecondStop;
+        this.smokeAlphaStops[1].value = this.smokeAlphaConfig?.smokeAlphaSecondStop || 0.0;
 
         this._buildSmokeInterpolantsAndTextures();
     }

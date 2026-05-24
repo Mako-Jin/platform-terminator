@@ -1,8 +1,12 @@
 import MersenneTwister from 'mersennetwister';
 import * as Three from 'three';
+import {LoggerFactory} from "common-tools";
 
 
 const MT_ = new MersenneTwister(7);
+
+
+const logger = LoggerFactory.create("weather-utils-math");
 
 
 // ✅ 插值帧接口
@@ -106,6 +110,10 @@ class Vec3Interpolant extends Interpolant {
     }
 
     protected override onEvaluate(result: Float32Array): Three.Vector3 {
+        if (!result || result.length < 3) {
+            logger.warn('[Math] Invalid result array in Vec3Interpolant');
+            return new Three.Vector3(0, 0, 0);
+        }
         return new Three.Vector3(result[0], result[1], result[2]);
     }
 }
@@ -185,6 +193,10 @@ class ColorInterpolant extends Interpolant {
     }
 
     protected override onEvaluate(result: Float32Array): Three.Color {
+        if (!result || result.length < 3) {
+            logger.warn('[Math] Invalid result array in ColorInterpolant');
+            return new Three.Color(1, 1, 1);
+        }
         return new Three.Color(result[0], result[1], result[2]);
     }
 

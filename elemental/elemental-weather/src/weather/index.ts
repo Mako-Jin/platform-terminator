@@ -221,8 +221,10 @@ class Weather {
 
     private registerEventListeners(): void {
         sizeManager.onSizeChanged(this.handleResize.bind(this));
-        this.unsubscribeClock = clockManager.onUpdate((delta, elapsedTime) => {
-            if (this.isRunning) this.update(delta, elapsedTime);
+        this.unsubscribeClock = clockManager.onUpdate(async (delta, elapsedTime) => {
+            if (this.isRunning) {
+                await this.update(delta, elapsedTime);
+            }
         });
     }
 
@@ -245,8 +247,8 @@ class Weather {
         }
     }
 
-    private update(delta: number, elapsedTime: number): void {
-        this.world.update(delta, elapsedTime).then();
+    private async update(delta: number, elapsedTime: number): Promise<void> {
+        await this.world.update(delta, elapsedTime);
 
         this.orbitControls?.update(delta);
 

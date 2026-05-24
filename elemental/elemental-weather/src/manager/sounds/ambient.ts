@@ -2,8 +2,8 @@ import {eventBus, LoggerFactory} from "common-tools";
 import {datetimeManager, type IAudioPlayer} from "common-three";
 import * as Three from 'three';
 import MusicManager from "./music";
-import {weatherManager} from "/@/manager/weather/manager";
-import type {WeatherChangedData} from "/@/manager/weather/types";
+import {weatherManager} from "/@/manager";
+import type {WeatherChangedData} from "/@/manager";
 
 
 export interface AmbientSoundConfig {
@@ -204,7 +204,7 @@ export default class AmbientSoundManager {
         this.handleRain(weather);
         this.handleThunder(season, weather);
         this.handleWolf(timeOfDay);
-        this.handleFire(season);
+        this.handleFire(weather);
         // 湖水波浪声
         this.handleLakeWaves(season);
     }
@@ -410,7 +410,7 @@ export default class AmbientSoundManager {
 
         switch (soundKey) {
             case 'birds':
-                return (season === 'autumn' || season === 'spring' || season === 'winter') && timeOfDay === 'day';
+                return timeOfDay === 'day';
             case 'owlHowling':
                 return (season === 'autumn' || season === 'spring' || season === 'summer' || weather === 'rainy') && timeOfDay === 'night';
             case 'owlHooting':
@@ -446,7 +446,7 @@ export default class AmbientSoundManager {
             return this.config.baseVolume * 0.7;
         }
 
-        const distance = this.audioPlayer.getListener().parent!.position.distanceTo(soundPosition);
+        const distance = this.audioPlayer.getListener()!.parent!.position.distanceTo(soundPosition);
         const normalizedDistance = Math.min(distance / this.config.maxDistance, 1.0);
         const volume = (1.0 - normalizedDistance) * this.config.baseVolume * 0.7;
 

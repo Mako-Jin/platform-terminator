@@ -18,7 +18,7 @@ export default class AudioManager implements IAudioPlayer {
     private static instance: AudioManager | null = null;
 
     // ✅ Three.js AudioListener
-    private listener!: Three.AudioListener;
+    private listener!: Three.AudioListener | null;
 
     // ✅ 存储 Three.js Audio 对象
     private sounds: Map<string, Three.Audio> = new Map();
@@ -69,12 +69,12 @@ export default class AudioManager implements IAudioPlayer {
     /**
      * ✅ 获取 AudioListener（用于绑定到相机）
      */
-    getListener(): Three.AudioListener {
+    getListener(): Three.AudioListener | null {
         return this.listener;
     }
 
     addListenerToCamera(camera: BaseCamera) {
-        camera.getCamera().add(this.listener);
+        camera.getCamera().add(this.listener!);
     }
 
     /**
@@ -179,7 +179,9 @@ export default class AudioManager implements IAudioPlayer {
             const targetVolume = options.volume ?? (this.musicSounds.has(id) ? this.musicVolume : this.soundVolume) * this.masterVolume;
             audio.setVolume(0);
             audio.play();
-            this.fadeVolume(audio, targetVolume, options.fadeInDuration || 2000).then();
+            this.fadeVolume(audio, targetVolume, options.fadeInDuration || 2000).catch(error => {
+                this.logger.error(`Failed to fade in audio ${id}`, error);
+            });
         } else {
             if (audio.isPlaying) {
                 // 使用淡出效果停止当前播放（200ms 淡出时间）
@@ -509,6 +511,14 @@ export default class AudioManager implements IAudioPlayer {
         });
     }
 
+    private stopAllSounds(): void {
+        this.sounds.forEach((audio, id) => {
+            if (audio.isPlaying) {
+                audio.stop();
+            }
+        });
+    }
+
     /**
      * ✅ 销毁音频管理器，释放所有资源
      */
@@ -523,19 +533,12 @@ export default class AudioManager implements IAudioPlayer {
             this.listener = null;
         }
 
-        // 3. 清理 Three.js AudioContext 相关资源
-        if (this.context) {
-            this.context.close().then(() => {
-                this.logger.debug('[AudioManager] AudioContext closed');
-            });
-            this.context = null;
-        }
-
         // 4. 清空缓存
         this.sounds.clear();
         this.ambientSounds.clear();
+        this.musicSounds.clear();
+        this.uiSounds.clear();
 
-        this.isInitialized = false;
         this.logger.info('[AudioManager] Disposed');
     }
 

@@ -134,7 +134,9 @@ export default class MusicManager {
         if (currentTrackId) {
             const music = this.audioPlayer.getAudio(currentTrackId);
             if (music && currentTrackId === this.pausedTrackId) {
-                this.playTrackWithoutLoop(currentTrackId).then();
+                this.playTrackWithoutLoop(currentTrackId).catch(error => {
+                    this.logger.error(`Failed to resume track ${currentTrackId}`, error);
+                });
                 this.startTrackMonitoring(currentTrackId);
                 return;
             }
@@ -174,7 +176,9 @@ export default class MusicManager {
         this.currentTrackIndex = nextIndex;
         const track = this.musicTracks[this.currentTrackIndex];
 
-        this.playTrackWithoutLoop(track.id).then();
+        this.playTrackWithoutLoop(track.id).catch(error => {
+            this.logger.error(`Failed to play track ${track.id}`, error);
+        });
 
         this.handleTrackChanged(track);
 
@@ -231,7 +235,7 @@ export default class MusicManager {
 
         const music = this.audioPlayer.getAudio(trackId);
         if (!music) {
-            console.warn(`Music ${trackId} not found`);
+            this.logger.warn(`Music ${trackId} not found`);
             return;
         }
 

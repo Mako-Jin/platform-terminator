@@ -182,4 +182,10 @@ export default class SettingsManager {
         }
     }
 
+    clearCache(): void {
+        this.seasonConfigs.clear();
+        this.isInitialized = false;
+        SettingsLoaders.clearCache();
+    }
+
 }

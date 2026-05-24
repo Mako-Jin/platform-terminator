@@ -22,6 +22,24 @@ import GrassManager from "/@/weather/components/grass";
 import {Water} from "/@/weather/components";
 
 
+export interface GroundUniforms {
+    uDensityMap: { value: Three.Texture };
+    uGroundSize: { value: Three.Vector3 };
+    uDisplacementMap: { value: Three.Texture };
+    uPerlinNoise: { value: Three.Texture };
+    uGroundRockMap: { value: Three.Texture };
+    uGroundRockAO: { value: Three.Texture };
+    uGroundColorLight: { value: Three.Color };
+    uGroundColorDark: { value: Three.Color };
+    uGroundColorBelowGrass: { value: Three.Color };
+    uRockColor: { value: Three.Color };
+    uHeightMap: { value: Three.Texture };
+    uRockTiling: { value: number };
+    uWaterShallow: { value: Three.Color };
+    uWaterDeep: { value: Three.Color };
+    uWaterDepthIntensity: { value: number };
+}
+
 
 export default class Ground extends Object3DComponent {
 
@@ -34,7 +52,7 @@ export default class Ground extends Object3DComponent {
 
     private gridGeometry: Three.PlaneGeometry | null = null;
     private groundMaterial: Three.MeshStandardMaterial | null = null;
-    private customGroundUniforms: any = null;
+    private customGroundUniforms: GroundUniforms | null = null;
 
     private settingsManager: SettingsManager;
     private biomeManager: BiomeManager | null = null;

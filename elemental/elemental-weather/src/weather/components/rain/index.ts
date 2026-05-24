@@ -14,9 +14,19 @@ import {
 import {type WeatherChangedData, weatherManager} from "/@/manager";
 
 
+export interface ParticleBounds {
+    originX: number;
+    xRange: number;
+    originZ: number;
+    zRange: number;
+    yMin: number;
+    yMax: number;
+}
+
+
 class RainSystem {
     private scene: SceneWrapper;
-    private bounds: any;
+    private bounds: ParticleBounds;
     private count: number;
     private visible: boolean;
     private geometry!: Three.BufferGeometry;
@@ -30,7 +40,7 @@ class RainSystem {
         spawnDelay: number;
     }>;
 
-    constructor(scene: SceneWrapper, bounds: any) {
+    constructor(scene: SceneWrapper, bounds: ParticleBounds) {
         this.scene = scene;
         this.bounds = bounds;
 

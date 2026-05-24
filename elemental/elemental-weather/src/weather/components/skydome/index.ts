@@ -288,13 +288,13 @@ export default class Skydome extends Object3DComponent {
     /**
      * 获取颜色配置（优先使用 SettingsManager，回退到内置预设）
      */
-    private getSkyColors(season: string, isNight: boolean): SkyColorConfig | undefined {
+    private getSkyColors(season: string, isNight: boolean): ConfigObject {
         const configKey = isNight ? 'night' : 'day';
 
         const config = this.settingsManager.getComponentConfig('skydome', 'smoothstep');
 
-        if (config && config[season] && config[season][configKey]) {
-            return config[season][configKey];
+        if (config) {
+            return config;
         }
 
         return DEFAULT_SKY_COLORS[season]?.[configKey];

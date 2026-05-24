@@ -14,12 +14,26 @@ import {type ConfigObject, SettingsManager} from "/@/settings";
 import type {EasingType} from "/@/settings/manager.ts";
 
 
-interface LightingConfig {
+// ✅ 灯光配置接口
+export interface LightingConfig {
     key: Three.DirectionalLight | null;
     fill: Three.DirectionalLight | null;
     ambient: Three.AmbientLight | null;
     rim: Three.DirectionalLight | null;
-    lamp: Three.PointLight | null
+    lamp: Three.PointLight | null;
+}
+
+// ✅ 灯光颜色配置接口
+export interface LightColorConfig {
+    color: number;
+    intensity: number;
+    position?: number[];
+}
+
+// ✅ 环境配置接口
+export interface EnvironmentConfig {
+    intensity: number;
+    rotationY: number;
 }
 
 
@@ -123,7 +137,7 @@ export default class Lighting extends Object3DComponent {
         // 清理引用
         this.environmentMap = null;
         Object.keys(this.lights).forEach(key => {
-            (this.lights as any)[key] = null;
+            this.lights[key as keyof LightingConfig] = null;
         });
     }
 
@@ -298,7 +312,7 @@ export default class Lighting extends Object3DComponent {
         }
     }
 
-    private updateEnvironment(envSettings: any): void {
+    private updateEnvironment(envSettings: EnvironmentConfig): void {
         if (!this.environmentMap) return;
 
         const timeFactor = this.settingsManager.getColorInterpolationFactor('smoothstep');
