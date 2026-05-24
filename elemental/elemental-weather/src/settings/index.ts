@@ -6,3 +6,6 @@ export * from "./manager.ts";
 export {default as SettingsManager} from "./manager.ts";
 
 export * from "./types.ts";
+
+
+export * from "./qiankun";

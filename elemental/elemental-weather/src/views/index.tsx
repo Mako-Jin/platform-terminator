@@ -4,6 +4,13 @@ import {ResourceLoader, type SeasonType} from "common-three";
 import {ASSETS} from "/@/settings/resources";
 import LoadingScreen from "./loading";
 import {Haptics} from "/@/utils";
+import {
+    defaultQiankunConfig,
+    fullConfig,
+    getAssetsForConfig,
+    getCurrentConfig,
+    type QiankunConfig
+} from "/@/settings";
 import Weather from "/@/weather";
 import SettingsManager from "/@/settings/manager.ts";
 import ControlPanel from "/@/views/controls";
@@ -45,6 +52,9 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
 
     const debugMode = isDebugMode();
     
+    // ✅ qiankun 配置状态
+    const [qiankunConfig, setQiankunConfig] = useState<QiankunConfig>(fullConfig);
+    
     // ✅ 新增:跟踪Weather实例是否已初始化,防止重复初始化
     const weatherInitializedRef = useRef<boolean>(false);
 
@@ -80,9 +90,14 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         weatherInitializedRef.current = true; // ✅ 标记为已初始化
         
         const weather = Weather.getInstance();
-        weather.init({container: targetContainer, isDebugMode: debugMode, onInitProgress: (progress: number) => {
+        weather.init({
+            container: targetContainer, 
+            isDebugMode: debugMode, 
+            onInitProgress: (progress: number) => {
                 logger.debug(`Loading progress: ${progress * 100}%`);
-            }}).then(() => {
+            },
+            qiankunConfig: qiankunConfig
+        }).then(() => {
             window.weatherInstance = weather;
             logger.info('[Weather] Weather application started successfully');
             // ✅ 获取并设置 musicManager 以便传递给 UI
@@ -156,13 +171,34 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
             return;
         }
 
-        // ✅ 修复：将资源加载逻辑提取到单独的函数中，避免在 effect 中直接调用 setState
-        const initResources = () => {
-            const loader = new ResourceLoader(ASSETS, debugMode);
+        // ✅ 根据 qiankun 配置决定加载哪些资源
+        const initResources = (config: QiankunConfig) => {
+            const assetsToLoad = getAssetsForConfig(config, ASSETS);
+            logger.info(`[WeatherView] Loading ${assetsToLoad.length} assets based on qiankun config`);
+            const loader = new ResourceLoader(assetsToLoad, debugMode);
             setResourceLoader(loader);
         };
 
-        initResources();
+        // ✅ 获取 qiankun 配置（支持从 API 获取）
+        // 如需从 API 获取，传入 API 地址：await getCurrentConfig('/api/qiankun-config')
+        const loadConfigAndResources = async () => {
+            try {
+                // 方式1：使用默认配置
+                const config = await getCurrentConfig();
+                
+                // 方式2：从 API 获取配置（取消注释并配置正确的 API 地址）
+                // const config = await getCurrentConfig('/api/qiankun-config');
+                
+                setQiankunConfig(config);
+                initResources(config);
+            } catch (error) {
+                logger.error('Failed to load qiankun config, using default:', error);
+                setQiankunConfig(defaultQiankunConfig);
+                initResources(defaultQiankunConfig);
+            }
+        };
+
+        loadConfigAndResources();
 
         SettingsManager.getInstance();
 
@@ -177,7 +213,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
                 weatherInitializedRef.current = false;
             }
         };
-    }, [debugMode, getContainer]);
+    }, [debugMode, getContainer, qiankunConfig]);
 
     useEffect(() => {
         if (!musicManager) {
@@ -213,7 +249,7 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
             <div ref={weatherContainerRef}/>
 
             {/* 加载界面 */}
-            {isLoading && resourceLoader && (
+            {!qiankunConfig.enabled && isLoading && resourceLoader && (
                 <LoadingScreen
                     resources={resourceLoader}
                     onComplete={handleLoadingComplete}
@@ -221,36 +257,41 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
             )}
 
             {/* Shader转场动画 */}
-            {showShader && (
+            {!qiankunConfig.enabled && showShader && (
                 <ShaderReveal onComplete={handleShaderComplete} />
             )}
 
             {/* Toast通知容器 */}
             <ToastContainer toasts={toasts} onClose={removeToast} />
 
-            <ControlPanel
-                visible={showControls}
-                musicManager={musicManager}
-                onSeasonChange={handleSeasonChange}
-                onTimeChange={handleTimeChange}
-                onWeatherChange={handleWeatherChange}
-                onLightningStrike={handleLightningStrike}
-            />
+            {/* 控制面板 - 根据配置决定是否显示 */}
+            {qiankunConfig.showUI && (
+                <ControlPanel
+                    visible={showControls}
+                    musicManager={musicManager}
+                    onSeasonChange={handleSeasonChange}
+                    onTimeChange={handleTimeChange}
+                    onWeatherChange={handleWeatherChange}
+                    onLightningStrike={handleLightningStrike}
+                />
+            )}
 
-            {/* 页面标题 */}
-            {!isLoading && !showShader && <PageTitle />}
+            {/* 页面标题 - 根据配置决定是否显示 */}
+            {qiankunConfig.showUI && !isLoading && !showShader && <PageTitle />}
 
-            {/* 汉堡菜单 */}
-            {!isLoading && !showShader && (
+            {/* 汉堡菜单 - 根据配置决定是否显示 */}
+            {qiankunConfig.showUI && !isLoading && !showShader && (
                 <HamburgerMenu onOpenSettings={handleOpenSettings} />
             )}
 
-            {/* 设置模态框 */}
-            <SettingsModal
-                isOpen={isSettingsOpen}
-                onClose={handleCloseSettings}
-                musicManager={musicManager}
-            />
+            {/* 设置模态框 - 根据配置决定是否显示 */}
+            {qiankunConfig.showUI && (
+                <SettingsModal
+                    isOpen={isSettingsOpen}
+                    onClose={handleCloseSettings}
+                    musicManager={musicManager}
+                />
+            )}
         </>
     );
 }

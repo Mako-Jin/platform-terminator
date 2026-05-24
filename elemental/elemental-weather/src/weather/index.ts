@@ -14,11 +14,13 @@ import * as Three from 'three';
 import {AmbientSoundManager, AudioManager, MusicManager} from "/@/manager";
 import World from "/@/weather/word.ts";
 import {Vector3} from "three";
+import type {QiankunConfig} from "/@/settings";
 
 interface WeatherConfig {
     container: HTMLElement;
     isDebugMode?: boolean;
     onInitProgress?: (progress: number) => void;
+    qiankunConfig?: QiankunConfig;
 }
 
 class Weather {
@@ -36,6 +38,7 @@ class Weather {
     private camera!: BaseCamera | null;
     private orbitControls!: OrbitControls | null;
     private world!: World;
+    private qiankunConfig?: QiankunConfig;
 
     private audioManager!: AudioManager;
     public musicManager!: MusicManager;
@@ -69,6 +72,7 @@ class Weather {
         this.container = config.container;
         this.isDebugMode = config.isDebugMode ?? false;
         this.onInitProgress = config.onInitProgress;
+        this.qiankunConfig = config.qiankunConfig;
 
         try {
             this.logger.debug('[Weather] Initializing...');
@@ -84,7 +88,7 @@ class Weather {
             await this.initializeAudioSystem();
             this.reportProgress(30);
 
-            this.world = new World(this.scene, this.isDebugMode);
+            this.world = new World(this.scene, this.isDebugMode, this.qiankunConfig);
             await this.world.initialize((progress) => {
                 this.reportProgress(30 + (progress * 0.5));
             });

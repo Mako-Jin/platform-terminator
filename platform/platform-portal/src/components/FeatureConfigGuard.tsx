@@ -3,7 +3,8 @@ import {createContext, useCallback, useContext, useEffect, useState} from 'react
 import {globalActions} from './qiankun/apps';
 import {updateApps} from './qiankun';
 import {message} from 'antd';
-import {Logger} from 'common-tools/utils/logger';
+import {LoggerFactory} from 'common-tools';
+import {getGlobalState} from "./qiankun/state.ts";
 
 interface FeatureConfig {
   elementalWeather: boolean;
@@ -23,6 +24,9 @@ export const FeatureConfigGuard: React.FC<FeatureConfigGuardProps> = ({
   children,
   onConfigLoaded
 }) => {
+  
+  const logger = LoggerFactory.create("feature-config-guard");
+  
   const [loaded, setLoaded] = useState(false);
   const [config, setConfig] = useState<FeatureConfig | null>(null);
 
@@ -46,18 +50,18 @@ export const FeatureConfigGuard: React.FC<FeatureConfigGuardProps> = ({
         }, 100);
       });
     } catch (error) {
-      Logger.error('[FeatureConfigGuard] 获取用户配置失败:', error);
+      logger.error('[FeatureConfigGuard] 获取用户配置失败:', error);
       message.error('获取用户配置失败，使用默认配置');
       return {
         elementalWeather: false, // 失败时默认关闭
       };
     }
-  }, []);
+  }, [logger]);
 
   // 更新功能配置
   const updateFeatureConfig = useCallback(async (newConfig: Partial<FeatureConfig>) => {
     try {
-      Logger.log('[FeatureConfigGuard] 更新功能配置:', newConfig);
+      logger.info('[FeatureConfigGuard] 更新功能配置:', newConfig);
 
       // 1. 调用后端 API 保存配置
       // await fetch('/api/user/update-feature-config', {
@@ -67,7 +71,7 @@ export const FeatureConfigGuard: React.FC<FeatureConfigGuardProps> = ({
       // });
 
       // 2. 更新全局状态
-      const currentState = globalActions.getGlobalState();
+      const currentState = getGlobalState();
       const updatedConfig = { ...currentState.featureConfig, ...newConfig };
 
       globalActions.setGlobalState({
@@ -87,7 +91,7 @@ export const FeatureConfigGuard: React.FC<FeatureConfigGuardProps> = ({
       message.error('配置更新失败');
       throw error;
     }
-  }, []);
+  }, [logger]);
 
   useEffect(() => {
     const loadConfig = async () => {

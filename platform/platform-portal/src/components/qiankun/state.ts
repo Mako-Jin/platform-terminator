@@ -4,21 +4,33 @@ import {LoggerFactory} from 'common-tools';
 const initialState = {
     theme: 'dark',
     locale: 'zh-CN',
+    // 天气功能开关
+    weatherEnabled: true,
 };
 
-const Logger = LoggerFactory.create("qiankun");
+type GlobalState = typeof initialState;
+
+const logger = LoggerFactory.create("qiankun");
+
+// 维护一份本地状态副本
+let currentState: GlobalState = {...initialState};
 
 export const globalActions = initGlobalState(initialState);
 
-export const updateGlobalState = (state: Partial<typeof initialState>): void => {
-    Logger.info('[Qiankun State] 更新全局状态:', state);
-    const currentState = globalActions.getGlobalState();
+// 监听全局状态变化，同步到本地副本
+globalActions.onGlobalStateChange((state) => {
+    currentState = {...currentState, ...state};
+    logger.info('[Qiankun State] 全局状态变化:', currentState);
+}, true);
+
+export const updateGlobalState = (state: Partial<GlobalState>): void => {
+    logger.info('[Qiankun State] 更新全局状态:', state);
     globalActions.setGlobalState({
         ...currentState,
         ...state,
     });
 };
 
-export const getGlobalState = (): typeof initialState => {
-    return globalActions.getGlobalState();
+export const getGlobalState = (): GlobalState => {
+    return {...currentState};
 };

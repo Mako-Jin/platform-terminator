@@ -35,6 +35,7 @@ function App() {
   return (
     <QiankunGuard>
       <div className="sub-app-wrapper">
+        <div id="elemental-weather-container" className="elemental-weather-container"/>
         <div id="games-farm-container" className="games-farm-container"/>
       </div>
     </QiankunGuard>

@@ -1,6 +1,9 @@
 import type {Asset} from "common-three";
 
-export const ASSETS: Asset[] = [
+/**
+ * 天气相关资源 - qiankun 场景下只加载这些
+ */
+export const WEATHER_ASSETS: Asset[] = [
     {
         id: 'environmentMapDayTexture',
         type: 'cubeMap',
@@ -25,6 +28,67 @@ export const ASSETS: Asset[] = [
             '/map/night/nz.png',
         ],
     },
+    {
+        id: 'perlinNoise',
+        type: 'texture',
+        path: ['/textures/noises/perlin_noise_256x256.png'],
+    },
+    {
+        id: 'groundRockMap',
+        type: 'texture',
+        path: ['/textures/ground/rocks_height_256x256.png'],
+    },
+    {
+        id: 'groundRockAOMap',
+        type: 'texture',
+        path: ['/textures/ground/rocks_ao_256x256.png'],
+    },
+    {
+        id: 'waterDepthMap',
+        type: 'texture',
+        path: ['/textures/water/water_depth_map_256x256.png'],
+    },
+    {
+        id: 'fireTexture',
+        type: 'texture',
+        path: ['/textures/fire/fire_256x256.png'],
+    },
+    {
+        id: 'smokeTexture',
+        type: 'texture',
+        path: ['/textures/fire/smoke_256x256.png'],
+    },
+    {
+        id: 'particleTexture',
+        type: 'texture',
+        path: ['/textures/particles/particle_alpha_map_256x256.png'],
+    },
+    {
+        id: 'particleTextureNoAlpha',
+        type: 'texture',
+        path: ['/textures/particles/particle_256x256.jpg'],
+    },
+    {
+        id: 'rainSound',
+        type: 'audio',
+        path: ['/audio/sounds/rain/rain.mp3'],
+    },
+    {
+        id: 'thunderDistantSound',
+        type: 'audio',
+        path: ['/audio/sounds/thunder/distant/thunder_distant.mp3'],
+    },
+    {
+        id: 'thunderStrikeSound',
+        type: 'audio',
+        path: ['/audio/sounds/thunder/near/thunder_strike.mp3'],
+    },
+];
+
+/**
+ * 场景装饰资源 - 非 qiankun 场景下额外加载这些
+ */
+export const SCENE_ASSETS: Asset[] = [
     {
         id: 'grassBladeModel',
         type: 'gltfModelCompressed',
@@ -51,21 +115,6 @@ export const ASSETS: Asset[] = [
         path: ['/textures/grass/displacement_map_blur_256x256.png'],
     },
     {
-        id: 'perlinNoise',
-        type: 'texture',
-        path: ['/textures/noises/perlin_noise_256x256.png'],
-    },
-    {
-        id: 'groundRockMap',
-        type: 'texture',
-        path: ['/textures/ground/rocks_height_256x256.png'],
-    },
-    {
-        id: 'groundRockAOMap',
-        type: 'texture',
-        path: ['/textures/ground/rocks_ao_256x256.png'],
-    },
-    {
         id: 'tentModel',
         type: 'gltfModelCompressed',
         path: ['/models/tent.glb'],
@@ -74,11 +123,6 @@ export const ASSETS: Asset[] = [
         id: 'bridgeModel',
         type: 'gltfModelCompressed',
         path: ['/models/bridge.glb'],
-    },
-    {
-        id: 'waterDepthMap',
-        type: 'texture',
-        path: ['/textures/water/water_depth_map_256x256.png'],
     },
     {
         id: 'rocksModel',
@@ -131,26 +175,6 @@ export const ASSETS: Asset[] = [
         path: ['/models/leaf.glb'],
     },
     {
-        id: 'fireTexture',
-        type: 'texture',
-        path: ['/textures/fire/fire_256x256.png'],
-    },
-    {
-        id: 'smokeTexture',
-        type: 'texture',
-        path: ['/textures/fire/smoke_256x256.png'],
-    },
-    {
-        id: 'particleTexture',
-        type: 'texture',
-        path: ['/textures/particles/particle_alpha_map_256x256.png'],
-    },
-    {
-        id: 'particleTextureNoAlpha',
-        type: 'texture',
-        path: ['/textures/particles/particle_256x256.jpg'],
-    },
-    {
         id: 'flowerTexture1',
         type: 'texture',
         path: ['/textures/flowers/flower_1_128x128.png'],
@@ -160,7 +184,6 @@ export const ASSETS: Asset[] = [
         type: 'texture',
         path: ['/textures/flowers/flower_2_128x128.png'],
     },
-
     {
         id: 'morningPetalsMusic',
         type: 'audio',
@@ -176,7 +199,6 @@ export const ASSETS: Asset[] = [
         type: 'audio',
         path: ['/audio/musics/forest_dreams.mp3'],
     },
-
     {
         id: 'birds1Sound',
         type: 'audio',
@@ -218,11 +240,6 @@ export const ASSETS: Asset[] = [
         path: ['/audio/sounds/owl/owl_hooting.mp3'],
     },
     {
-        id: 'rainSound',
-        type: 'audio',
-        path: ['/audio/sounds/rain/rain.mp3'],
-    },
-    {
         id: 'lakeWavesSound',
         type: 'audio',
         path: ['/audio/sounds/waves/lake_waves.mp3'],
@@ -233,17 +250,6 @@ export const ASSETS: Asset[] = [
         path: ['/audio/sounds/wolf/wolf_howling.mp3'],
     },
     {
-        id: 'thunderDistantSound',
-        type: 'audio',
-        path: ['/audio/sounds/thunder/distant/thunder_distant.mp3'],
-    },
-    {
-        id: 'thunderStrikeSound',
-        type: 'audio',
-        path: ['/audio/sounds/thunder/near/thunder_strike.mp3'],
-    },
-
-    {
         id: 'clickSound',
         type: 'audio',
         path: ['/audio/sounds/ui_interactions/click.mp3'],
@@ -253,4 +259,12 @@ export const ASSETS: Asset[] = [
         type: 'audio',
         path: ['/audio/sounds/ui_interactions/hover.mp3'],
     },
+];
+
+/**
+ * 所有资源 - 非 qiankun 场景下使用
+ */
+export const ASSETS: Asset[] = [
+    ...WEATHER_ASSETS,
+    ...SCENE_ASSETS,
 ];
