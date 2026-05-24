@@ -5,11 +5,12 @@ import qiankun from 'vite-plugin-qiankun';
 import glsl from 'vite-plugin-glsl'
 
 export default defineConfig({
+  base: '/',
   plugins: [
-    react(),
+    react({}),
     glsl(),
     qiankun('elemental-weather', {
-      useDevMode: process.env.NODE_ENV === 'development', // 根据环境动态设置
+      useDevMode: true,
     }),
   ],
   resolve: {

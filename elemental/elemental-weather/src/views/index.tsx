@@ -1,7 +1,7 @@
 import {LoggerFactory, isDebugMode, eventBus} from "common-tools";
 import {useCallback, useEffect, useRef, useState} from "react";
 import {ResourceLoader, type SeasonType} from "common-three";
-import {ASSETS} from "/@/settings/resources";
+import {ASSETS, resolvePath} from "/@/settings/resources";
 import LoadingScreen from "./loading";
 import {Haptics} from "/@/utils";
 import {
@@ -174,8 +174,15 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
         // ✅ 根据 qiankun 配置决定加载哪些资源
         const initResources = (config: QiankunConfig) => {
             const assetsToLoad = getAssetsForConfig(config, ASSETS);
-            logger.info(`[WeatherView] Loading ${assetsToLoad.length} assets based on qiankun config`);
-            const loader = new ResourceLoader(assetsToLoad, debugMode);
+            
+            // ✅ 在加载前动态解析资源路径（解决 qiankun 环境下路径问题）
+            const resolvedAssets = assetsToLoad.map(asset => ({
+                ...asset,
+                path: asset.path.map(p => resolvePath(p))
+            }));
+            
+            logger.info(`[WeatherView] Loading ${resolvedAssets.length} assets based on qiankun config`);
+            const loader = new ResourceLoader(resolvedAssets, debugMode);
             setResourceLoader(loader);
         };
 

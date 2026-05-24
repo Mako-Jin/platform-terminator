@@ -13,8 +13,12 @@ let currentWeatherEnabled = true;
 const getAppsWithSandbox = (apps: typeof baseApps) => {
     return apps.map(app => ({
         ...app,
-        // 对于 Vite 应用，使用 legacy 沙箱或禁用沙箱
-        sandbox: !(app.name.includes('farm') || app.name.includes('weather')),
+        // 对于 Vite 应用，禁用沙箱
+        sandbox: false,
+        // 过滤掉 React Refresh 的脚本
+        excludeAssetFilter: (url: string) => {
+            return url.includes('react-refresh') || url.includes('@react-refresh');
+        },
     }));
 };
 

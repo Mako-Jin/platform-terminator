@@ -32,13 +32,19 @@ export const baseApps: MicroAppConfig[] = [
 ];
 
 // 天气应用配置（受开关控制）
-export const weatherApp: MicroAppConfig = createMicroApp(
-    'elemental-weather', 
-    5001, 
-    '/elemental/elemental-weather/', 
-    '/elemental-weather', 
-    '#elemental-weather-container'
-);
+// 使用函数作为 activeRule，始终返回 true 以便天气应用始终激活
+export const weatherApp: MicroAppConfig = {
+    name: 'elemental-weather',
+    entry: isDev ? '//localhost:5001' : '/elemental/elemental-weather/',
+    container: '#elemental-weather-container',
+    activeRule: () => true, // 始终激活
+    props: {
+        basename: '/elemental-weather',
+        getGlobalState: globalActions.getGlobalState,
+        setGlobalState: globalActions.setGlobalState,
+        onGlobalStateChange: globalActions.onGlobalStateChange,
+    },
+};
 
 // 根据天气开关获取应用列表
 export const getMicroApps = (weatherEnabled: boolean): MicroAppConfig[] => {
