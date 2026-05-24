@@ -134,7 +134,7 @@ class Weather {
         
         this.logger.info('[Weather] Stopping render loop...');
         this.isRunning = false;
-        this.world.stop();
+        // this.world.stop();
         clockManager.stop();
     }
 

@@ -118,7 +118,7 @@ const LoadingScreen: (
             <div className="loader-content">
                 <h1 className="loader-title" ref={titleRef}>
                     <i className="fa-regular fa-square"/>
-                    Elemental Serenity
+                    Elemental Weather
                 </h1>
 
                 <div className="loader-progress">

@@ -295,12 +295,15 @@ export default class Bush extends Object3DComponent {
     /**
      * 辅助函数：创建 Color
      */
-    private col(arr: number[]): Three.Color {
-        if (!Array.isArray(arr) || arr.length < 3) {
+    private col(value: number[] | Three.Color): Three.Color {
+        if (value instanceof Three.Color) {
+            return value.clone();
+        }
+        if (!Array.isArray(value) || value.length < 3) {
             this.logger.warn('[Bush] Invalid array for Color creation:', arr);
             return new Three.Color(1, 1, 1);
         }
-        return new Three.Color(arr[0], arr[1], arr[2]);
+        return new Three.Color(value[0], value[1], value[2]);
     }
 
     /**

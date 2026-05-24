@@ -140,7 +140,7 @@ export default class Water extends Object3DComponent {
             // ✅ 更新时间 uniform
             this.customWaterUniforms.uTime.value += params.delta;
         }
-
+        this.updateSeasonalAndWeatherEffects();
     }
 
     /**
@@ -193,11 +193,12 @@ export default class Water extends Object3DComponent {
     public onSeasonChanged(data: SeasonChangedData): void {
         this.logger.debug(`[Water] Season changed: ${data.previousSeason} -> ${data.currentSeason} (${data.solarTerm})`);
         this.updateWaterColors();
+        // this.updateSeasonalAndWeatherEffects();
     }
 
     public onWeatherChanged(data: WeatherChangedData): void {
         this.logger.debug(`[Water] Weather changed: ${data.previousWeather} -> ${data.currentWeather}`);
-        this.updateSeasonalAndWeatherEffects();
+        // this.updateSeasonalAndWeatherEffects();
     }
 
     /**
@@ -287,13 +288,10 @@ export default class Water extends Object3DComponent {
         }
         perlinNoise.wrapS = perlinNoise.wrapT = Three.RepeatWrapping;
 
-        // ✅ 获取颜色配置
-        const colors = this.getWaterColorConfig();
-
         // ✅ 创建水面几何体（参考 Ground.addWaterRipples 第 228-233 行）
         this.waterGeometry = new Three.PlaneGeometry(
-            this.groundSize + 0.5,
-            this.groundSize + 2,
+            this.worldSize + 1,
+            this.worldSize + 1,
             1,
             1
         );
@@ -359,17 +357,13 @@ export default class Water extends Object3DComponent {
                 ...this.customWaterUniforms,
             };
 
-            // ✅ 关键修复：先替换 begin_vertex，再替换 common
-            // 因为 waterVertexBeginChunk 包含 #include <begin_vertex>
-            // 如果先替换 common，会破坏 begin_vertex 的标记
-            shader.vertexShader = shader.vertexShader.replace(
-                '#include <begin_vertex>',
-                waterVertexBeginChunk
-            );
-
             shader.vertexShader = shader.vertexShader.replace(
                 '#include <common>',
                 waterVertexCommonChunk
+            );
+            shader.vertexShader = shader.vertexShader.replace(
+                '#include <begin_vertex>',
+                waterVertexBeginChunk
             );
 
             shader.fragmentShader = shader.fragmentShader.replace(
@@ -387,10 +381,9 @@ export default class Water extends Object3DComponent {
         this.waterMesh = new Three.Mesh(this.waterGeometry, this.waterMaterial);
         this.waterMesh.rotateX(-Math.PI / 2);
 
-        // ✅ 关键修复：水面应该位于场景中心，而不是偏移位置
-        // 原始项目中的 (-0.2, 0.1, 1.3) 是相对于单个 ground tile 的位置
-        // 但我们的场景是 5x5 网格，需要将水面放在中心
-        this.waterMesh.position.set(0, 0.1, 0);
+        // ✅ 水面位于场景中心，略高于地面（0.1）
+        // this.waterMesh.position.set(0, 0.1, 0);
+        this.waterMesh.position.set(-0.2, 0.1, 1.3);
 
         this.waterMesh.name = 'WaterRipples';
         this.waterMesh.renderOrder = 2;
@@ -419,17 +412,17 @@ export default class Water extends Object3DComponent {
     }
 
     /**
-     * ✅ 更新水面颜色（参考 Ground.updateColors）
+     * 更新水面效果（水的基础颜色由 Ground 组件管理）
+     * 
+     * 设计说明：
+     * - 水面基础颜色（浅水/深水）由 Ground 组件的 ground.fragment_color_chunk.glsl 控制
+     * - 本组件只负责动态效果：波纹、飞溅、冰层
+     * - 颜色配置通过 Ground.customGroundUniforms (uWaterShallow, uWaterDeep) 管理
      */
     private updateWaterColors(): void {
-        if (!this.customWaterUniforms) return;
-
-        const colors = this.getWaterColorConfig();
-        if (!colors) return;
-
-        // ✅ 注意：water shader chunks 中没有直接使用水颜色 uniform
-        // 颜色是通过 ground 的 shader 控制的，这里主要控制效果强度
-        this.logger.debug('[Water] Updated water effects for season:');
+        // 水的基础颜色由 Ground 组件统一管理
+        // 这里不需要做任何操作，只记录日志
+        this.logger.debug('[Water] Water colors are managed by Ground component');
     }
 
     /**
@@ -483,19 +476,18 @@ export default class Water extends Object3DComponent {
             this.customWaterUniforms.uRipplesRatio.value = lerp(
                 this.customWaterUniforms.uRipplesRatio.value,
                 1.0,
-                0.05
+                0.15  // ✅ 加快过渡速度
             );
             this.customWaterUniforms.uSplashesRatio.value = lerp(
                 this.customWaterUniforms.uSplashesRatio.value,
                 0.0,
-                0.05
+                0.15  // ✅ 加快飞溅效果消失速度
             );
             this.customWaterUniforms.uIceRatio.value = lerp(
                 this.customWaterUniforms.uIceRatio.value,
                 0.0,
-                0.05
+                0.15  // ✅ 加快过渡速度
             );
         }
     }
 }
-
