@@ -251,54 +251,52 @@ const WeatherView = ({container}: { container?: HTMLElement | string } = {}) => 
     return (
         <>
             <div className="weather-container">
+                <div ref={weatherContainerRef}/>
+                {/* 加载界面 */}
+                {!qiankunConfig.enabled && isLoading && resourceLoader && (
+                    <LoadingScreen
+                        resources={resourceLoader}
+                        onComplete={handleLoadingComplete}
+                    />
+                )}
 
+                {/* Shader转场动画 */}
+                {!qiankunConfig.enabled && showShader && (
+                    <ShaderReveal onComplete={handleShaderComplete} />
+                )}
+
+                {/* Toast通知容器 */}
+                <ToastContainer toasts={toasts} onClose={removeToast} />
+
+                {/* 控制面板 - 根据配置决定是否显示 */}
+                {qiankunConfig.showUI && (
+                    <ControlPanel
+                        visible={showControls}
+                        musicManager={musicManager}
+                        onSeasonChange={handleSeasonChange}
+                        onTimeChange={handleTimeChange}
+                        onWeatherChange={handleWeatherChange}
+                        onLightningStrike={handleLightningStrike}
+                    />
+                )}
+
+                {/* 页面标题 - 根据配置决定是否显示 */}
+                {qiankunConfig.showUI && !isLoading && !showShader && <PageTitle />}
+
+                {/* 汉堡菜单 - 根据配置决定是否显示 */}
+                {qiankunConfig.showUI && !isLoading && !showShader && (
+                    <HamburgerMenu onOpenSettings={handleOpenSettings} />
+                )}
+
+                {/* 设置模态框 - 根据配置决定是否显示 */}
+                {qiankunConfig.showUI && (
+                    <SettingsModal
+                        isOpen={isSettingsOpen}
+                        onClose={handleCloseSettings}
+                        musicManager={musicManager}
+                    />
+                )}
             </div>
-            <div ref={weatherContainerRef}/>
-
-            {/* 加载界面 */}
-            {!qiankunConfig.enabled && isLoading && resourceLoader && (
-                <LoadingScreen
-                    resources={resourceLoader}
-                    onComplete={handleLoadingComplete}
-                />
-            )}
-
-            {/* Shader转场动画 */}
-            {!qiankunConfig.enabled && showShader && (
-                <ShaderReveal onComplete={handleShaderComplete} />
-            )}
-
-            {/* Toast通知容器 */}
-            <ToastContainer toasts={toasts} onClose={removeToast} />
-
-            {/* 控制面板 - 根据配置决定是否显示 */}
-            {qiankunConfig.showUI && (
-                <ControlPanel
-                    visible={showControls}
-                    musicManager={musicManager}
-                    onSeasonChange={handleSeasonChange}
-                    onTimeChange={handleTimeChange}
-                    onWeatherChange={handleWeatherChange}
-                    onLightningStrike={handleLightningStrike}
-                />
-            )}
-
-            {/* 页面标题 - 根据配置决定是否显示 */}
-            {qiankunConfig.showUI && !isLoading && !showShader && <PageTitle />}
-
-            {/* 汉堡菜单 - 根据配置决定是否显示 */}
-            {qiankunConfig.showUI && !isLoading && !showShader && (
-                <HamburgerMenu onOpenSettings={handleOpenSettings} />
-            )}
-
-            {/* 设置模态框 - 根据配置决定是否显示 */}
-            {qiankunConfig.showUI && (
-                <SettingsModal
-                    isOpen={isSettingsOpen}
-                    onClose={handleCloseSettings}
-                    musicManager={musicManager}
-                />
-            )}
         </>
     );
 }
