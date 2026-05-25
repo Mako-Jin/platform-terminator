@@ -4,6 +4,7 @@ packages:
   - 'packages/common-three'
   # 平台系统元素
   - 'elemental/elemental-weather'
+  - 'elemental/elemental-city-wall'
   # 平台级功能子应用
   - 'platform/platform-auth'
   - 'platform/platform-portal'
