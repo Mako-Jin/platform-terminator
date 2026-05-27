@@ -15,6 +15,8 @@ const WorldView = ({container}: { container?: HTMLElement | string } = {}) => {
     // ✅ qiankun 配置状态
     const [qiankunConfig, setQiankunConfig] = useState<QiankunConfig>(fullConfig);
 
+    const worldInitializedRef = useRef<boolean>(false);
+
     const getContainer = useCallback((): HTMLElement | null => {
         // 优先使用传入的container，否则使用ref
         let targetContainer: HTMLElement | null;
@@ -29,14 +31,22 @@ const WorldView = ({container}: { container?: HTMLElement | string } = {}) => {
         return targetContainer;
     }, [container]);
 
-    const initWorld = () => {
+    const initializeWorld = () => {
+        // ✅ 关键修复:防止重复初始化
+        if (worldInitializedRef.current) {
+            logger.warn('[CityWallWorldView] city wall world already initialized, skipping...');
+            return;
+        }
 
         const targetContainer = getContainer();
         if (!targetContainer) {
-            logger.error('weather world container not found');
+            logger.error('city wall world container not found');
             return;
         }
-        
+
+        logger.info('[CityWallWorldView] Initializing weather application...');
+        worldInitializedRef.current = true;
+
         const world = World.getInstance();
         world.init({
             container: targetContainer,
@@ -46,11 +56,11 @@ const WorldView = ({container}: { container?: HTMLElement | string } = {}) => {
             },
             qiankunConfig: qiankunConfig
         });
-    }
+    };
 
     useEffect(() => {
-        initWorld();
-    }, [initWorld]);
+        initializeWorld();
+    }, [initializeWorld]);
 
     return (
         <>

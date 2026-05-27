@@ -173,16 +173,10 @@ class Weather {
             autoAddLights: false,
         });
 
-        // ✅ 关键修复:先获取容器尺寸,再计算正确的宽高比
-        const containerWidth = this.container.clientWidth || window.innerWidth;
-        const containerHeight = this.container.clientHeight || window.innerHeight;
-        const aspectRatio = containerWidth / containerHeight;
-
         this.camera = cameraManager.createCamera(CameraType.PERSPECTIVE, {
             fov: 25, 
             near: 0.1, 
             far: 200,
-            aspect: aspectRatio, // ✅ 显式设置宽高比
             position: { x: 18.25, y: 10.69, z: 27.32 },
             target: { x: 0, y: 0, z: 0 },
         });
@@ -215,8 +209,6 @@ class Weather {
         
         // ✅ 关键修复:强制更新相机投影矩阵
         this.camera.getCamera().updateProjectionMatrix();
-        
-        this.logger.info('[Weather] Camera initialized with aspect ratio:', aspectRatio);
     }
 
     private initializeGlobalManagers(): void {
