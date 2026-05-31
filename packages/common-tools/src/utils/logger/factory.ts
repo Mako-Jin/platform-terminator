@@ -251,7 +251,11 @@ export class LoggerInstance {
             }
             return await response.text();
         } catch (error) {
-            this.error('Failed to load ASCII art', error);
+            try {
+                this.error('Failed to load ASCII art', error);
+            } catch {
+                // 忽略日志记录失败的情况
+            }
             return '';
         }
     }
