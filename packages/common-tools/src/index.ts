@@ -10,3 +10,5 @@ export * from './request';
 
 // Auth
 export * from './auth';
+
+export * from './storage';

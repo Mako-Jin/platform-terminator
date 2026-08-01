@@ -1,6 +1,7 @@
 packages:
   # 公共依赖
   - 'packages/common-tools'
+  - 'packages/common-theme'
   - 'packages/common-three'
   # 平台系统元素
   - 'elemental/elemental-weather'

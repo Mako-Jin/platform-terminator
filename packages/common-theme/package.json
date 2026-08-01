@@ -1,0 +1,69 @@
+{
+  "name": "common-theme",
+  "version": "0.0.0",
+  "type": "module",
+  "main": "./src/index.ts",
+  "types": "./src/index.ts",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc -b && vite build",
+    "test": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest --coverage",
+    "lint": "eslint .",
+    "preview": "vite preview"
+  },
+  "description": "共享主题系统",
+  "exports": {
+    ".": {
+      "import": "./src/index.ts",
+      "types": "./src/index.ts"
+    },
+    "./react": {
+      "import": "./adapters/react-use-theme.ts",
+      "require": "./adapters/react-use-theme.js",
+      "types": "./adapters/react-use-theme.d.ts"
+    },
+    "./vue": {
+      "import": "./adapters/vue-use-theme.ts",
+      "require": "./adapters/vue-use-theme.js",
+      "types": "./adapters/vue-use-theme.d.ts"
+    },
+    "./styles": {
+      "import": "./dist/styles/global-theme.css",
+      "require": "./dist/styles/global-theme.css"
+    }
+  },
+  "peerDependencies": {
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0",
+    "vue": ">=3.0.0"
+  },
+  "peerDependenciesMeta": {
+    "react": {
+      "optional": true
+    },
+    "vue": {
+      "optional": true
+    }
+  },
+  "dependencies": {
+    "common-tools": "workspace:*"
+  },
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@types/node": "^24.13.3",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.4",
+    "eslint": "^10.8.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "eslint-plugin-react-refresh": "^0.5.3",
+    "globals": "^17.7.0",
+    "typescript": "~6.0.2",
+    "typescript-eslint": "^8.65.0",
+    "vite": "^8.2.0",
+    "vitest": "^4.1.4",
+    "@testing-library/react": "^16.3.2"
+  }
+}

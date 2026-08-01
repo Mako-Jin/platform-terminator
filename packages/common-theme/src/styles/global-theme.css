@@ -1,0 +1,42 @@
+:root {
+    --color-primary: #3C3F27;
+    --color-secondary: #937539;
+    --color-accent: #9DA780;
+    --color-neutral-dark: #3C3F27;
+    --color-neutral-light: #C5AB71;
+    --color-background: #F8F6EF;
+    --color-card-bg: #FFFFFF;
+    --color-text: #3C3F27;
+    --color-border: #9DA780;
+    --color-focus: var(--color-accent);
+}
+
+/** {*/
+/*    transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease;*/
+/*}*/
+
+/* 仅对颜色相关属性过渡，避免性能问题 */
+button,
+a,
+input,
+textarea,
+select,
+dialog,
+[class*='theme-transition'] {
+    transition:
+        background-color 0.3s ease,
+        color 0.3s ease,
+        border-color 0.3s ease,
+        box-shadow 0.3s ease;
+}
+
+body {
+    background-color: var(--color-background);
+    color: var(--color-text);
+}
+
+/* 焦点可见性支持 */
+:focus-visible {
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
+}
