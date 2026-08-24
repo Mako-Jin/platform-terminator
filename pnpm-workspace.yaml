@@ -9,5 +9,7 @@ packages:
   # 平台级功能子应用
   - 'platform/platform-auth'
   - 'platform/platform-portal'
+  - 'platform/platform-workflow'
   # 休闲放松游戏
   - 'games/games-farm'
+  # app 应用子应用
